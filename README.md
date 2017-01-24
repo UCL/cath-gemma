@@ -139,9 +139,12 @@ GeMMA_folders_and_datasets/v4.1_dataset/2.20.100.10/starting-clusters/12528.faa 
 COMPASS 3.1 bits
 ----------------
 
+**Be aware**: calling `mk_compass_db` multiple times will concatenate on top of the existing library rather than replacing it.
+
 ~~~~~
-rm -f compass_db_310.len 
+rm -f /dev/shm/compass_db_310 /dev/shm/compass_db_310.len 
 ./mk_compass_db_310 -g 0.50001 -i /dev/shm/aln_list -o /dev/shm/compass_db_310
+rm -f /dev/shm/compass_db_310.len 
 ~~~~~
 
 
