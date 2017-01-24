@@ -1,0 +1,85 @@
+#!/bin/bash
+
+# GENERIC version
+
+#DEBUG to show the running host
+hostname
+
+#DEBUG check if this 'x y z' (intermediate spaces) command line arg is passed correctly
+#echo $a5
+
+# a1 = job_number
+# a2 = script_path
+#DEBUG could replace with source dir, target dir, job file (see below) instead
+# a3 = family_dir
+
+# a4 = mafft_executable_path
+# a5 = mafft_hq_params
+# a6 = mafft_lq_params
+# a7 = mafft_aln_quality_seq_num_cutoff
+
+
+function sigusr1_handler()
+{
+        echo "SIGUSR1 caught by shell script" 1>&2
+}
+
+
+function sigusr2_handler()
+{
+        echo "SIGUSR2 caught by shell script" 1>&2
+}
+
+
+function sigxcpu_handler()
+{
+        echo "SIGXCPU caught by shell script" 1>&2
+}
+
+#trap sigusr1_handler SIGUSR1
+#trap sigusr2_handler SIGUSR2
+trap sigxcpu_handler SIGXCPU
+
+# ------------------------------------ preparations -----------------------------------
+
+#DEBUG rather get source dir, target dir, job file as parameters to this script (no absolute dir names)
+
+job_no=$a1
+
+node_script=$a2
+
+family_dir=$a3
+
+target_dir=$family_dir/results
+
+job_dir=$family_dir/jobs
+
+faa_dir=$family_dir/mfasta
+
+cp -f $node_script $TMPDIR/node_script.pl
+
+cp -f $job_dir/job.$job_no $TMPDIR/
+
+# --------------------------------------- run phase -----------------------------------
+
+#NOTE the "s! important for passing command line args with intermediate spaces
+perl $TMPDIR/node_script.pl $job_no $TMPDIR $faa_dir $TMPDIR "$a4" "$a5" "$a6" "$a7"
+
+# ------------------------------------- collection phase ------------------------------
+
+find $TMPDIR/ -type f -name '*.aln' -exec mv -f {} $target_dir/ \;
+
+find $TMPDIR/ -type f -name '*.stderr' -exec mv -f {} $target_dir/ \;
+
+find $TMPDIR/ -type f -name 'errors.*' -exec mv -f {} $target_dir/ \;
+
+#DEBUG or is this script here also killed in such cases? then this would be useless ofc.
+# if one of the SIGnals above has killed the child process (or any of its children, e.g. MAFFT, 
+# and everything up the process tree, e.g. mafft_node.pl)
+if [ ! -e $TMPDIR/done.$job_no ]
+then
+	echo "-1 -1" > $TMPDIR/done.$job_no
+fi
+
+mv -f $TMPDIR/done.$job_no $target_dir/
+

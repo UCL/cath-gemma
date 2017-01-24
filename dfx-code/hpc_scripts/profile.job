@@ -1,0 +1,68 @@
+#!/bin/bash
+
+# GENERIC version
+
+# a1 = job number
+# a2 = script_path
+# a3 = family_dir
+
+# a4 = executable
+# a5 = parameters
+
+function sigusr1_handler()
+{
+        echo "SIGUSR1 caught by shell script" 1>&2
+}
+
+function sigusr2_handler()
+{
+        echo "SIGUSR2 caught by shell script" 1>&2
+}
+
+function sigxcpu_handler()
+{
+        echo "SIGXCPU caught by shell script" 1>&2
+}
+
+#trap sigusr1_handler SIGUSR1
+#trap sigusr2_handler SIGUSR2
+trap sigxcpu_handler SIGXCPU
+
+# ------------------------------------ preparations -----------------------------------
+
+job_no=$a1
+
+script=$a2
+
+family_dir=$a3
+
+target_dir=$family_dir/results
+
+job_dir=$family_dir/jobs
+
+aln_dir=$family_dir/alignments
+
+cp -f $script $TMPDIR/script.pl
+
+cp -f $job_dir/job.$job_no $TMPDIR/
+
+# --------------------------------------- run phase -----------------------------------
+
+perl $TMPDIR/script.pl $job_no $TMPDIR $aln_dir $TMPDIR "$a4" "$a5"
+
+# ------------------------------------- collection phase ------------------------------
+
+find $TMPDIR/ -type f -name '*.prof' -exec mv -f {} $target_dir/ \;
+
+find $TMPDIR/ -type f -name '*.stderr' -exec mv -f {} $target_dir/ \;
+
+find $TMPDIR/ -type f -name 'errors.*' -exec mv -f {} $target_dir/ \;
+
+# if one of the SIGnals above has killed the child process (or any of its children, e.g. MAFFT, and then everything up the process tree, e.g. mafft_node.pl)
+if [ ! -e $TMPDIR/done.$job_no ]
+then
+	echo "-1 -1" > $TMPDIR/done.$job_no
+fi
+
+mv -f $TMPDIR/done.$job_no $target_dir/
+
