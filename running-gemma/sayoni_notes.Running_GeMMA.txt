@@ -35,7 +35,15 @@ $ cp /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/superfamilies.siz
 # change usernames in /cath/people2/ucbtdas/GeMMA/dfx_cath1/pipeline.config
 # change the cluster directory as well
 
-# cd to the folder dfx_cath1/ in the cluster directory
+# Mirror everything to the cluster
+$ rsync -av /cath/people2/ucbtdas/GeMMA/dfx_cath1/      bchuckle.cs.ucl.ac.uk:/cluster/project8/ff_stability/GeMMA_2016/cath/dfx_cath1/
+$ rsync -av /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/ bchuckle.cs.ucl.ac.uk:/cluster/project8/ff_stability/GeMMA_2016/cath/dfx_cath1_data/
+
+# ssh to the cluster and cd to the non-data folder in the cluster directory
+$ ssh bchuckle.cs.ucl.ac.uk
+$ cd /cluster/project8/ff_stability/GeMMA_2016/cath/dfx_cath1/
+
+# Run dfx
 $ perl dfx.pl run cath1 cluster
 
 expected response:
