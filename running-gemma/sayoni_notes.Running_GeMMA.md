@@ -8,21 +8,21 @@ cd /cath/people2/ucbtdas/GeMMA/
 Copy over base directory structures required
 
 ~~~~~
-rsync -av /cath/people2/ucbtnld/projects/GeMMA/dfx_base/ /cath/people2/ucbtdas/GeMMA/dfx_cath1/
+rsync -av /cath/people2/ucbtnld/projects/GeMMA/dfx_base/      /cath/people2/ucbtdas/GeMMA/dfx_cath1/
 rsync -av /cath/people2/ucbtnld/projects/GeMMA/dfx_base_data/ /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/
 ~~~~~
 
 Rename the sub-folder PROJECT_NAME to your project name
 
 ~~~~~
-mv /cath/people2/ucbtdas/GeMMA/dfx_cath1/projects/PROJECT_NAME/ /cath/people2/ucbtdas/GeMMA/dfx_cath1/projects/cath1/
+mv /cath/people2/ucbtdas/GeMMA/dfx_cath1/projects/PROJECT_NAME/      /cath/people2/ucbtdas/GeMMA/dfx_cath1/projects/cath1/
 mv /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/PROJECT_NAME/ /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/
 ~~~~~
 
 Delete the prototype superfamily folder SUPERFAMILY_NAME and copy the required superfamily starting clusters to the data directory
 
 ~~~~~
-rm -r /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/starting_clusters/SUPERFAMILY_ID/
+rm -rf /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/starting_clusters/SUPERFAMILY_ID/
 rsync -av /cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/starting_clusters/1.10.150.120/*.faa /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/starting_clusters/1.10.150.120/
 ~~~~~
 
