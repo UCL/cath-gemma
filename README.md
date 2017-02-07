@@ -1,6 +1,16 @@
 **cath-gemma**
 ==========
 
+Overview
+---------
+
+This is one of the repos that's used in generating funfams.
+
+For the master repo, please see https://github.com/UCL/cath-funfam
+
+Notes
+-----
+
  * `/export/people/ucbctnl/gemma_stuff/dfx/dfx_pfam1/tools/compass/compass_db1Xdb2_241`  ( `$compass_dbXdb_executable` )
  * `/export/people/ucbctnl/gemma_stuff/dfx/dfx_pfam1/tools/compass/compass_wp_245_fixed` ( `$compass_executable`       )
 
