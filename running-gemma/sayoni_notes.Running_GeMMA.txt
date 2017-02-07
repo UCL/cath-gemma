@@ -29,10 +29,10 @@ $ cp /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/superfamilies.lis
 # make a tab-separated file /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/superfamilies.sizes having the following fields
 # Superfamily 1.10.150.120 has 437 sequences in all faa files
 
-$ echo 1.10.150.120   437 > /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/superfamilies.sizes
+$ echo "1.10.150.120\t437" > /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/superfamilies.sizes
 $ cp /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/cath1/superfamilies.sizes /cath/people2/ucbtdas/GeMMA/dfx_cath1/projects/cath1/
 
-# change usernames in /cath/people2/ucbtdas/GeMMA/dfx_cath1_data/projects/pipeline.config
+# change usernames in /cath/people2/ucbtdas/GeMMA/dfx_cath1/pipeline.config
 # change the cluster directory as well
 
 # cd to the folder dfx_cath1/ in the cluster directory
