@@ -4,18 +4,18 @@ Alignment Speed Notes
 The problem
 -----------
 
-Initial testing on 1.10.150.120 (with 45 starting clusters) suggests that for these smaller S/Fs, the MAFFT alignment takes the majority of the time. Though this isn't the worst bottleneck, that time will accumulate over the long tail of smallish superfamilies.
+Initial testing on 1.10.150.120 (with 45 starting clusters) suggests that for these smaller S/Fs, the MAFFT alignment takes the majority of the time. Though this isn't the worst bottleneck, the total alignment time will nevertheless accumulate over the long tail of smallish superfamilies.
 
 Note: the initial MAFFT alignments appear to be fast (about 6/second) but the later larger ones are slower (though the existing GeMMMA code switches to using rougher, faster aligning at 200 sequences).
 
 Possible strategy 1: Remove identical sequences
 -------------------
 
-The starting clusters often contain quite a few identical sequences. Want to know whether removing such redundancy would:
+The starting clusters often contain quite a few identical sequences. We want to know whether removing such redundancy would:
  * preserve the profile evalues
  * speed up the alignments
 
-An initial test of the first proposition seemed to suggest that it would preserve evalues:
+An initial test of the first issue seemed to suggest that it *would* preserve evalues:
 
 ~~~~~
 cp /cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/starting_clusters/1.10.150.120/{869,920}.faa .
