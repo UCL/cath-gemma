@@ -36,6 +36,8 @@ my $compass_profile_suffix = '.prof';
 # rsync -av /export/people/ucbctnl/gemma_stuff/dfx/dfx_pfam1/tools/mafft-6.864-without-extensions/binaries/ /dev/shm/mafft_binaries_dir/
 # setenv MAFFT_BINARIES /dev/shm/mafft_binaries_dir
 
+$ENV{  MAFFT_BINARIES } = '/dev/shm/mafft_binaries_dir';
+
 process_superfamily( $example_sf );
 
 # 43,699
@@ -214,7 +216,7 @@ sub process_to_evalue_cutoff {
 			my $cluster1 = $clusters->[ $index1 ];
 			my $cluster2 = $clusters->[ $index2 ];
 
-			my @combined_cluster_ids = sort { $a <=> $b } ( @{ $clusters->[ $index1 ] }, @{ $clusters->[ $index2 ] } );
+			my @combined_cluster_ids = ( @{ $clusters->[ $index1 ] }, @{ $clusters->[ $index2 ] } );
 			$clusters->[ $index1 ] = \@combined_cluster_ids;
 			$clusters->[ $index2 ] = undef;
 			delete $index_of_cluster_id->{ $id1 };
@@ -286,6 +288,7 @@ sub compass_single {
 	$temp_db_fh->close()
 		or confess "";
 
+	warn localtime(time()) . " : About to run single COMPASS scan\n";
 	my $results = run_compass( $temp_db_file, $new_file );
 
 	$temp_db_file->remove()
@@ -341,18 +344,16 @@ sub compass_all_vs_all {
 	my $temp_db_file     = $temporary_dir->file( 'temp_db.' . $PROCESS_ID );
 	my $temp_db_fh = $temp_db_file->openw();
 
-	warn localtime(time()) . " : About to write db file...\n";
+	warn localtime(time()) . " : About to write all-vs-all db file...\n";
 	foreach my $cluster_num ( @$cluster_nums ) {
 		my $cluster_file = $sf_profiles_dir->file( $cluster_num . $compass_profile_suffix );
 		print $temp_db_fh $cluster_file->slurp();
 	}
 	$temp_db_fh->close()
 		|| confess "";
-	warn localtime(time()) . " : Wrote db file.\n";
+	warn localtime(time()) . " : About to run all-vs-all compass.\n";
 
 	my $results = run_compass( $temp_db_file, $temp_db_file );
-
-	warn localtime(time()) . " : Ran compass...\n";
 
 	$temp_db_file->remove()
 		|| confess "Unable to remove temporary database file \"$temp_db_file\" : $OS_ERROR";
@@ -462,29 +463,30 @@ sub make_compass_profile {
 
 	my $num_sequences        = get_num_sequences( $source_file );
 	my $temporary_align_file = $temporary_dir->file( $dest_file->basename() . '.temporary_alignment_file.' . $PROCESS_ID );
+	my @mafft_params_slow_high_qual = ( qw/ --amino --anysymbol --localpair --maxiterate 1000 --quiet / );
+	my @mafft_params_fast_low_qual  = ( qw/ --amino --anysymbol --parttree  --retree     1    --quiet / );
 
 	if ( $num_sequences  > 1 ) {
+		my $mafft_params = ( $num_sequences <= 200 ) ? \@mafft_params_slow_high_qual
+		                                             : \@mafft_params_fast_low_qual;
 		# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		# !!!! THIS IS THE HIGH-QUALITY VERSION FOR S90S WITH 1 < N <= 200 SEQUENCES !!!!
 		# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		my @mafft_command = ( 
 			$mafft_exe,
-			qw/
-				--amino
-				--anysymbol
-				--localpair
-				--maxiterate
-				1000
-				--quiet
-			/,
+			@$mafft_params,
 			$source_file
 		);
+
+		warn localtime(time()) . " : About to align sequences with mafft\n";
 
 		my ( $mafft_stdout, $mafft_stderr );
 		run3( \@mafft_command, \undef, \$mafft_stdout, \$mafft_stderr );
 		if ( defined( $mafft_stderr ) && $mafft_stderr ne '' ) {
 			confess "Argh mafft command ". join( ' ', @mafft_command ) ." failed with:\n\n$mafft_stderr\n\n$mafft_stdout";
 		}
+
+		warn localtime(time()) . " : Finished aligning sequences with mafft\n";
 
 		$temporary_align_file->spew( $mafft_stdout );
 	}
@@ -509,6 +511,8 @@ sub make_compass_profile {
 		'-p2', $temporary_small_prof_file,
 	);
 
+	warn localtime(time()) . " : About to build COMPASS profile\n";
+
 	my ( $compass_stdout, $compass_stderr );
 	run3( \@compass_command, \undef, \$compass_stdout, \$compass_stderr );
 	# if ( defined( $compass_stderr ) && $compass_stderr ne '' ) {
@@ -517,8 +521,8 @@ sub make_compass_profile {
 
 	$temporary_align_file->remove()
 		or confess "Cannot remove temporary_align_file $temporary_align_file : $OS_ERROR";
-	# $temporary_small_prof_file->remove()
-	# 	or confess "Cannot remove temporary_small_prof_file $temporary_small_prof_file : $OS_ERROR";
+	$temporary_small_prof_file->remove()
+		or confess "Cannot remove temporary_small_prof_file $temporary_small_prof_file : $OS_ERROR";
 
 
 	# confess Dumper( [ \@mafft_command, $compass_stdout, $compass_stderr ] );
