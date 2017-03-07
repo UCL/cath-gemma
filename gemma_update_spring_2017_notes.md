@@ -61,7 +61,7 @@ Beyond that:
 ### Usability
 
  * Avoid new code being so dependent on a specific, intricate directory structure
- * Restore the ability to process (smaller) superfamilies in standalone (ie non-HPC) mode
+ * Restore the ability to process (smaller) superfamilies in standalone (ie single-machine, non-HPC) mode
  * Allow configuration of:
    * how much computation to put into one compute job
    * (possibly: how long tasks should be expected to take before being put into a new cluster job, rather than just being run then-and-there)
@@ -83,7 +83,7 @@ Since the only comprehensive data we already have is on v4.0, it makes sense to 
 
 ### Regression Testing
 
-Given we'll already need to be benchmarking for this project (see [Benchmarking](#benchmarking), below), this is a good opportunity to run the **Existing Code** on some small subset of superfamilies and establish there isn't any regression from the **Dave's Dir** results.
+Given we'll already need to be benchmarking for this project (see [Benchmarking](#benchmarking), immediately below), this is a good opportunity to run the **Existing Code** on some small subset of superfamilies and establish there isn't any regression from the **Dave's Dir** results.
 
 Benchmarking
 --
@@ -93,13 +93,13 @@ It will be very valuable to build a meaningful, clear, well-documented, reusable
 I think it's worth having two categories of benchmark:
 
  * Tree Benchmark - a very fast way to assess whether one tree is substantially worse/better than another on the same starting clusters
- * Function benchmark - a more biologically meaningful benchmark to
+ * Function benchmark - a more biologically meaningful benchmark to indicate value for function prediction.
 
 Ideas for each type of benchmark...
 
 ### Tree Benchmark
 
-We think that a good metric for comparing different trees generated from the same starting clusters is the average evalue: the lower the average evalue, the tighter the tree. This has the advantage of being extremely easy to calculate and of being intuitively. However it won't allow comparison between trees for different sets of starting clusters.
+We think that a good metric for comparing different trees generated from the same starting clusters is the average evalue: the lower the average evalue, the tighter the tree. This has the advantage of being extremely easy to calculate and of being intuitively meaningful. However it won't allow comparison between trees for different sets of starting clusters.
 
 <sub><sup>*(The calculation should use the [geometric mean](https://en.wikipedia.org/wiki/Geometric_mean), rather than the [arithmetic mean](https://en.wikipedia.org/wiki/Arithmetic_mean), which would be excessively dominated by the worse evalues. To see this, consider the evalues: 1e-3, 1e-16, 1e-20. The (arithmetic) mean is ~3.33e-4 &mdash; almost completely dominated by the largest value. The geometric mean is 1e-13.)*</sup></sub>
 
@@ -107,7 +107,7 @@ We think that a good metric for comparing different trees generated from the sam
 
 We will also need a broader benchmark that allows us to assess the effect of changes on our ability to accurately predict function.
 
-There is a clear trade-off here: making the benchmark bigger allows us to be more confident about the accuracy/precision of the results; but keeping the benchmark smaller makes it easier to run and that can will likely have a big impact on the usefulness of the benchmark.
+There is a clear trade-off here: making the benchmark bigger allows us to be more confident about the accuracy/precision of the results; but keeping the benchmark smaller makes it easier to run and that will likely have a big impact on the usefulness of the benchmark.
 
 I implore everyone to keep that latter point in mind &mdash; please let's try to keep this benchmark as small and simple as possible. &#9786;
 
@@ -116,17 +116,17 @@ More discussion is required to form this benchmark. Some subset of superfamilies
 Key Task Priorities
 --
 
-I propose:
+I propose my priorities should be:
 
  1. Submit jobs for the existing code on agreed benchmark superfamilies to the CS cluster
  1. Build tools to generate key data on the farm
  1. Submit jobs for new code on the CS cluster, prioritising benchmark superfamilies
- 1. Continue to assemble the results from these jobs...
- 1. Build a well-designed, well-tested, well-commented, well-documented script <sub><sup>(and associated libraries)</sup></sub> that reproduces small/medium trees in standalone (ie single-machine, non-HPC) mode
+ 1. Continue to assemble the results from these jobs whilst tackling the following steps...
+ 1. Build a well-designed, well-tested, well-commented, well-documented script that reproduces small/medium trees in standalone (ie single-machine, non-HPC) mode
  1. Extend this to:
      * handle the large amount of data involved in large superfamilies
      * run effectively on the CS cluster
- 1. (Guided by timings breakdowns from real runs) iteratively:
+ 1. (Guided by timing breakdowns from real runs), iteratively:
     1. Benchmark
     1. Explore possible improvements (see [Possible Improvements](#possible-improvements), immediately below)
 
@@ -135,13 +135,15 @@ Possible Improvements
 
 ### [Speed+simplicity] Always need to realign and build profile?
 
-In principle, the existing algorithm is similar to running, say, TCluster on an all-versus-all COMPASS matrix. The key difference that substantially complicates things is that each merged cluster is (re-aligned and then) re-scored against the other clusters. This means that the clustering procedure and the re-scoring procedure need to be interleaved, which substantially complicates it.
+In principle, the existing algorithm is similar to running, say, TCluster on an all-versus-all COMPASS matrix. The key difference that substantially complicates things is that each merged cluster is (re-aligned and then) re-scored against the other clusters. This means that the clustering procedure and the re-scoring procedure need to be interleaved, which substantially complicates everything.
 
-It may be possible to simplify by using a multi-linkage (complete-linkage), average-linkage or single-linkage clustering strategy to reduce the degree of interleaving.
+It may be possible to simplify by using a multi-linkage (complete-linkage), average-linkage or single-linkage clustering strategy to at least reduce the degree of interleaving.
 
 This would result in fewer, larger batches of jobs to compute, which will typically work better on the farm.
 
-This needn't necessarily preclude the final tree having the "correct" final evalues, which could be all calculated and inserted into the final tree.
+This needn't necessarily preclude the final tree having the "correct" final evalues, which could be all calculated and inserted into the final tree at the end.
+
+This will only be possible if it turns out that the best/average/worst score from a pair of merged clusters is a reasonably good predictor of equivalent score from the merged cluster, at least within certain circumstances. This can be tested relatively quickly.
 
 ### [Speed+quality] Batch handling
 
@@ -160,7 +162,7 @@ This can cause the results to diverge a bit from the "pure greedy" tree. For exa
     B  ←– 1.3e-20 –┘
 ~~~
 
-After `A` and `B` are merged, we'd want `C` to be merged with `A+B` before `D` <sub><sup>*(assuming the evalue between `C` and `A+B` is comparably small)*</sup></sub>, like this:
+After `A` and `B` are merged, we'd want `C` to be merged with `A+B` before `D` <sub><sup>*(assuming the evalue between `C` and `A+B` is comparable to 1.3e-20)*</sup></sub>, like this:
 
 ~~~
 `     ┌– A
@@ -172,7 +174,7 @@ After `A` and `B` are merged, we'd want `C` to be merged with `A+B` before `D` <
   └––––– D
 ~~~
 
-...but the existing procedure would go ahead with merging it to `D`, resulting in this:
+...but the existing approach would immediately merge it with `D`, which would eventually result in this:
 
 ~~~
 `    ┌– A
@@ -184,11 +186,11 @@ After `A` and `B` are merged, we'd want `C` to be merged with `A+B` before `D` <
      └– D
 ~~~
 
-An alternative strategy may be able to achieve similar or larger batch sizes whilst avoiding these deviations from the "pure greedy" greedy tree: instead of using brackets, it would identify *all* pair-merges that, *at that time*, can be seen will be included in the final "pure greedy" tree. These can be identified as: those pairs for which each of the pair's sub-clusters is the other's best-scoring match.
+An alternative strategy may be able to achieve similar or larger batch sizes whilst avoiding these deviations from the "pure greedy" tree: instead of using intervals, it would identify *all* pair-merges that, *at that time*, can be seen will be included in the final "pure greedy" tree. The criterion is: pairs for which each of the pair's sub-clusters is the other's best-scoring match.
 
-This approach would avoid the in-the-current-interval merges that cause these small deviations from the final "pure greedy" tree, whilst still generating decent-sized batches by taking merges from the full evalue range, not just within a particular interval.
+This approach would avoid the within-the-current-interval merges that cause the deviations from the final "pure greedy" tree, whilst still generating decent-sized batches by taking merges from the full evalue range, not just within a particular interval.
 
-This approach could go further by identifying merges that are very likely to be part of the "pure greedy" tree and adding them to the batch to be re-aligned and re-scored but not committing to them until the scores confirm it. These would be cases, like `C` (above), in which two clusters being merged are share a best-scoring match, which in turn has one of those two clusters as its best-scoring match.
+This approach could go further by identifying more merges that are *very likely* to be part of the "pure greedy" tree and adding them to the batch to be re-aligned and re-scored but not committing to them until the scores confirm it. These would be cases, like `C` (above), in which two clusters being merged share a best-scoring match, and that match's best-scoring match is one of those two original clusters.
 
 ### [Speed] Faster aligning?
 
@@ -205,7 +207,7 @@ Possible strategies (for more info, see file [Alignment Speed Notes](alignment_s
 I've already spent some time investigating ways to perform COMPASS comparisons quickly. The architecture must also enable the machine to focus on those comparisons to achieve maximum throughput. Beyond this, substantial further reductions in time spent on COMPASS comparisons can only come from doing fewer comparisons.
 
 Of course, this issue's particularly important for large families where the existing GeMMA code deploys random sampling to reduce computation. It may be possible to find ways to improve the coverage of the best evalues for a given budget of COMPASS comparisons. I like the COMPASSing with initial S30 clusters approach described within [GeMMA paper](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2817468/). One possible way to build on that:
- * usie those COMPASS results to sub-cluster at a reasonably strict evalue
+ * use those COMPASS results to sub-cluster at a reasonably strict evalue
  * do an all-versus-all COMPASS of the sub-cluster reps to find any cross-cluster links
  * do all-versus-all comparisons between the members of any sub-cluster pairs that for a cross S30 cluster link
 
@@ -223,13 +225,17 @@ It looks like we can apply a cut-off using the following option that Sayoni and 
         if set to 0.9, the shorter sequences need to be
         at least 90% length of the representative of the cluster
 
-**Note**: It may be worth choosing quite a strict cut-off because it looks like this clustering criterion is based on a single rep, which may mean it's looser than our multi-linkage clustering. For example, it might be something like: if the rep is 60 residues long, then with `-s 0.6` the sequences can have a range from 36 residues to 100 residues (because 0.6 \* 100 = 60 and 0.6 \* 60 = 36).
+<sub><sup>*Note: It may be worth choosing quite a strict cut-off because it looks like this clustering criterion is based on a single rep, which may mean it's looser than our multi-linkage clustering. For example, it might be something like: if the rep is 60 residues long, then with `-s 0.6` the sequences can have a range from 36 residues to 100 residues (because 0.6 \* 100 = 60 and 0.6 \* 60 = 36).* </sup></sub>
 
 ### [Usability] Renumbering
 
-Previously, the FunFam numbers have been practically arbitrary numbers (eg 12528) that emerge from the process, which is arguably a bit strange for users. But it may well be better than the alternative of sequentially renumbering from one upwards at the end of the process, because that might mislead users into thinking that FunFam numbers persist over consecutive CATH releases.
+Previously, the FunFam numbers have been practically arbitrary numbers (eg 12528) that emerge from the process, which is arguably a bit strange for users. But it may well be better than the alternative of sequentially renumbering the arbitrarily ordered FunFams from one upwards at the end of the process, because that might mislead users into thinking that FunFam numbers persist over consecutive CATH releases.
 
-However, we could get the best of both worlds if we had a program to renumber based on the numbers of the previous release so that FunFams *do* keep numbers across releases where they're mostly preserved and get new numbers otherwise. For each superfamily, the program would take a list of the FunFam members for the previous release and the new release and would spit out a renumbering of the new FunFams. This could be pretty simple and pretty fast. Under the covers, it could do something like a much-simplified version of the Genome3D SCOP/CATH mapping where it inherits a previous FunFam's number to a new FuFam if the new FunFam contains domains that match, say, at least 70% of 70% of the old FunFam's domains.
+But FunFams represent functionally coherent groups of sequences, so we should hope that many of them *will* have fairly stable equivalents across consecutive releases.
+
+We could get the best of both worlds if we had a program to renumber based on the numbers of the previous release so that FunFams that are most preserved across releases *do* keep their numbers and the others get new numbers. For each superfamily, the program would take a list of the FunFam members for the previous release and the new release and would spit out a renumbering of the new FunFams. This could be pretty simple and pretty fast. Under the covers, it could do something like a much-simplified version of the Genome3D SCOP/CATH mapping where it inherits a previous FunFam's number to a new FunFam if the new FunFam contains domains that match, say, at least 70% of 70% of the old FunFam's domains.
+
+<sub><sup>*In principle, this could compare to multiple previous releases so that if some FunFam groupings revert to how they were in a previous release, the previously used numbers would be re-activated. But I think this is excessive.*</sup></sub>
 
 Relevant References
 --
