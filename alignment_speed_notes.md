@@ -48,6 +48,8 @@ At present, each newly-merged cluster is completely realigned, even though its s
 
 MAFFT let's you tell it which groups of input sequences are already aligned. It's likely that that will allow MAFFT to do much less work, if each step doesn't involve re-aligning the entire batch of sequences but just pairwise-aligning two, already-well-aligned alignments. After all, the process of merging clusters of sequences by merging the most similar first, is exactly the process that should be well matched to that approach.
 
+This could be parametrised, eg: "only re-align `n` levels deeper than the new cluster's root"; "only re-align until the evalues are `x` times better than the evalue for the new merge".
+
 Possible strategy 3: upgrade MAFFT
 --------------------
 
