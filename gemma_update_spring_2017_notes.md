@@ -15,7 +15,7 @@ The FunFam protocol processes the Gene3D sequences for a given superfamily as fo
  1. &nbsp; &dArr; &nbsp; Run FunFHMMer to select the cut-points of tree
  1. &nbsp; &dArr; &nbsp; Create FunFams from the groups below those cut points
 
-So this work is within step 3 <small>*(though benchmarking will also involve steps 4-5 and the work may possibly also touch on issues in steps 1 (see [Overlap](#-quality-overlap)) and 5 (see [Renumbering](#-usability-renumbering)))*</small>.
+So this work is within step 3 <small>*(though benchmarking will also involve steps 4-5 and the work may possibly also touch on issues in steps 1 (see [Overlap](#quality-overlap)) and 5 (see [Renumbering](#usability-renumbering)))*</small>.
 
 ### What GeMMA Does
 
@@ -128,7 +128,7 @@ I propose:
      * run effectively on the CS cluster
  1. (Guided by timings breakdowns from real runs) iteratively:
     1. Benchmark
-    1. Explore possible improvements (see [Possible Improvements](#possible-Improvements), immediately below)
+    1. Explore possible improvements (see [Possible Improvements](#possible-improvements), immediately below)
 
 Possible Improvements
 --
@@ -213,7 +213,7 @@ Of course, this issue's particularly important for large families where the exis
 
 We've seen instances of a starting S90 cluster (Dave's directories, v4.1, 2.20.100.10, 12528.faa) with a wide diversity of lengths from 16 residues up to 47 residues (~2.9x). It seems questionable whether this diversity is a good starting point.
 
-Depending on time, it may be possible to investigate whether changing this improves results. This would require taking some agreed superfamilies through the entire protocol (see [GeMMA's context](#gemma-s-context)). (Natalie on step 2: "[...] I don't think it should be a hassle. There will be some work needed, but I don't think it will be a huge amount.")
+Depending on time, it may be possible to investigate whether changing this improves results. This would require taking some agreed superfamilies through the entire protocol (see [GeMMA's context](#gemmas-context)). (Natalie on step 2: "[...] I don't think it should be a hassle. There will be some work needed, but I don't think it will be a huge amount.")
 
 <small>*(Before doing this, it'd be worth checking that (a) this issue is in the current protocol and (b) if we were to change it, we wouldn't just find that the COMPASS scores would immediately re-merge the overlap-separated clusters.)*</small>
 
