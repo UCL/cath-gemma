@@ -133,6 +133,13 @@ I propose my priorities should be:
 Possible Improvements
 --
 
+ * [[Speed+simplicity] Always need to realign and build profile?](#speedsimplicity-always-need-to-realign-and-build-profile)
+ * [[Speed+quality] Batch handling](#speedquality-batch-handling)
+ * [[Speed] Faster aligning?](#speed-faster-aligning)
+ * [[Speed] Faster](#speed-faster)
+ * [[Quality] Overlap](#quality-overlap)
+ * [[Usability] Renumbering](#usability-renumbering)
+
 ### [Speed+simplicity] Always need to realign and build profile?
 
 In principle, the existing algorithm is similar to running, say, TCluster on an all-versus-all COMPASS matrix. The key difference that substantially complicates things is that each merged cluster is (re-aligned and then) re-scored against the other clusters. This means that the clustering procedure and the re-scoring procedure need to be interleaved, which substantially complicates everything.
