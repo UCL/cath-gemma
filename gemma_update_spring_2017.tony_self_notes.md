@@ -113,7 +113,7 @@ cluster_name domain_id
    * For each old cluster member:
      * Search in the `unordered_map` to find a domain equiv
      * If a domain equivalent is found:
-       * Find domain equivalent's cluster
+       * Find equivalent domain's cluster
        * Increment that cluster's counter of domain equivalents
        * If the counter has reached the target, add the cluster mapping to the list and move to the next cluster
  * Get the list of new clusters that don't have an old equiv, sort by **new cluster ordering criteria** (above)
@@ -142,19 +142,19 @@ cluster_name domain_id
 Domain Mapping
 ==
 
-This section describes how well the map-from domains could be mapped to new domains (and vice versa). The quality of a mapping between a pair of domains is defined as the percentage overlap over the longer domain (ie the percentage of the longer domain's residues shared with the other domain). In this run, the cutoff for defining domain-equivalence was **X**%.
+This section describes how well the map-from domains could be mapped to new domains (and vice versa). The quality of a mapping between a pair of domains is defined as the percentage overlap over the longer domain (ie the percentage of the longer domain's residues shared with the other domain). In this run, the cut-off for defining domain-equivalence was **X**%.
 
 
 Domains from Map-From Clusters
 --
 
-| Category                                                        | Number | Percentage |
-|-----------------------------------------------------------------|--------|------------|
-| All                                                             |    123 |     100.0% |
-| &nbsp; ...of which:                                             |        |            |
-| &nbsp; &bull; Equivalence-mapped   (ie **X** < overlap        ) |    100 |      81.3% |
-| &nbsp; &bull; Insufficently-mapped (ie 0     < overlap ≤ **X**) |     20 |      16.3% |
-| &nbsp; &bull; Completely-unmapped  (ie         overlap = 0)     |      3 |       2.4% |
+| Category                                                         | Number | Percentage |
+|------------------------------------------------------------------|--------|------------|
+| All                                                              |    123 |     100.0% |
+| &nbsp; ...of which:                                              |        |            |
+| &nbsp; &bull; Equivalence-mapped    (ie **X** < overlap        ) |    100 |      81.3% |
+| &nbsp; &bull; Insufficiently-mapped (ie 0     < overlap ≤ **X**) |     20 |      16.3% |
+| &nbsp; &bull; Completely-unmapped   (ie         overlap = 0)     |      3 |       2.4% |
 
 Domains from New Clusters
 --
