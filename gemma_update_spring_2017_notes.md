@@ -28,6 +28,8 @@ So this work is within step 3 <sub><sup>*(though benchmarking will also involve 
 &emsp; `1st_mergee_num 2nd_mergee_num new_merged_clust_num evalue`
 <br>
 The new clusters are numbered consecutively, starting from the highest starting cluster number plus one. FunFHMMer uses both the structure of this tree and its evalues.
+<br>
+In discussing the work, we've decided that GeMMA should also start outputting alignment files for each of the nodes in the final `.trace` file because otherwise FunFHMMer just has to regenerate all these alignments again.
 
 **Scores** : &nbsp; The evalue between two clusters comes from a COMPASS comparison between alignments of the sequences in each of those clusters. When two clusters are merged, a combined alignment is generated for the new cluster and is COMPASS-scored against the other clusters' alignments.
 
@@ -68,8 +70,8 @@ Beyond that:
 
 ### Practical Deployability
 
- * Ideally work with whoever is likely to be running GeMMA in the near future to ensure they're happy the code is usable. If so, whom?
- * Possibly try to get that person started on running GeMMA across v4.1.0?
+ * Ideally work with Natalie and Sayoni to ensure they're happy the code is usable.
+ * Possibly try to get Natalie and Sayonie started on running GeMMA across v4.1.0?
 
 Available GeMMA Results for Comparison
 --
@@ -90,10 +92,11 @@ Benchmarking
 
 It will be very valuable to build a meaningful, clear, well-documented, reusable benchmark. This will allow us to ensure that the current version hasn't regressed from previous results, that the new version doesn't regress from the current version and that any future changes can be assessed.
 
-I think it's worth having two categories of benchmark:
+We've talked about three levels of benchmark:
 
  * Tree Benchmark - a very fast way to assess whether one tree is substantially worse/better than another on the same starting clusters
- * Function benchmark - a more biologically meaningful benchmark to indicate value for function prediction.
+ * EC Codes Benchmark - an intermediate measure of the number of EC codes associated with each FunFam
+ * Function Benchmark - more biologically meaningful benchmarks to indicate value for function prediction.
 
 Ideas for each type of benchmark...
 
@@ -103,15 +106,23 @@ We think that a good metric for comparing different trees generated from the sam
 
 <sub><sup>*(The calculation should use the [geometric mean](https://en.wikipedia.org/wiki/Geometric_mean), rather than the [arithmetic mean](https://en.wikipedia.org/wiki/Arithmetic_mean), which would be excessively dominated by the worse evalues. To see this, consider the evalues: 1e-3, 1e-16, 1e-20. The (arithmetic) mean is ~3.33e-4 &mdash; almost completely dominated by the largest value. The geometric mean is 1e-13.)*</sup></sub>
 
+### EC Codes Benchmark
+
+Assess the number of EC codes associated with each FunFam.
+
 ### Function Benchmark
 
 We will also need a broader benchmark that allows us to assess the effect of changes on our ability to accurately predict function.
 
 There is a clear trade-off here: making the benchmark bigger allows us to be more confident about the accuracy/precision of the results; but keeping the benchmark smaller makes it easier to run and that will likely have a big impact on the usefulness of the benchmark.
 
-I implore everyone to keep that latter point in mind &mdash; please let's try to keep this benchmark as small and simple as possible. &#9786;
+We've decided to not use CAFA in the bencharking.
 
-More discussion is required to form this benchmark. Some subset of superfamilies involved in the CAFA benchmark? SFLD?
+Agreed key benchmarking superfamilies:
+
+1. HUPs,    [3.40.50.620](http://www.cathdb.info/version/latest/superfamily/3.40.50.620)
+1. TPPs,    [3.40.50.970](http://www.cathdb.info/version/latest/superfamily/3.40.50.970)
+1. Enolase, [3.20.20.120](http://www.cathdb.info/version/latest/superfamily/3.20.20.120) and [3.30.390.10](http://www.cathdb.info/version/latest/superfamily/3.30.390.10)
 
 Key Task Priorities
 --
