@@ -29,7 +29,7 @@ So this work is within step 3 <sub><sup>*(though benchmarking will also involve 
 <br>
 The new clusters are numbered consecutively, starting from the highest starting cluster number plus one. FunFHMMer uses both the structure of this tree and its evalues.
 <br>
-In discussing the work, we've decided that GeMMA should also start outputting alignment files for each of the nodes in the final `.trace` file because otherwise FunFHMMer just has to regenerate all these alignments again.
+In discussing the work, we've decided that GeMMA should also start outputting alignment files for each of the nodes in the final `.trace` file because otherwise FunFHMMer just has to regenerate all these alignments again. Sayoni has confirmed that FunFHMMer won't care about the order in which the starting clusters / sequences appear in this alignment.
 
 **Scores** : &nbsp; The evalue between two clusters comes from a COMPASS comparison between alignments of the sequences in each of those clusters. When two clusters are merged, a combined alignment is generated for the new cluster and is COMPASS-scored against the other clusters' alignments.
 
