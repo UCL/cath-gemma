@@ -71,7 +71,7 @@ Beyond that:
 ### Practical Deployability
 
  * Ideally work with Natalie and Sayoni to ensure they're happy the code is usable.
- * Possibly try to get Natalie and Sayonie started on running GeMMA across v4.1.0?
+ * Possibly try to get Natalie and Sayoni started on running GeMMA across v4.1.0?
 
 Available GeMMA Results for Comparison
 --
