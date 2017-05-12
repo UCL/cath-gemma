@@ -13,11 +13,12 @@ WriteMakefile(
       : ()),
     PL_FILES            => {},
     PREREQ_PM => {
-        'Capture::Tiny' => 0,
-        'Moo'           => 0,
-        'Path::Tiny'    => 0,
-        'Try::Tiny'     => 0,
-        'Type::Tiny'    => 0,
+        'Capture::Tiny'    => 0,
+        'Moo'              => 0,
+        'MooX::HandlesVia' => 0,
+        'Path::Tiny'       => 0,
+        'Try::Tiny'        => 0,
+        'Type::Tiny'       => 0,
     },
     TEST_REQUIRES => {
         'Test::More'    => 0,
