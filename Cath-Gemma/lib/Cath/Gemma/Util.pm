@@ -1,6 +1,5 @@
 package Cath::Gemma::Util;
 
-
 =head1 NAME
 
 Cath::Gemma::Util - TODOCUMENT
@@ -10,10 +9,13 @@ Cath::Gemma::Util - TODOCUMENT
 use strict;
 use warnings;
 
+use Carp qw/ confess /;
+use Digest::MD5 qw/ md5_hex /;
 use Exporter qw/ import /;
 
 our @EXPORT = qw/
 	cluster_name_spaceship
+	id_of_starting_clusters
 	mergee_is_starting_cluster
 	/;
 
@@ -46,6 +48,30 @@ sub cluster_name_spaceship {
 		}
 	}
 	return ( $a cmp $b );
+}
+
+=head2 id_of_starting_clusters
+
+=cut
+
+sub id_of_starting_clusters {
+	my $starting_clusters = shift;
+	if ( scalar( @$starting_clusters ) == 0 ) {
+		confess "Cannot calculate an ID for an empty list of starting clusters";
+	}
+	if ( scalar( @$starting_clusters ) == 1 ) {
+		return $starting_clusters->[ 0 ]
+	}
+	return md5_hex( @$starting_clusters );
+}
+
+=head2 alignment_filename_of_starting_clusters
+
+=cut
+
+sub alignment_filename_of_starting_clusters {
+	my $starting_clusters = shift;
+	return id_of_starting_clusters( $starting_clusters ) . '.faa';
 }
 
 1;

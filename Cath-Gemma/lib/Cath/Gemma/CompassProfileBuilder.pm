@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 # Core
-# use Digest::MD5 qw/ md5_hex /;
+use Digest::MD5 qw/ md5_hex /;
 
 # Moo
 use Moo;
@@ -101,7 +101,8 @@ sub starting_nodes_in_standard_order {
 sub standard_order_id {
 	my $self = shift;
 
-	return id_of_starting_clusters( $self->starting_nodes_in_depth_first_traversal_order() );
+	my $nodes = $self->starting_nodes_in_depth_first_traversal_order();
+	return md5_hex( @$nodes );
 }
 
 =head2 depth_first_traversal_id
@@ -111,7 +112,8 @@ sub standard_order_id {
 sub depth_first_traversal_id {
 	my $self = shift;
 
-	return id_of_starting_clusters( $self->starting_nodes_in_standard_order() );
+	my $nodes = $self->starting_nodes_in_standard_order();
+	return md5_hex( @$nodes );
 }
 
 1;
