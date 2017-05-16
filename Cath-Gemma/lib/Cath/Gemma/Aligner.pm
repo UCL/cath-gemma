@@ -100,7 +100,10 @@ sub make_alignment_file {
 		copy( $mafft_exe, $local_mafft_exe )
 			or confess "Unable to copy MAFFT executable $mafft_exe to local executable $local_mafft_exe : $OS_ERROR";
 	}
-
+	if ( ! -x $local_mafft_exe->stat() ) {
+		$local_mafft_exe->chmod( 'a+x' )
+			or confess "Unable to chmod local MAFFT executable \"$local_mafft_exe\" : $OS_ERROR";
+	}
 
 	my $raw_seqs_filename  = Path::Tiny->tempfile( TEMPLATE => '.temp_raw_seqs.XXXXXXXXXXX',
 	                                               DIR      => $tmp_dir,
