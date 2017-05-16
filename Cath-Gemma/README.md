@@ -32,5 +32,9 @@ vim Makefile.PL
 cpanm -L extlib --installdeps .
 ~~~
 
+To force the install of a module:
+~~~
+cpanm -L extlib --force Params::Validate
+~~~
 
 #

@@ -14,9 +14,11 @@ use Digest::MD5 qw/ md5_hex /;
 use Exporter qw/ import /;
 
 our @EXPORT = qw/
+	alignment_filename_of_starting_clusters
 	cluster_name_spaceship
 	id_of_starting_clusters
 	mergee_is_starting_cluster
+	raw_sequences_filename_of_starting_clusters
 	/;
 
 =head2 mergee_is_starting_cluster
@@ -72,6 +74,15 @@ sub id_of_starting_clusters {
 sub alignment_filename_of_starting_clusters {
 	my $starting_clusters = shift;
 	return id_of_starting_clusters( $starting_clusters ) . '.faa';
+}
+
+=head2 raw_sequences_filename_of_starting_clusters
+
+=cut
+
+sub raw_sequences_filename_of_starting_clusters {
+	my $starting_clusters = shift;
+	return id_of_starting_clusters( $starting_clusters ) . '.fa';
 }
 
 1;

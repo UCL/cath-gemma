@@ -1,4 +1,4 @@
-package Cath::Gemma::Merge;
+package Cath::Gemma::CompassProfileBuilder;
 
 use strict;
 use warnings;

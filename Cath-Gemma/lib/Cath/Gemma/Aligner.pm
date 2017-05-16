@@ -1,136 +1,173 @@
-package Cath::Gemma::Merge;
+package Cath::Gemma::Aligner;
 
 use strict;
 use warnings;
 
 # # Core
-# use Digest::MD5 qw/ md5_hex /;
+use Capture::Tiny       qw/ capture                  /;
+use Carp                qw/ confess                  /;
+use English             qw/ -no_match_vars           /;
+use Exporter            qw/ import                   /;
+use File::Copy          qw/ copy move                /;
 use FindBin;
+use Log::Log4perl::Tiny qw/ :easy                    /;
+use Time::HiRes         qw/ gettimeofday tv_interval /;
+use v5.10;
 
-# # Moo
-# use Moo;
-# use strictures 1;
+our @EXPORT = qw/
+	make_alignment_file
+	/;
 
 # # Non-core (local)
 use Path::Tiny;
-use Types::Path::Tiny qw/ Path /;
-# use Types::Standard qw/ Num Str /; 
+use Type::Params      qw/ compile                         /;
+use Types::Path::Tiny qw/ Path                            /;
+use Types::Standard   qw/ ArrayRef ClassName Optional Str /;
 
 # # Cath
-# use Cath::Gemma::Types qw/ CathGemmaMerge /; 
-# use Cath::Gemma::Util;
+use Cath::Gemma::Util;
 
 my $mafft_exe = "$FindBin::Bin/.././tools/mafft-6.864-without-extensions/core/mafft";
 
-=head2 confess_if_defined
+=head2 build_raw_seqs_file
 
 =cut
 
-sub confess_if_defined {
-	my $var = shift;
-	if ( defined( $var ) ) {
-		confess $var;
-	}
-}
-
-=head2 make_compass_profile
-
-=cut
-
-sub make_compass_profile {
+sub build_raw_seqs_file {
+	shift;
 	my $starting_clusters    = shift;
 	my $starting_cluster_dir = shift;
-	my $dest_dir             = shift;
+	my $dest_file            = shift;
 
-	my $id = id_of_starting_clusters( $starting_clusters );
+	my $dest_fh = $dest_file->openw();
 
-	# Validate parameters
-	confess_if_defined(
-		   ArrayRef[Str]->validate( $starting_clusters    )
-		// Path         ->validate( $starting_cluster_dir )
-		// Path         ->validate( $dest_dir             )
-	)
+	my $num_sequences = 0;
 
-	my $temporary_dir     = dir( '', 'dev', 'shm' );
-	my $exe_dir           = dir( '', 'dev', 'shm' );
+	foreach my $starting_cluster ( @$starting_clusters ) {
+		my $starting_cluster_file = $starting_cluster_dir->child( $starting_cluster . '.faa' );
+		if ( ! -s $starting_cluster_file ) {
+			confess "Cannot find non-empty starting cluster file \"$starting_cluster_file\"";
+		}
 
-	if ( -s $dest_file ) {
-		return;
+		my $starting_cluster_data = $starting_cluster_file->slurp();
+		my @starting_cluster_lines = split( /\n/, $starting_cluster_data );
+		foreach my $starting_cluster_line ( @starting_cluster_lines ) {
+			if ( $starting_cluster_line =~ /^>/ ) {
+				++$num_sequences;
+			}
+			print $dest_fh "$starting_cluster_line\n";
+		}
 	}
-	if ( -e $dest_file ) {
-		$dest_file->remove()
-			or confess "Cannot delete empty file $dest_file";
+
+	# TODO: Add in returning the average sequence length
+	return {
+		num_sequences => $num_sequences
+	};
+}
+
+=head2 make_alignment_file
+
+=cut
+
+sub make_alignment_file {
+	state $check = compile( ClassName, ArrayRef[Str], Path, Path, Optional[Path] );
+	my ( $class, $starting_clusters, $starting_cluster_dir, $dest_dir, $tmp_dir ) = $check->( @ARG );
+
+	$tmp_dir //= $dest_dir;
+
+	if ( ! -d $dest_dir ) {
+		$dest_dir->mkpath()
+			or confess "Unable to make alignment output directory \"$dest_dir\" : $OS_ERROR";
 	}
 
-	my $num_sequences        = get_num_sequences( $source_file );
-	my $temporary_align_file = $temporary_dir->file( $dest_file->basename() . '.temporary_alignment_file.' . $PROCESS_ID );
+	my $id_of_clusters     = id_of_starting_clusters( $starting_clusters );
+	my $alignment_basename = alignment_filename_of_starting_clusters( $starting_clusters );
+	my $alignment_filename = $dest_dir->child( $alignment_basename );
+	my $mafft_duration     = undef;
+	if ( -s $alignment_filename ) {
+		return {
+			alignment_filename => $alignment_filename,
+		};
+	}
+	if ( -e $alignment_filename ) {
+		$alignment_filename->remove()
+			or confess "Cannot delete empty file $alignment_filename";
+	}
+
+	my $local_exe_dir   = path( '/dev/shm' );
+	my $local_mafft_exe = $local_exe_dir->child( path( $mafft_exe )->basename() );
+	if ( ( -s $mafft_exe ) != ( -s $local_exe_dir ) ) {
+		copy( $mafft_exe, $local_mafft_exe )
+			or confess "Unable to copy MAFFT executable $mafft_exe to local executable $local_mafft_exe : $OS_ERROR";
+	}
+
+
+	my $raw_seqs_filename  = Path::Tiny->tempfile( TEMPLATE => '.temp_raw_seqs.XXXXXXXXXXX',
+	                                               DIR      => $tmp_dir,
+	                                               SUFFIX   => '.fa',
+	                                               CLEANUP  => 1,
+	                                               );
+
+	my $build_raw_seqs_result = __PACKAGE__->build_raw_seqs_file(
+		$starting_clusters,
+		$starting_cluster_dir,
+		$raw_seqs_filename,
+	);
+	my $num_sequences = $build_raw_seqs_result->{ num_sequences };
+
+	my $temporary_align_file = Path::Tiny->tempfile( TEMPLATE => '.tmp_aln.' . $id_of_clusters . '.XXXXXXXXXXX',
+	                                                 DIR      => $dest_dir,
+	                                                 SUFFIX   => '.faa',
+	                                                 CLEANUP  => 1,
+	                                                 );
 	my @mafft_params_slow_high_qual = ( qw/ --amino --anysymbol --localpair --maxiterate 1000 --quiet / );
 	my @mafft_params_fast_low_qual  = ( qw/ --amino --anysymbol --parttree  --retree     1    --quiet / );
 
 	if ( $num_sequences  > 1 ) {
 		my $mafft_params = ( $num_sequences <= 200 ) ? \@mafft_params_slow_high_qual
 		                                             : \@mafft_params_fast_low_qual;
-		# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		# !!!! THIS IS THE HIGH-QUALITY VERSION FOR S90S WITH 1 < N <= 200 SEQUENCES !!!!
-		# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-		my @mafft_command = ( 
-			$mafft_exe,
-			@$mafft_params,
-			$source_file
-		);
 
-		warn localtime(time()) . " : About to align sequences with mafft\n";
+		INFO 'About to align ' . $num_sequences . ' sequences (' . $id_of_clusters . ') with mafft';
 
-		my ( $mafft_stdout, $mafft_stderr );
-		run3( \@mafft_command, \undef, \$mafft_stdout, \$mafft_stderr );
+		# TODO: Sort this out
+		# rsync -av tools/mafft-6.864-without-extensions/binaries/ /dev/shm/mafft_binaries_dir/
+		$ENV{  MAFFT_BINARIES } = '/dev/shm/mafft_binaries_dir';
+
+		my $mafft_t0 = [ gettimeofday() ];
+		my ( $mafft_stdout, $mafft_stderr ) = capture {
+		  system( "$local_mafft_exe", @$mafft_params, "$raw_seqs_filename" );
+		};
+
 		if ( defined( $mafft_stderr ) && $mafft_stderr ne '' ) {
-			confess "Argh mafft command ". join( ' ', @mafft_command ) ." failed with:\n\n$mafft_stderr\n\n$mafft_stdout";
+			confess
+				"mafft command "
+				.join( ' ', ( "$local_mafft_exe", @$mafft_params, "$raw_seqs_filename" ) )
+				." failed with:\nstderr:\n$mafft_stderr\nstdout:\n$mafft_stdout";
 		}
+		$mafft_duration = tv_interval ( $mafft_t0, [ gettimeofday() ] );
 
-		warn localtime(time()) . " : Finished aligning sequences with mafft\n";
+		INFO 'Finished aligning ' . $num_sequences . ' sequences (' . $id_of_clusters . ') in ' . $mafft_duration . 's with mafft';
 
 		$temporary_align_file->spew( $mafft_stdout );
 	}
 	else {
-		symlink $source_file, $temporary_align_file
-			or confess "Arghh can't symlink $source_file, $temporary_align_file : $OS_ERROR";
+		copy( $raw_seqs_filename, $temporary_align_file )
+			or confess "Unable to copy single sequence file $raw_seqs_filename to $temporary_align_file : $OS_ERROR";
 	}
 
-	
-	my $temporary_small_aln_file  = $temporary_dir->file( 'small_temp_aln_file.' . $PROCESS_ID . '.faa' );
-	my $temporary_small_prof_file = $temporary_dir->file( 'small_temp_aln_file.' . $PROCESS_ID . '.prof' );
-	$temporary_small_aln_file->spew( "'>A\nA\n" );
+	if ( ! -e $alignment_filename ) {
+		move( $temporary_align_file, $alignment_filename );
+	}
 
-	# TODO: Make this write to a temporary file and then rename to dest when finished
-
-	my @compass_command = (
-		$compass_build_exe,
-		'-g',  '0.50001',
-		'-i',  $temporary_align_file,
-		'-j',  $temporary_small_aln_file,
-		'-p1', $dest_file,
-		'-p2', $temporary_small_prof_file,
-	);
-
-	warn localtime(time()) . " : About to build COMPASS profile\n";
-
-	my ( $compass_stdout, $compass_stderr );
-	run3( \@compass_command, \undef, \$compass_stdout, \$compass_stderr );
-	# if ( defined( $compass_stderr ) && $compass_stderr ne '' ) {
-	# 	confess "Argh compass failed with $compass_stderr";
-	# }
-
-	$temporary_align_file->remove()
-		or confess "Cannot remove temporary_align_file $temporary_align_file : $OS_ERROR";
-	$temporary_small_prof_file->remove()
-		or confess "Cannot remove temporary_small_prof_file $temporary_small_prof_file : $OS_ERROR";
-
-
-	# confess Dumper( [ \@mafft_command, $compass_stdout, $compass_stderr ] );
-
-	# $working_dest_file;
-
-	# $temporary_align_file;
+	return {
+		alignment_filename => $alignment_filename,
+		(
+			defined( $mafft_duration )
+			? ( mafft_duration => $mafft_duration )
+			: ()
+		),
+		num_sequences      => $num_sequences
+	};
 }
 
 

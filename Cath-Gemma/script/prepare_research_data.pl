@@ -5,7 +5,6 @@ use warnings;
 
 # Core
 use Carp        qw/ confess        /;
-use Data::Dumper;
 use English     qw/ -no_match_vars /;
 use feature     qw/ say            /;
 use FindBin;
@@ -18,6 +17,7 @@ use Path::Tiny;
 use lib "$FindBin::Bin/../lib";
 
 # Cath
+use Cath::Gemma::Aligner;
 use Cath::Gemma::MergeList;
 
 # my $trace_files_dir = path( '/cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/clustering_output' );
@@ -39,6 +39,16 @@ my $visit_result = $trace_files_dir->visit(
 
 		my $mergelist         = Cath::Gemma::MergeList->read_from_tracefile( $tracefile_path );
 		my $starting_clusters = $mergelist->starting_clusters();
+
+		foreach my $starting_cluster (@$starting_clusters) {
+			my $align_result = Cath::Gemma::Aligner->make_alignment_file(
+				[ $starting_cluster ],
+				path( 'temporary_example_data/starting_clusters' ),
+				path( 'temporary_example_data/output'            ),
+				path( '/dev/shm'                                 ),
+			);
+		}
+
 		# my $merge_nodes       = $mergelist->merge_nodes();
 		say "Processing $tracefile_path";
 		say "Starting clusters are " . join( ", ", @$starting_clusters );
@@ -50,6 +60,12 @@ my $visit_result = $trace_files_dir->visit(
 				say $merge->standard_order_id();
 				say join( " ", @{ $merge->starting_nodes_in_standard_order             () } );
 				say $merge->depth_first_traversal_id();
+				my $align_result = Cath::Gemma::Aligner->make_alignment_file(
+					$merge->starting_nodes_in_depth_first_traversal_order(),
+					path( 'temporary_example_data/starting_clusters' ),
+					path( 'temporary_example_data/output'            ),
+					path( '/dev/shm'                                 ),
+				);
 			}
 		}
 		# confess "STOP ";
