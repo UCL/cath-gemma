@@ -114,6 +114,7 @@ sub initial_scans {
 			[ @$starting_clusters[ ( $cluster_ctr + 1 ) .. ( scalar ( @$starting_clusters ) - 1 ) ] ]
 		];
 	}
+
 	return \@results;
 }
 
