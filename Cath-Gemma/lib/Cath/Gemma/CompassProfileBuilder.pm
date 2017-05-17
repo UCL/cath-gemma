@@ -4,116 +4,106 @@ use strict;
 use warnings;
 
 # Core
-use Digest::MD5 qw/ md5_hex /;
-
-# Moo
-use Moo;
-use strictures 1;
+use Carp                qw/ confess                         /;
+use English             qw/ -no_match_vars                  /;
+use File::Copy          qw/ copy move                       /;
+use FindBin;
+use Time::HiRes         qw/ gettimeofday tv_interval        /;
+use v5.10;
 
 # Non-core (local)
+use Capture::Tiny       qw/ capture                         /;
+use Log::Log4perl::Tiny qw/ :easy                           /;
 use Path::Tiny;
-use Types::Standard qw/ Num Str /; 
+use Type::Params        qw/ compile                         /;
+use Types::Path::Tiny   qw/ Path                            /;
+use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
 
-# Cath
-use Cath::Gemma::Types qw/ CathGemmaMerge /; 
-use Cath::Gemma::Util;
+my $compass_build_exe = "$FindBin::Bin/../tools/compass/compass_wp_245_fixed";
 
-=head2 mergee_a
-
-=cut
-
-has mergee_a => (
-	is => 'ro',
-	isa => Str|CathGemmaMerge,
-);
-
-=head2 mergee_b
+=head2 build_compass_profile
 
 =cut
 
-has mergee_b => (
-	is => 'ro',
-	isa => Str|CathGemmaMerge,
-);
+sub build_compass_profile {
+	state $check = compile( ClassName, Path, Path, Optional[Path] );
+	my ( $class, $aln_file, $dest_dir, $tmp_dir ) = $check->( @ARG );
 
-=head2 score
+	my $basename = $aln_file->basename();
+	my $dest_prof_filename = $dest_dir->child( $basename . '.prof' );
 
-=cut
+	$tmp_dir //= $dest_dir;
 
-has score => (
-	is  => 'ro',
-	isa => Num,
-);
+	if ( -s $dest_prof_filename ) {
+		return {
+			out_filename => $dest_prof_filename,
+		};
+	}
+	if ( -e $dest_prof_filename ) {
+		$dest_prof_filename->remove()
+			or confess "Cannot delete empty COMPASS profile file $dest_prof_filename";
+	}
 
-=head2 mergee_a_is_starting_cluster
+	my $tmp_prof_file = Path::Tiny->tempfile( TEMPLATE => '.tmp_prof.' . $basename . '.XXXXXXXXXXX',
+	                                          DIR      => $dest_dir,
+	                                          SUFFIX   => '.faa',
+	                                          CLEANUP  => 1,
+	                                          );
 
-=cut
+	my $tmp_dummy_aln_file  = Path::Tiny->tempfile( DIR => $tmp_dir, TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => '.faa',  CLEANUP => 1 );
+	my $tmp_dummy_prof_file = Path::Tiny->tempfile( DIR => $tmp_dir, TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => '.prof', CLEANUP => 1 );
+	$tmp_dummy_aln_file->spew( "'>A\nA\n" );
 
-sub mergee_a_is_starting_cluster {
-	my $self = shift;
-	return mergee_is_starting_cluster( $self->mergee_a() );
-}
+	my $local_exe_dir   = path( '/dev/shm' );
+	my $local_compass_build_exe = $local_exe_dir->child( path( $compass_build_exe )->basename() );
+	if ( ( -s $compass_build_exe ) != ( -s $local_exe_dir ) ) {
+		copy( $compass_build_exe, $local_compass_build_exe )
+			or confess "Unable to copy COMPASS executable $compass_build_exe to local executable $local_compass_build_exe : $OS_ERROR";
+	}
+	if ( ! -x $local_compass_build_exe->stat() ) {
+		$local_compass_build_exe->chmod( 'a+x' )
+			or confess "Unable to chmod local COMPASS profile build executable \"$local_compass_build_exe\" : $OS_ERROR";
+	}
 
-=head2 mergee_b_is_starting_cluster
+	# TODO: Make this write to a temporary file and then rename to dest when finished
 
-=cut
+	my @compass_params = (
+		'-g',  '0.50001',
+		'-i',  $aln_file,
+		'-j',  $tmp_dummy_aln_file,
+		'-p1', $tmp_prof_file,
+		'-p2', $tmp_dummy_prof_file,
+	);
 
-sub mergee_b_is_starting_cluster {
-	my $self = shift;
-	return mergee_is_starting_cluster( $self->mergee_b() );
-}
+	INFO "About to build COMPASS profile";
 
-=head2 starting_nodes_in_depth_first_traversal_order
+	my $compass_build_t0 = [ gettimeofday() ];
+	my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
+	  system( "$local_compass_build_exe", @compass_params );
+	};
 
-=cut
+	if ( $compass_exit != 0 ) {
+		confess
+			"COMPASS profile-building command "
+			.join( ' ', ( "$local_compass_build_exe", @compass_params ) )
+			." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
+	}
 
-sub starting_nodes_in_depth_first_traversal_order {
-	my $self = shift;
+	my $compass_build_duration = tv_interval ( $compass_build_t0, [ gettimeofday() ] );
+	INFO 'Finished building COMPASS profile in ' . $compass_build_duration . 's';
 
-	return [
+	if ( ! -e $dest_prof_filename ) {
+		move( $tmp_prof_file, $dest_prof_filename );
+	}
+
+	return {
+		out_filename => $dest_prof_filename,
 		(
-			$self->mergee_a_is_starting_cluster()
-				? $self->mergee_a()
-				: @{ $self->mergee_a()->starting_nodes_in_depth_first_traversal_order() }
+			defined( $compass_build_duration )
+			? ( duration => $compass_build_duration )
+			: ()
 		),
-		(
-			$self->mergee_b_is_starting_cluster()
-				? $self->mergee_b()
-				: @{ $self->mergee_b()->starting_nodes_in_depth_first_traversal_order() }
-		)
-	];
-}
-
-=head2 starting_nodes_in_standard_order
-
-=cut
-
-sub starting_nodes_in_standard_order {
-	my $self = shift;
-
-	return [ sort { cluster_name_spaceship( $a, $b ) } @{ $self->starting_nodes_in_depth_first_traversal_order() } ];
-}
-
-=head2 standard_order_id
-
-=cut
-
-sub standard_order_id {
-	my $self = shift;
-
-	my $nodes = $self->starting_nodes_in_depth_first_traversal_order();
-	return md5_hex( @$nodes );
-}
-
-=head2 depth_first_traversal_id
-
-=cut
-
-sub depth_first_traversal_id {
-	my $self = shift;
-
-	my $nodes = $self->starting_nodes_in_standard_order();
-	return md5_hex( @$nodes );
+	};
 }
 
 1;

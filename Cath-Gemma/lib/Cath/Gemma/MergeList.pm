@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp    qw/ confess /;
-use English qw/ -no_match_vars /;
+use Carp               qw/ confess                                     /;
+use English            qw/ -no_match_vars                              /;
+use v5.10;
 
 # Moo
 use Moo;
@@ -14,11 +15,13 @@ use strictures 1;
 
 # Non-core (local)
 use Path::Tiny;
-use Types::Standard qw/ ArrayRef /; 
+use Type::Params       qw/ compile                                     /;
+use Types::Path::Tiny  qw/ Path                                        /;
+use Types::Standard    qw/ ArrayRef Bool ClassName Object Optional Str /;
 
 # Cath
 use Cath::Gemma::Merge;
-use Cath::Gemma::Types qw/ CathGemmaMerge /; 
+use Cath::Gemma::Types qw/ CathGemmaMerge                              /;
 use Cath::Gemma::Util;
 
 =head2 merges
@@ -41,12 +44,10 @@ has merges => (
 =cut
 
 sub read_from_tracefile {
-	shift;
-	my $input_file = shift;
+	state $check = compile( ClassName, Path );
+	my ( $class, $input_path ) = $check->( @ARG );
 
-	my $input_path = path( $input_file );
 	my $data       = $input_path->slurp();
-
 
 	my @merges;
 	my @lines = split( /\n/, $data );
@@ -95,5 +96,59 @@ sub starting_clusters {
 	}
 	return [ sort { cluster_name_spaceship( $a, $b ) } ( keys ( %starting_clusters ) ) ];
 }
+
+=head2 initial_scans
+
+=cut
+
+sub initial_scans {
+	my $self = shift;
+
+	my $starting_clusters = $self->starting_clusters();
+
+	my @results;
+	for (my $cluster_ctr = 0; $cluster_ctr < ( scalar( @$starting_clusters ) - 1 ); ++$cluster_ctr) {
+		my $starting_cluster = $starting_clusters->[ $cluster_ctr ];
+		push @results, [
+			$starting_clusters->[ $cluster_ctr ],
+			[ @$starting_clusters[ ( $cluster_ctr + 1 ) .. ( scalar ( @$starting_clusters ) - 1 ) ] ]
+		];
+	}
+	return \@results;
+}
+
+
+=head2 later_scans
+
+=cut
+
+sub later_scans {
+	state $check = compile( Object, Optional[Bool] );
+	my ( $self, $use_depth_first ) = $check->( @ARG );
+
+	$use_depth_first //= 0;
+
+	my %clusters = map { ( $ARG, 1 ) } @{ $self->starting_clusters() };
+	my $merges = $self->merges();
+
+	my @results;
+	foreach my $merge ( @$merges ) {
+		my $new_id = $merge->id         ( $use_depth_first );
+		my $id_a   = $merge->mergee_a_id( $use_depth_first );
+		my $id_b   = $merge->mergee_b_id( $use_depth_first );
+
+		delete $clusters{ $id_a };
+		delete $clusters{ $id_b };
+
+		if ( scalar( keys ( %clusters ) ) > 0 ) {
+			push @results, [ $new_id, [ sort { cluster_name_spaceship( $a, $b ) } keys ( %clusters ) ] ];
+		}
+
+		$clusters{ $new_id } = 1;
+	}
+
+	return \@results;
+}
+
 
 1;

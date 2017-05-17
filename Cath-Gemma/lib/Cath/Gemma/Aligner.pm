@@ -3,31 +3,26 @@ package Cath::Gemma::Aligner;
 use strict;
 use warnings;
 
-# # Core
-use Capture::Tiny       qw/ capture                  /;
-use Carp                qw/ confess                  /;
-use English             qw/ -no_match_vars           /;
-use Exporter            qw/ import                   /;
-use File::Copy          qw/ copy move                /;
+# Core
+use Carp                qw/ confess                         /;
+use English             qw/ -no_match_vars                  /;
+use File::Copy          qw/ copy move                       /;
 use FindBin;
-use Log::Log4perl::Tiny qw/ :easy                    /;
-use Time::HiRes         qw/ gettimeofday tv_interval /;
+use Time::HiRes         qw/ gettimeofday tv_interval        /;
 use v5.10;
 
-our @EXPORT = qw/
-	make_alignment_file
-	/;
-
-# # Non-core (local)
+# Non-core (local)
+use Capture::Tiny       qw/ capture                         /;
+use Log::Log4perl::Tiny qw/ :easy                           /;
 use Path::Tiny;
-use Type::Params      qw/ compile                         /;
-use Types::Path::Tiny qw/ Path                            /;
-use Types::Standard   qw/ ArrayRef ClassName Optional Str /;
+use Type::Params        qw/ compile                         /;
+use Types::Path::Tiny   qw/ Path                            /;
+use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
 
-# # Cath
+# Cath
 use Cath::Gemma::Util;
 
-my $mafft_exe = "$FindBin::Bin/.././tools/mafft-6.864-without-extensions/core/mafft";
+my $mafft_exe = "$FindBin::Bin/../tools/mafft-6.864-without-extensions/core/mafft";
 
 =head2 build_raw_seqs_file
 
@@ -86,7 +81,7 @@ sub make_alignment_file {
 	my $mafft_duration     = undef;
 	if ( -s $alignment_filename ) {
 		return {
-			alignment_filename => $alignment_filename,
+			out_filename => $alignment_filename,
 		};
 	}
 	if ( -e $alignment_filename ) {
@@ -118,11 +113,11 @@ sub make_alignment_file {
 	);
 	my $num_sequences = $build_raw_seqs_result->{ num_sequences };
 
-	my $temporary_align_file = Path::Tiny->tempfile( TEMPLATE => '.tmp_aln.' . $id_of_clusters . '.XXXXXXXXXXX',
-	                                                 DIR      => $dest_dir,
-	                                                 SUFFIX   => '.faa',
-	                                                 CLEANUP  => 1,
-	                                                 );
+	my $tmp_align_file = Path::Tiny->tempfile( TEMPLATE => '.tmp_aln.' . $id_of_clusters . '.XXXXXXXXXXX',
+	                                           DIR      => $dest_dir,
+	                                           SUFFIX   => '.faa',
+	                                           CLEANUP  => 1,
+	                                           );
 	my @mafft_params_slow_high_qual = ( qw/ --amino --anysymbol --localpair --maxiterate 1000 --quiet / );
 	my @mafft_params_fast_low_qual  = ( qw/ --amino --anysymbol --parttree  --retree     1    --quiet / );
 
@@ -137,11 +132,11 @@ sub make_alignment_file {
 		$ENV{  MAFFT_BINARIES } = '/dev/shm/mafft_binaries_dir';
 
 		my $mafft_t0 = [ gettimeofday() ];
-		my ( $mafft_stdout, $mafft_stderr ) = capture {
+		my ( $mafft_stdout, $mafft_stderr, $mafft_exit ) = capture {
 		  system( "$local_mafft_exe", @$mafft_params, "$raw_seqs_filename" );
 		};
 
-		if ( defined( $mafft_stderr ) && $mafft_stderr ne '' ) {
+		if ( ( $mafft_exit != 0 ) || ( defined( $mafft_stderr ) && $mafft_stderr ne '' ) ) {
 			confess
 				"mafft command "
 				.join( ' ', ( "$local_mafft_exe", @$mafft_params, "$raw_seqs_filename" ) )
@@ -151,25 +146,25 @@ sub make_alignment_file {
 
 		INFO 'Finished aligning ' . $num_sequences . ' sequences (' . $id_of_clusters . ') in ' . $mafft_duration . 's with mafft';
 
-		$temporary_align_file->spew( $mafft_stdout );
+		$tmp_align_file->spew( $mafft_stdout );
 	}
 	else {
-		copy( $raw_seqs_filename, $temporary_align_file )
-			or confess "Unable to copy single sequence file $raw_seqs_filename to $temporary_align_file : $OS_ERROR";
+		copy( $raw_seqs_filename, $tmp_align_file )
+			or confess "Unable to copy single sequence file $raw_seqs_filename to $tmp_align_file : $OS_ERROR";
 	}
 
 	if ( ! -e $alignment_filename ) {
-		move( $temporary_align_file, $alignment_filename );
+		move( $tmp_align_file, $alignment_filename );
 	}
 
 	return {
-		alignment_filename => $alignment_filename,
+		out_filename => $alignment_filename,
 		(
 			defined( $mafft_duration )
-			? ( mafft_duration => $mafft_duration )
+			? ( duration => $mafft_duration )
 			: ()
 		),
-		num_sequences      => $num_sequences
+		num_sequences => $num_sequences
 	};
 }
 

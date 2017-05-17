@@ -9,9 +9,9 @@ Cath::Gemma::Util - TODOCUMENT
 use strict;
 use warnings;
 
-use Carp qw/ confess /;
+use Carp        qw/ confess /;
 use Digest::MD5 qw/ md5_hex /;
-use Exporter qw/ import /;
+use Exporter    qw/ import  /;
 
 our @EXPORT = qw/
 	alignment_filename_of_starting_clusters
@@ -48,8 +48,14 @@ sub cluster_name_spaceship {
 			my $number_b = $1;
 			return ( $number_a <=> $number_b );
 		}
+		else {
+			return -1;
+		}
 	}
-	return ( $a cmp $b );
+	return
+		( $b =~ /^(\D*)([\d]+)(\D*)$/ )
+		? 1
+		: ( $a cmp $b );
 }
 
 =head2 id_of_starting_clusters
