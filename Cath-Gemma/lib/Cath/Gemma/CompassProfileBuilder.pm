@@ -70,6 +70,14 @@ sub build_compass_profile {
 
 			INFO 'Finished building COMPASS profile for ' . $output_stem;
 
+			my ( $sed_stdout, $sed_stderr, $sed_exit ) = capture {
+				system( 'sed', '-i', '2s/^.*/#/', "$tmp_prof_file" );
+			};
+
+			if ( $sed_exit || $sed_stdout || $sed_stderr ) {
+				confess "Cannot run sed to standardise second comment line of COMPASS profile file \"$tmp_prof_file\"";
+			}
+
 			return {};
 		}
 	);
