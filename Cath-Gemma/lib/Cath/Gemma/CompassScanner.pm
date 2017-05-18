@@ -20,33 +20,21 @@ use Types::Path::Tiny   qw/ Path                            /;
 use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
 
 # Cath
+use Cath::Gemma::Types  qw/ CathGemmaExecutables            /;
 use Cath::Gemma::Util;
 
-my $compass_scan_exe = "$FindBin::Bin/../tools/compass/compass_db1Xdb2_241";
-
 =head2 _compass_scan_impl
-
-# TODO: Abstract out binary-preparation
 
 =cut
 
 sub _compass_scan_impl {
-	state $check = compile( ClassName, Path, ArrayRef[Str], ArrayRef[Str], Path );
-	my ( $class, $profile_dir, $query_cluster_ids, $match_cluster_ids, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaExecutables, Path, ArrayRef[Str], ArrayRef[Str], Path );
+	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $tmp_dir ) = $check->( @ARG );
 
 	my $query_prof_lib = Cath::Gemma::CompassScanner->build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $tmp_dir );
 	my $match_prof_lib = Cath::Gemma::CompassScanner->build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $tmp_dir );
 
-	my $local_exe_dir   = path( '/dev/shm' );
-	my $local_compass_scan_exe = $local_exe_dir->child( path( $compass_scan_exe )->basename() );
-	if ( ( -s $compass_scan_exe ) != ( -s $local_exe_dir ) ) {
-		copy( $compass_scan_exe, $local_compass_scan_exe )
-			or confess "Unable to copy COMPASS executable $compass_scan_exe to local executable $local_compass_scan_exe : $OS_ERROR";
-	}
-	if ( ! -x $local_compass_scan_exe->stat() ) {
-		$local_compass_scan_exe->chmod( 'a+x' )
-			or confess "Unable to chmod local COMPASS profile build executable \"$local_compass_scan_exe\" : $OS_ERROR";
-	}
+	my $compass_scan_exe = $exes->compass_scan();
 
 	my @compass_scan_command = (
 		'-g', '0.50001',
@@ -150,8 +138,8 @@ sub build_temp_profile_lib_file {
 =cut
 
 sub compass_scan {
-	state $check = compile( ClassName, Path, ArrayRef[Str], ArrayRef[Str], Path );
-	my ( $class, $profile_dir, $query_cluster_ids, $match_cluster_ids, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaExecutables, Path, ArrayRef[Str], ArrayRef[Str], Path );
+	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $tmp_dir ) = $check->( @ARG );
 
 	return run_and_time_filemaking_cmd(
 		'COMPASS scan',
@@ -159,6 +147,7 @@ sub compass_scan {
 		sub {
 			return {
 				data => Cath::Gemma::CompassScanner->_compass_scan_impl(
+					$exes,
 					$profile_dir,
 					$query_cluster_ids,
 					$match_cluster_ids,
@@ -174,8 +163,8 @@ sub compass_scan {
 =cut
 
 sub compass_scan_to_file {
-	state $check = compile( ClassName, Path, ArrayRef[Str], ArrayRef[Str], Path, Optional[Path] );
-	my ( $class, $profile_dir, $query_cluster_ids, $match_cluster_ids, $dest_dir, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaExecutables, Path, ArrayRef[Str], ArrayRef[Str], Path, Optional[Path] );
+	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $dest_dir, $tmp_dir ) = $check->( @ARG );
 	$tmp_dir //= $dest_dir;
 
 	return run_and_time_filemaking_cmd(
@@ -186,6 +175,7 @@ sub compass_scan_to_file {
 			my $tmp_scan_file    = path( $scan_atomic_file->filename );
 
 			my $result = Cath::Gemma::CompassScanner->_compass_scan_impl(
+				$exes,
 				$profile_dir,
 				$query_cluster_ids,
 				$match_cluster_ids,

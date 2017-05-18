@@ -20,19 +20,16 @@ use Types::Path::Tiny   qw/ Path                            /;
 use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
 
 # Cath
+use Cath::Gemma::Types  qw/ CathGemmaExecutables            /;
 use Cath::Gemma::Util;
 
-my $compass_build_exe = "$FindBin::Bin/../tools/compass/compass_wp_245_fixed";
-
 =head2 build_compass_profile
-
-# TODO: Abstract out binary-preparation
 
 =cut
 
 sub build_compass_profile {
-	state $check = compile( ClassName, Path, Path, Optional[Path] );
-	my ( $class, $aln_file, $dest_dir, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaExecutables, Path, Path, Optional[Path] );
+	my ( $class, $exes, $aln_file, $dest_dir, $tmp_dir ) = $check->( @ARG );
 	$tmp_dir //= $dest_dir;
 
 	my $output_stem = $aln_file->basename( alignment_profile_suffix() );
@@ -48,16 +45,7 @@ sub build_compass_profile {
 			my $tmp_dummy_prof_file = Path::Tiny->tempfile( DIR => $tmp_dir, TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => compass_profile_suffix(),   CLEANUP => 1 );
 			$tmp_dummy_aln_file->spew( "'>A\nA\n" );
 
-			my $local_exe_dir   = path( '/dev/shm' );
-			my $local_compass_build_exe = $local_exe_dir->child( path( $compass_build_exe )->basename() );
-			if ( ( -s $compass_build_exe ) != ( -s $local_exe_dir ) ) {
-				copy( $compass_build_exe, $local_compass_build_exe )
-					or confess "Unable to copy COMPASS executable $compass_build_exe to local executable $local_compass_build_exe : $OS_ERROR";
-			}
-			if ( ! -x $local_compass_build_exe->stat() ) {
-				$local_compass_build_exe->chmod( 'a+x' )
-					or confess "Unable to chmod local COMPASS profile build executable \"$local_compass_build_exe\" : $OS_ERROR";
-			}
+			my $compass_build_exe = $exes->compass_build();
 
 			my @compass_params = (
 				'-g',  '0.50001',
@@ -70,13 +58,13 @@ sub build_compass_profile {
 			INFO 'About to build    COMPASS profile for ' . $output_stem;
 
 			my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
-				system( "$local_compass_build_exe", @compass_params );
+				system( "$compass_build_exe", @compass_params );
 			};
 
 			if ( $compass_exit != 0 ) {
 				confess
 					"COMPASS profile-building command "
-					.join( ' ', ( "$local_compass_build_exe", @compass_params ) )
+					.join( ' ', ( "$compass_build_exe", @compass_params ) )
 					." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
 			}
 
@@ -93,8 +81,8 @@ sub build_compass_profile {
 =cut
 
 sub build_alignment_and_compass_profile {
-	state $check = compile( ClassName, ArrayRef[Str], Path, Path, Path, Optional[Path] );
-	my ( $class, $starting_clusters, $starting_cluster_dir, $aln_dest_dir, $prof_dest_dir, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaExecutables, ArrayRef[Str], Path, Path, Path, Optional[Path] );
+	my ( $class, $exes, $starting_clusters, $starting_cluster_dir, $aln_dest_dir, $prof_dest_dir, $tmp_dir ) = $check->( @ARG );
 	$tmp_dir //= $aln_dest_dir;
 
 
@@ -105,6 +93,7 @@ sub build_alignment_and_compass_profile {
 			out_filename => $aln_file
 		}
 		: Cath::Gemma::Aligner->make_alignment_file(
+			$exes,
 			$starting_clusters,
 			$starting_cluster_dir,
 			$tmp_dir,
@@ -113,6 +102,7 @@ sub build_alignment_and_compass_profile {
 
 	my $built_aln_file   = $alignment_result->{ out_filename  };
 	my $profile_result   = Cath::Gemma::CompassProfileBuilder->build_compass_profile(
+		$exes,
 		$built_aln_file,
 		$prof_dest_dir,
 		$tmp_dir,

@@ -21,6 +21,9 @@ use Cath::Gemma::Aligner;
 use Cath::Gemma::CompassProfileBuilder;
 use Cath::Gemma::CompassScanner;
 use Cath::Gemma::MergeList;
+use Cath::Gemma::Executables;
+
+my $exes = Cath::Gemma::Executables->new();
 
 # my $trace_files_dir = path( '/cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/clustering_output' );
 my $trace_files_dir = path( 'temporary_example_data' );
@@ -52,6 +55,7 @@ my $visit_result = $trace_files_dir->visit(
 		# Build alignments and profiles for all starting_clusters
 		foreach my $starting_cluster (@{ $mergelist->starting_clusters() } ) {
 			my $build_aln_and_prof_result = Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
+				$exes,
 				[ $starting_cluster ],
 				$starting_clusters_dir,
 				$aln_dir,
@@ -68,6 +72,7 @@ my $visit_result = $trace_files_dir->visit(
 
 				foreach my $use_depth_first ( 0, 1 ) {
 					my $build_aln_and_prof_result = Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
+						$exes,
 						$merge->starting_nodes( $use_depth_first ),
 						$starting_clusters_dir,
 						$aln_dir,
@@ -84,6 +89,7 @@ my $visit_result = $trace_files_dir->visit(
 		# Perform all initial (ie starting cluster vs other starting clusters) scans
 		foreach my $scan ( @{$mergelist->initial_scans()  } ) {
 			my $result = Cath::Gemma::CompassScanner->compass_scan_to_file(
+				$exes,
 				$prof_dir,
 				[ $scan->[ 0 ] ],
 				$scan->[ 1 ],
@@ -100,6 +106,7 @@ my $visit_result = $trace_files_dir->visit(
 		foreach my $use_depth_first ( 0, 1 ) {
 			foreach my $scan ( @{ $mergelist->later_scans( $use_depth_first ) } ) {
 				my $result = Cath::Gemma::CompassScanner->compass_scan_to_file(
+					$exes,
 					$prof_dir,
 					[ $scan->[ 0 ] ],
 					$scan->[ 1 ],
