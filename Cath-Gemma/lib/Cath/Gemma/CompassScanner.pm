@@ -116,9 +116,11 @@ sub build_temp_profile_lib_file {
 	state $check = compile( ClassName, Path, ArrayRef[Str], Path );
 	my ( $class, $profile_dir, $cluster_ids, $dest_dir ) = $check->( @ARG );
 
-	# TODO: Make this a tempfile
-
-	my $lib_filename = $dest_dir->child( id_of_starting_clusters( $cluster_ids )  . '.prof_lib' );
+	my $lib_filename = Path::Tiny->tempfile( TEMPLATE => '.' . id_of_starting_clusters( $cluster_ids ) . 'XXXXXXXXXXX',
+	                                         DIR      => $dest_dir,
+	                                         SUFFIX   => '.prof_lib',
+	                                         CLEANUP  => 1,
+	                                         );
 	my $lib_fh = $lib_filename->openw()
 		or confess "Unable to open profile library file \"$lib_filename\" for writing : $OS_ERROR";
 
