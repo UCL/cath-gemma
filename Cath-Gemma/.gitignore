@@ -6,6 +6,7 @@ Build
 Build.bat
 Cath-Gemma-*
 cover_db
+extlib/bin
 extlib/lib/perl5/x86_64-linux
 Makefile
 Makefile.old
