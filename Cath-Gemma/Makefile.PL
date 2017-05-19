@@ -15,6 +15,7 @@ WriteMakefile(
     PREREQ_PM => {
         'Capture::Tiny'       => 0,
         'File::AtomicWrite'   => 0,
+        'JSON::MaybeXS'       => 0,
         'Log::Log4perl::Tiny' => 0,
         'Moo'                 => 0,
         'MooX::HandlesVia'    => 0,
