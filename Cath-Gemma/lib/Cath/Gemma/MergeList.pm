@@ -83,7 +83,8 @@ sub read_from_tracefile {
 =cut
 
 sub starting_clusters {
-	my $self = shift;
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
 
 	my %starting_clusters;
 
@@ -102,7 +103,8 @@ sub starting_clusters {
 =cut
 
 sub initial_scans {
-	my $self = shift;
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
 
 	my $starting_clusters = $self->starting_clusters();
 
