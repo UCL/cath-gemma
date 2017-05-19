@@ -1,8 +1,12 @@
-#!perl -T
+#!perl
 
 use 5.006;
 use strict;
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin/../extlib/lib/perl5";
+
 use Test::More tests => 2;
 
 sub not_in_file_ok {

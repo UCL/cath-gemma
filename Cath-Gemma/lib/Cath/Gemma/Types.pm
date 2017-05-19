@@ -11,13 +11,15 @@ use Type::Library
 	-declare => qw(
 		CathGemmaExecutables
 		CathGemmaMerge
+		ComputeProfileBuildTask
 	);
 
 use Type::Utils qw/ class_type coerce declare from /;
 use Types::Standard -types;
 
-class_type CathGemmaExecutables, { class => "Cath::Gemma::Executables" };
-class_type CathGemmaMerge,       { class => "Cath::Gemma::Merge"       };
+class_type CathGemmaComputeProfileBuildTask, { class => "Cath::Gemma::ComputeProfileBuildTask" };
+class_type CathGemmaExecutables,             { class => "Cath::Gemma::Executables"             };
+class_type CathGemmaMerge,                   { class => "Cath::Gemma::Merge"                   };
 
 # coerce CathGemmaMerge,
 # 	from Str, via { 

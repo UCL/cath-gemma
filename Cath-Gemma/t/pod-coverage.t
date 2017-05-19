@@ -1,5 +1,9 @@
 use strict;
 use warnings;
+
+use FindBin;
+use lib "$FindBin::Bin/../extlib/lib/perl5";
+
 use Test::More;
 
 # Ensure a recent version of Test::Pod::Coverage

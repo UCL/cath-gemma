@@ -1,9 +1,10 @@
 #!perl
 
-use Test::More tests => 1;
-
 use FindBin;
 use lib "$FindBin::Bin/../extlib/lib/perl5";
+
+use Test::More tests => 1;
+
 
 BEGIN {
     use_ok( 'Cath::Gemma' ) || print "Bail out!\n";

@@ -72,6 +72,7 @@ sub mergee_a_id {
 		? $self->mergee_a()
 		: $self->mergee_a()->id( $use_depth_first );
 }
+
 =head2 mergee_b_is_starting_cluster
 
 =cut

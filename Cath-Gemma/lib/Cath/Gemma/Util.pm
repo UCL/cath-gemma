@@ -53,7 +53,7 @@ sub time_fn {
 	};
 }
 
-=head2 run_something
+=head2 run_and_time_filemaking_cmd
 
 =cut
 
