@@ -45,3 +45,9 @@ cpanm -L extlib --force Params::Validate
 ~~~
 
 #
+
+Update the projects list
+
+~~~
+ls -1 temporary_example_data/tracefiles/ | sed 's/\.trace$//g' | sort -V > temporary_example_data/projects.txt
+~~~

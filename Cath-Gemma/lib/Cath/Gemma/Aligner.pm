@@ -8,6 +8,7 @@ use Carp                qw/ confess                         /;
 use English             qw/ -no_match_vars                  /;
 use File::Copy          qw/ copy move                       /;
 use FindBin;
+use List::Util          qw/ sum0                            /;
 use Time::HiRes         qw/ gettimeofday tv_interval        /;
 use v5.10;
 
@@ -38,6 +39,7 @@ sub build_raw_seqs_file {
 
 	my $num_sequences = 0;
 
+	my @seq_lengths;
 	foreach my $starting_cluster ( @$starting_clusters ) {
 		my $starting_cluster_file = $starting_cluster_dir->child( $starting_cluster . alignment_profile_suffix() );
 		if ( ! -s $starting_cluster_file ) {
@@ -46,16 +48,25 @@ sub build_raw_seqs_file {
 
 		my $starting_cluster_data = $starting_cluster_file->slurp();
 		my @starting_cluster_lines = split( /\n/, $starting_cluster_data );
+		my $seq_length = 0;
 		foreach my $starting_cluster_line ( @starting_cluster_lines ) {
 			if ( $starting_cluster_line =~ /^>/ ) {
 				++$num_sequences;
+				if ( $seq_length != 0 ) {
+					push @seq_lengths, $seq_length;
+					$seq_length = 0;
+				}
+			}
+			else {
+				$seq_length += length( $starting_cluster_line );
 			}
 			print $dest_fh "$starting_cluster_line\n";
 		}
+		push @seq_lengths, $seq_length;
 	}
 
-	# TODO: Add in returning the average sequence length
 	return {
+		mean_seq_length => ( sum0( @seq_lengths ) / scalar( @seq_lengths ) ),
 		num_sequences => $num_sequences
 	};
 }
@@ -122,7 +133,10 @@ sub make_alignment_file {
 					or confess "Unable to copy single sequence file $raw_seqs_filename to $tmp_aln_file : $OS_ERROR";
 			}
 
-			return { num_sequences => $num_sequences };
+			return {
+				mean_seq_length => $build_raw_seqs_result->{ mean_seq_length },
+				num_sequences   => $num_sequences,
+			};
 		}
 	);
 

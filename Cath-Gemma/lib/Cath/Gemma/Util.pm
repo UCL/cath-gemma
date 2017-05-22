@@ -15,6 +15,7 @@ use Digest::MD5       qw/ md5_hex                           /;
 use English           qw/ -no_match_vars                    /;
 use Exporter          qw/ import                            /;
 use Time::HiRes       qw/ gettimeofday tv_interval          /;
+use Time::Seconds;
 use v5.10;
 
 our @EXPORT = qw/
@@ -44,11 +45,10 @@ sub time_fn {
 	state $check = compile( CodeRef, slurpy ArrayRef );
 	my ( $operation, $arguments ) = $check->( @ARG );
 
-	my $t0 = [ gettimeofday() ];
+	my $t0     = [ gettimeofday() ];
 	my $result = $operation->( @$arguments );
-	my $duration = tv_interval( $t0, [ gettimeofday() ] );
 	return {
-		duration => $duration,
+		duration => Time::Seconds->new( tv_interval( $t0, [ gettimeofday() ] ) ),
 		result   => $result,
 	};
 }
@@ -61,41 +61,52 @@ sub run_and_time_filemaking_cmd {
 	state $check = compile( Str, Maybe[Path], CodeRef );
 	my ( $name, $out_file, $operation ) = $check->( @ARG );
 
-	if ( defined( $out_file ) ) {
-		if ( -s $out_file ) {
-			return { out_filename => $out_file };
+	my $outer_result = time_fn(
+		sub {
+
+			if ( defined( $out_file ) ) {
+				if ( -s $out_file ) {
+					return { out_filename => $out_file };
+				}
+
+				if ( -e $out_file ) {
+					$out_file->remove()
+						or confess "Unable to remove $name output file \"$out_file\" : $OS_ERROR";
+				}
+
+				my $out_dir = $out_file->parent();
+				if ( ! -d $out_dir ) {
+					$out_dir->mkpath()
+						or confess "Unable to make $name output directory \"$out_dir\" : $OS_ERROR";
+				}
+			}
+
+			my $atomic_file = defined( $out_file )
+			                  ? File::AtomicWrite->new( { file => "$out_file" } )
+			                  : undef;
+
+			my $result = time_fn( $operation, defined( $atomic_file ) ? ( $atomic_file ) : ( ) );
+
+			if ( ! defined( $result ) || ref( $result ) ne 'HASH' || ! defined( $result->{ result } ) || ref( $result->{ result } ) ne 'HASH' ) {
+				confess "ARGH";
+			}
+
+			if ( defined( $atomic_file ) ) {
+				$atomic_file->commit();
+			}
+
+			$result->{ result }->{ duration     } = $result->{ duration };
+			$result->{ result }->{ out_filename } = $out_file;
+
+			return $result->{ result };
+
+
 		}
+	);
 
-		if ( -e $out_file ) {
-			$out_file->remove()
-				or confess "Unable to remove $name output file \"$out_file\" : $OS_ERROR";
-		}
+	$outer_result->{ result }->{ wrapper_duration } = ( $outer_result->{ duration } - $outer_result->{ result }->{ duration } );
 
-		my $out_dir = $out_file->parent();
-		if ( ! -d $out_dir ) {
-			$out_dir->mkpath()
-				or confess "Unable to make $name output directory \"$out_dir\" : $OS_ERROR";
-		}
-	}
-
-	my $atomic_file = defined( $out_file )
-	                  ? File::AtomicWrite->new( { file => "$out_file" } )
-	                  : undef;
-
-	my $result = time_fn( $operation, defined( $atomic_file ) ? ( $atomic_file ) : ( ) );
-
-	if ( ! defined( $result ) || ref( $result ) ne 'HASH' || ! defined( $result->{ result } ) || ref( $result->{ result } ) ne 'HASH' ) {
-		confess "ARGH";
-	}
-
-	if ( defined( $atomic_file ) ) {
-		$atomic_file->commit();
-	}
-
-	$result->{ result }->{ duration     } = $result->{ duration };
-	$result->{ result }->{ out_filename } = $out_file;
-
-	return $result->{ result };
+	return $outer_result->{ result };
 }
 
 =head2 mergee_is_starting_cluster

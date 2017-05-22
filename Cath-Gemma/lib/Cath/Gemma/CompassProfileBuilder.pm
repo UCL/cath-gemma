@@ -93,8 +93,8 @@ sub build_alignment_and_compass_profile {
 	my ( $class, $exes, $starting_clusters, $starting_cluster_dir, $aln_dest_dir, $prof_dest_dir, $tmp_dir ) = $check->( @ARG );
 	$tmp_dir //= $aln_dest_dir;
 
-
 	my $aln_file = $aln_dest_dir->child( alignment_filename_of_starting_clusters( $starting_clusters ) );
+	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $tmp_dir );
 	my $alignment_result = 
 		( -s $aln_file )
 		? {
@@ -104,7 +104,7 @@ sub build_alignment_and_compass_profile {
 			$exes,
 			$starting_clusters,
 			$starting_cluster_dir,
-			$tmp_dir,
+			$temp_aln_dir,
 			$tmp_dir
 		);
 
@@ -127,9 +127,13 @@ sub build_alignment_and_compass_profile {
 	}
 
 	return {
-		( defined( $alignment_result->{ duration      } ) ? ( aln_duration  => $alignment_result->{ duration      } ) : () ),
-		( defined( $alignment_result->{ num_sequences } ) ? ( num_sequences => $alignment_result->{ num_sequences } ) : () ),
-		( defined( $profile_result  ->{ duration      } ) ? ( prof_duration => $profile_result  ->{ duration      } ) : () ),
+		( defined( $alignment_result->{ duration          } ) ? ( aln_duration          => $alignment_result->{ duration         } ) : () ),
+		( defined( $alignment_result->{ mean_seq_length   } ) ? ( mean_seq_length       => $alignment_result->{ mean_seq_length    } ) : () ),
+		( defined( $alignment_result->{ num_sequences     } ) ? ( num_sequences         => $alignment_result->{ num_sequences    } ) : () ),
+		( defined( $alignment_result->{ wrapper_duration  } ) ? ( aln_wrapper_duration  => $alignment_result->{ wrapper_duration } ) : () ),
+
+		( defined( $profile_result  ->{ duration          } ) ? ( prof_duration         => $profile_result  ->{ duration         } ) : () ),
+		( defined( $profile_result  ->{ wrapper_duration  } ) ? ( prof_wrapper_duration => $profile_result  ->{ wrapper_duration } ) : () ),
 		aln_filename  => $aln_file,
 		prof_filename => $profile_result->{ out_filename  },
 	};
