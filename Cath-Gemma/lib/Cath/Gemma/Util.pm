@@ -49,6 +49,7 @@ sub time_fn {
 	my $result = $operation->( @$arguments );
 	return {
 		duration => Time::Seconds->new( tv_interval( $t0, [ gettimeofday() ] ) ),
+		duration => tv_interval( $t0, [ gettimeofday() ] ),
 		result   => $result,
 	};
 }

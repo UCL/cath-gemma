@@ -20,8 +20,10 @@ use lib "$FindBin::Bin/../lib";
 use Cath::Gemma::Aligner;
 use Cath::Gemma::CompassProfileBuilder;
 use Cath::Gemma::CompassScanner;
-use Cath::Gemma::MergeList;
+use Cath::Gemma::Compute::ProfileBuildTask;
+use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Executables;
+use Cath::Gemma::MergeList;
 
 my $exes = Cath::Gemma::Executables->new();
 
@@ -39,6 +41,12 @@ my $working_dir                = path( '/dev/shm'                               
 
 my $projects_list_data = $projects_list_file->slurp();
 my @projects = split( /\n+/, $projects_list_data );
+
+if ( scalar( @ARGV ) ) {
+	
+}
+
+my $work_batcher = Cath::Gemma::Compute::WorkBatcher->new();
 
 foreach my $project ( @projects ) {
 	my $tracefile_path = $trace_files_dir->child( $project . $trace_files_ext );
@@ -62,71 +70,82 @@ foreach my $project ( @projects ) {
 	my $mergelist = Cath::Gemma::MergeList->read_from_tracefile( $tracefile_path );
 
 	# Print the starting clusters
-	say join( " ", @{ $mergelist->starting_clusters() } );
+	warn join( " ", @{ $mergelist->starting_clusters() } );
+	# say join( " ", @{ $mergelist->starting_clusters() } );
 
-	# Build alignments and profiles for all starting_clusters
-	foreach my $starting_cluster (@{ $mergelist->starting_clusters() } ) {
-		my $build_aln_and_prof_result = Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
-			$exes,
-			[ $starting_cluster ],
-			$starting_clusters_dir,
-			$aln_out_dir,
-			$prof_out_dir,
-			$working_dir,
-		);
-		say join( ', ', map { $ARG . ':' . $build_aln_and_prof_result->{ $ARG } } keys( %$build_aln_and_prof_result ) );
-	}
+	$work_batcher->add_profile_build_work( Cath::Gemma::Compute::ProfileBuildTask->new(
+		starting_cluster_lists => [ map { [ $ARG ] } @{ $mergelist->starting_clusters() } ],
+		starting_cluster_dir   => $starting_clusters_dir,
+		aln_dest_dir           => $aln_out_dir,
+		prof_dest_dir          => $prof_out_dir,
+	) );
 
-	# Build alignments and profiles for all merge nodes
-	if ( ! $mergelist->is_empty() ) {
-		foreach my $merge_ctr ( 0 .. ( $mergelist->count() - 1 ) ) {
-			my $merge = $mergelist->merge_of_index( $merge_ctr );
+	# # Build alignments and profiles for all starting_clusters
+	# foreach my $starting_cluster ( @{ $mergelist->starting_clusters() } ) {
+	# 	my $build_aln_and_prof_result = Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
+	# 		$exes,
+	# 		[ $starting_cluster ],
+	# 		$starting_clusters_dir,
+	# 		$aln_out_dir,
+	# 		$prof_out_dir,
+	# 		$working_dir,
+	# 	);
+	# 	say join( ', ', map { $ARG . ':' . $build_aln_and_prof_result->{ $ARG } } keys( %$build_aln_and_prof_result ) );
+	# }
 
-			foreach my $use_depth_first ( 0, 1 ) {
-				my $build_aln_and_prof_result = Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
-					$exes,
-					$merge->starting_nodes( $use_depth_first ),
-					$starting_clusters_dir,
-					$aln_out_dir,
-					$prof_out_dir,
-					$working_dir,
-				);
-				say join( ', ', map { $ARG . ':' . $build_aln_and_prof_result->{ $ARG } } keys( %$build_aln_and_prof_result ) );
-			}
-		}
-	}
+	# # Build alignments and profiles for all merge nodes
+	# if ( ! $mergelist->is_empty() ) {
+	# 	foreach my $merge_ctr ( 0 .. ( $mergelist->count() - 1 ) ) {
+	# 		my $merge = $mergelist->merge_of_index( $merge_ctr );
 
-	# say '';
+	# 		foreach my $use_depth_first ( 0, 1 ) {
+	# 			my $build_aln_and_prof_result = Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
+	# 				$exes,
+	# 				$merge->starting_nodes( $use_depth_first ),
+	# 				$starting_clusters_dir,
+	# 				$aln_out_dir,
+	# 				$prof_out_dir,
+	# 				$working_dir,
+	# 			);
+	# 			say join( ', ', map { $ARG . ':' . $build_aln_and_prof_result->{ $ARG } } keys( %$build_aln_and_prof_result ) );
+	# 		}
+	# 	}
+	# }
 
-	# Perform all initial (ie starting cluster vs other starting clusters) scans
-	foreach my $scan ( @{$mergelist->initial_scans()  } ) {
-		my $result = Cath::Gemma::CompassScanner->compass_scan_to_file(
-			$exes,
-			$prof_out_dir,
-			[ $scan->[ 0 ] ],
-			$scan->[ 1 ],
-			$scan_dir,
-			$working_dir,
-		);
-		say join( ', ', map { $ARG . ':' . $result->{ $ARG } } keys( %$result ) );
-		# say join( "\n", map { join( "\t", @$ARG ); } @{ $result->{ data } } );
-	}
+	# # say '';
 
-	# say '';
+	# # Perform all initial (ie starting cluster vs other starting clusters) scans
+	# foreach my $scan ( @{$mergelist->initial_scans()  } ) {
+	# 	my $result = Cath::Gemma::CompassScanner->compass_scan_to_file(
+	# 		$exes,
+	# 		$prof_out_dir,
+	# 		[ $scan->[ 0 ] ],
+	# 		$scan->[ 1 ],
+	# 		$scan_dir,
+	# 		$working_dir,
+	# 	);
+	# 	say join( ', ', map { $ARG . ':' . $result->{ $ARG } } keys( %$result ) );
+	# 	# say join( "\n", map { join( "\t", @$ARG ); } @{ $result->{ data } } );
+	# }
 
-	# Perform all merge node scans
-	foreach my $use_depth_first ( 0, 1 ) {
-		foreach my $scan ( @{ $mergelist->later_scans( $use_depth_first ) } ) {
-			my $result = Cath::Gemma::CompassScanner->compass_scan_to_file(
-				$exes,
-				$prof_out_dir,
-				[ $scan->[ 0 ] ],
-				$scan->[ 1 ],
-				$scan_dir,
-				$working_dir,
-			);
-			say join( ', ', map { $ARG . ':' . $result->{ $ARG } } keys( %$result ) );
-			# say join( "\n", map { join( "\t", @$ARG ); } @{ $result->{ data } } );
-		}
-	}
+	# # say '';
+
+	# # Perform all merge node scans
+	# foreach my $use_depth_first ( 0, 1 ) {
+	# 	foreach my $scan ( @{ $mergelist->later_scans( $use_depth_first ) } ) {
+	# 		my $result = Cath::Gemma::CompassScanner->compass_scan_to_file(
+	# 			$exes,
+	# 			$prof_out_dir,
+	# 			[ $scan->[ 0 ] ],
+	# 			$scan->[ 1 ],
+	# 			$scan_dir,
+	# 			$working_dir,
+	# 		);
+	# 		say join( ', ', map { $ARG . ':' . $result->{ $ARG } } keys( %$result ) );
+	# 		# say join( "\n", map { join( "\t", @$ARG ); } @{ $result->{ data } } );
+	# 	}
+	# }
 }
+
+$work_batcher->submit_to_compute_cluster( path( 'fred' )->realpath() );
+

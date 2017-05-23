@@ -17,13 +17,14 @@ Login and test:
 ~~~
 ssh legion.rc.ucl.ac.uk
 cd ~/Scratch/Cath-Gemma
+module load perl
 script/prepare_research_data.pl
 
 # ...or...
 
 ssh bchuckle.cs.ucl.ac.uk
 cd ~/Cath-Gemma
-export PATH=/share/apps/perl/bin/perl:$PATH
+export PATH=/share/apps/perl/bin:$PATH
 script/prepare_research_data.pl
 ~~~
 

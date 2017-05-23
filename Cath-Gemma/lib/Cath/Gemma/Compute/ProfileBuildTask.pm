@@ -4,11 +4,13 @@ use strict;
 use warnings;
 
 # Core
+use Digest::MD5        qw/ md5_hex                          /;
 use English            qw/ -no_match_vars                   /;
 use v5.10;
 
 # Moo
 use Moo;
+use MooX::HandlesVia;
 use strictures 1;
 
 # Non-core (local)
@@ -18,15 +20,17 @@ use Types::Path::Tiny  qw/ Path                             /;
 use Types::Standard    qw/ ArrayRef Int Object Optional Str /;
 
 # Cath
+use Cath::Gemma::CompassProfileBuilder;
 use Cath::Gemma::Types qw/ CathGemmaExecutables             /;
+use Cath::Gemma::Util;
 
 =head2 starting_cluster_lists
 
 =cut
 
 has starting_cluster_lists => (
-	is  => 'ro',
-	isa => ArrayRef[ArrayRef[Str]],
+	is          => 'ro',
+	isa         => ArrayRef[ArrayRef[Str]],
 	handles_via => 'Array',
 	handles     => {
 		is_empty                   => 'is_empty',
@@ -62,6 +66,16 @@ has prof_dest_dir => (
 	isa => Path,
 );
 
+=head2 id
+
+=cut
+
+sub id {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return md5_hex( map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() } );
+}
+
 =head2 get_sub_task
 
 =cut
@@ -88,7 +102,6 @@ sub total_num_starting_clusters {
 
 	return sum0( map { scalar( @$ARG ); } @{ $self->starting_cluster_lists() } );
 }
-
 
 =head2 execute_task
 

@@ -9,22 +9,31 @@ Cath::Gemma::Compute::WorkBatcher - TODOCUMENT
 use strict;
 use warnings;
 
-# # Core
-# use English            qw/ -no_match_vars               /;
-# use v5.10;
+# Core
+use Carp               qw/ confess             /;
+use Digest::MD5        qw/ md5_hex             /;
+use English            qw/ -no_match_vars      /;
+use List::Util         qw/ min                 /;
+use Storable           qw/ freeze              /;
+use v5.10;
 
-# # Moo
-# use Moo;
-# use strictures 1;
+# Moo
+use Moo;
+use strictures 1;
 
-# # Non-core (local)
-# use Path::Tiny;
-# use Type::Params       qw/ compile                      /;
-# use Types::Standard    qw/ Bool Num Object Optional Str /;
+# Non-core (local)
+use Capture::Tiny      qw/ capture             /;
+use Path::Tiny;
+use Type::Params       qw/ compile             /;
+use Types::Path::Tiny  qw/ Path                /;
+use Types::Standard    qw/ ArrayRef Int Object /;
 
-# # Cath
-# use Cath::Gemma::Types qw/ CathGemmaMerge               /;
-# use Cath::Gemma::Util;
+# Cath
+use Cath::Gemma::Compute::WorkBatch;
+use Cath::Gemma::Types qw/
+	CathGemmaComputeProfileBuildTask
+	CathGemmaComputeWorkBatch
+	/;
 
 =head2 profile_batch_size
 
@@ -33,7 +42,7 @@ use warnings;
 has profile_batch_size => (
 	is      => 'rwp',
 	isa     => Int,
-	default => 10,
+	default => 20,
 );
 
 =head2 profile_batches
@@ -42,8 +51,20 @@ has profile_batch_size => (
 
 has profile_batches => (
 	is  => 'rwp',
-	isa => ArrayRef[WorkBatch],
+	isa => ArrayRef[CathGemmaComputeWorkBatch],
+	default => sub { [] },
 );
+
+=head2 id
+
+=cut
+
+sub id {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return md5_hex( map { $ARG->id() } @{ $self->profile_batches() } );
+}
 
 =head2 add_profile_build_work
 
@@ -53,16 +74,169 @@ sub add_profile_build_work {
 	state $check = compile( Object, CathGemmaComputeProfileBuildTask );
 	my ( $self, $profile_task ) = $check->( @ARG );
 
+	my $num_new_profiles = $profile_task->num_profiles();
+
 	my $profile_batches = $self->profile_batches();
 
-	my $num_profiles_in_new_task = $profile_task->count();
+	my $num_profiles_in_new_task = $profile_task->num_profiles();
 
-	my $num_available_profiles_in_last_batch =
+	my $num_free_profiles_in_last_batch =
 		( scalar( @$profile_batches ) > 0 )
-		? $num_profiles_in_new_task - $profile_batches->[ scalar( @$profile_batches ) ]->num_profiles()
+		? $self->profile_batch_size() - $profile_batches->[ -1 ]->num_profiles()
 		: 0;
 
-	# $num_profiles_in_new_task;
+	if ( scalar( @$profile_batches ) > 0 ) {
+		my @bob = map { $ARG->num_profiles(); } @$profile_batches;
+	}
+
+	my $num_in_fillup_batch = min( $num_free_profiles_in_last_batch, $num_new_profiles );
+
+	if ( $num_in_fillup_batch > 0 ) {
+		my $prev_last_profile_batch = pop @$profile_batches;
+		push
+			@{ $profile_batches },
+			Cath::Gemma::Compute::WorkBatch->new(
+				profile_batches => [
+					@{ $prev_last_profile_batch->profile_batches() },
+					Cath::Gemma::Compute::ProfileBuildTask->new(
+						starting_cluster_lists => [ @{ $profile_task->starting_cluster_lists() }[ 0 .. ( $num_in_fillup_batch - 1 ) ] ],
+						starting_cluster_dir   => $profile_task->starting_cluster_dir(),
+						aln_dest_dir           => $profile_task->aln_dest_dir(),
+						prof_dest_dir          => $profile_task->prof_dest_dir(),
+					)
+				]
+			);
+		# push
+
+		# 	@{ $profile_batches->[ -1 ] },
+		# 	@{ $profile_task->starting_cluster_lists() }[ 0 .. ( $num_in_fillup_batch - 1 ) ];
+	}
+
+	my $num_remaining_profiles = $num_new_profiles - $num_in_fillup_batch;
+	my $num_remaining_batches  = (    int( $num_remaining_profiles / $self->profile_batch_size() )
+	                               + ( ( ( $num_remaining_profiles % $self->profile_batch_size() ) > 0 ) ? 1 : 0 ) );
+	for (my $batch_ctr = 0; $batch_ctr < $num_remaining_batches; ++$batch_ctr) {
+		my $batch_begin_index        =      $num_in_fillup_batch + (   $batch_ctr       * $self->profile_batch_size() );
+		my $batch_one_past_end_index = min( $num_in_fillup_batch + ( ( $batch_ctr + 1 ) * $self->profile_batch_size() ), $num_new_profiles );
+		push
+			@{ $profile_batches },
+			Cath::Gemma::Compute::WorkBatch->new(
+				profile_batches => [
+					Cath::Gemma::Compute::ProfileBuildTask->new(
+						starting_cluster_lists => [ @{ $profile_task->starting_cluster_lists() }[ $batch_begin_index .. ( $batch_one_past_end_index - 1 ) ] ],
+						starting_cluster_dir   => $profile_task->starting_cluster_dir(),
+						aln_dest_dir           => $profile_task->aln_dest_dir(),
+						prof_dest_dir          => $profile_task->prof_dest_dir(),
+					)
+				]
+			);
+	}
+}
+
+sub submit_to_compute_cluster {
+	state $check = compile( Object, Path );
+	my ( $self, $job_dir ) = $check->( @ARG );
+
+	if ( ! -d $job_dir ) {
+		$job_dir->mkpath()
+			or confess "Unable to make compute cluster submit directory \"$job_dir\" : $OS_ERROR";
+	}
+
+	my $id = $self->id();
+
+	my @profile_batch_files;
+	foreach my $profile_batch ( @{ $self->profile_batches() } ) {
+		my $work_freeze_file = $job_dir->child( $id . '.' . 'batch_' . $profile_batch->id() . '.freeze' );
+		$work_freeze_file->spew( freeze( $profile_batch ) );
+		push @profile_batch_files, "$work_freeze_file";
+	}
+
+	my $batch_files_file = $job_dir->child( $id . '.' . 'job_batch_files' );
+	$batch_files_file->spew( join( "\n", @profile_batch_files ) . "\n" );
+
+	my $execute_batch_script = path( "$FindBin::Bin" )->child( 'execute_work_batch.pl' ) . "";
+
+	my $num_batches = scalar( @{ $self->profile_batches() } );
+
+	my $stderr_file_stem = $job_dir->child( $id . '.stderr' );
+	my $stdout_file_stem = $job_dir->child( $id . '.stdout' );
+
+
+	my $submit_script = $job_dir->child( $id . '.' . 'job_script.bash' );
+	$submit_script->spew( <<"EOF" );
+#!/bin/bash
+
+# Inform scheduler that this is an array job
+# # \$ -o $stderr_file_stem
+# # \$ -e $stdout_file_stem
+
+echo In the script
+
+echo Using shell \$SHELL
+
+echo About to module avail perl
+
+module avail perl
+
+echo Just did module avail perl
+
+( module avail perl 2>&1 grep perl ) && module load perl
+
+which perl
+
+BATCH_FILES_FILE=$batch_files_file
+echo BATCH_FILES_FILE : \$BATCH_FILES_FILE
+echo SGE_TASK_ID      : \$SGE_TASK_ID
+
+BATCH_FILE=\$(awk "NR==\$SGE_TASK_ID" \$BATCH_FILES_FILE)
+echo BATCH_FILE       : \$BATCH_FILE
+
+$execute_batch_script \$BATCH_FILE
+
+EOF
+
+	$submit_script->chmod( 'a+x' )
+		or confess "Unable to chmod submit script \"$submit_script\" to be executable : $OS_ERROR";
+
+	my $submit_host = ( defined( $ENV{SGE_CLUSTER_NAME} ) && $ENV{SGE_CLUSTER_NAME} =~ /leg/i )
+	                  ? 'legion.rc.ucl.ac.uk'
+	                  : 'bchuckle.cs.ucl.ac.uk';
+
+	my @qsub_command = (
+		'ssh', $submit_host,
+		'qsub',
+		'-l', 'vf=1G,h_vmem=1G,h_rt=00:30:00',
+		# '-l', 'vf=1G,tmem=1G,h_vmem=1G,h_rt=00:30:00',
+		'-N', 'CathGemma'.$id,
+		'-e', "$stderr_file_stem",
+		'-o', "$stdout_file_stem",
+		'-S', '/bin/bash',
+		'-t', '1-'.$num_batches,
+		"$submit_script",
+	);
+
+	warn join( ' ', @qsub_command ) . "\n";
+
+	my ( $qsub_stdout, $qsub_stderr, $qsub_exit ) = capture {
+		system( @qsub_command );
+	};
+
+	use Data::Dumper;
+	confess Dumper( [ \@qsub_command, $qsub_stdout, $qsub_stderr, $qsub_exit ] );
+
+
+	# warn "$job_dir";
+
+	# # $job_dir;
+
+	# # my $submit_script        = $job_dir->child();
+	# # my $work_batch_file_list = $job_dir->child();
+
+	# my $script = Path::Tiny->tempfile( DIR => $tmp_dir, TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => alignment_profile_suffix(), CLEANUP => 1 );
+	# my $tmp_dummy_aln_file = Path::Tiny->tempfile( DIR => $tmp_dir, TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => alignment_profile_suffix(), CLEANUP => 1 );
+	# my 
+	# $job_dir->child( 'job.' );
+
 }
 
 1;

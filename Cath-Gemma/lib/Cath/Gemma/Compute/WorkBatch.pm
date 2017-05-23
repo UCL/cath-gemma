@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::WorkBatch;
 
 =head1 NAME
 
-Cath::Gemma::Compute::WorkBatcher - TODOCUMENT
+Cath::Gemma::Compute::WorkBatch - TODOCUMENT
 
 =cut
 
@@ -10,12 +10,15 @@ use strict;
 use warnings;
 
 # Core
+use Digest::MD5        qw/ md5_hex                  /;
 use English            qw/ -no_match_vars           /;
 use List::Util         qw/ sum0                     /;
+use Storable           qw/ thaw                     /;
 use v5.10;
 
 # Moo
 use Moo;
+use MooX::HandlesVia;
 use strictures 1;
 
 # Non-core (local)
@@ -25,6 +28,7 @@ use Types::Path::Tiny  qw/ Path                     /;
 use Types::Standard    qw/ ArrayRef Object Optional /;
 
 # Cath
+use Cath::Gemma::Compute::ProfileBuildTask;
 use Cath::Gemma::Types qw/
 	CathGemmaComputeProfileBuildTask
 	CathGemmaExecutables
@@ -45,6 +49,17 @@ has profile_batches => (
 	}
 );
 
+=head2 id
+
+=cut
+
+sub id {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return md5_hex( map { $ARG->id() } @{ $self->profile_batches() } );
+}
+
 =head2 num_profiles
 
 =cut
@@ -52,7 +67,7 @@ has profile_batches => (
 sub num_profiles {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
-	return sum0( map { $ARG->count(); } @{ $self->profile_batches() } );
+	return sum0( map { $ARG->num_profiles(); } @{ $self->profile_batches() } );
 }
 
 =head2 total_num_starting_clusters_in_profiles
@@ -75,7 +90,7 @@ sub execute_task {
 
 	my @results;
 	foreach my $profile_batch ( @{ $self->profile_batches() } ) {
-		push @results, { $profile_batch->execute_task() };
+		push @results, $profile_batch->execute_task( $exes, $tmp_dir );
 	}
 	return \@results;
 }
@@ -106,10 +121,10 @@ sub read_from_file {
 =cut
 
 sub execute_from_file {
-	state $check = compile( Invocant, Path );
-	my ( $proto, $file ) = $check->( @ARG );
+	state $check = compile( Invocant, Path, CathGemmaExecutables, Optional[Path] );
+	my ( $proto, $file, $exes, $tmp_dir ) = $check->( @ARG );
 
-	return $proto->read_from_file( $file )->execute_task();
+	return $proto->read_from_file( $file )->execute_task( $exes, $tmp_dir );
 }
 
 1;

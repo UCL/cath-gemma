@@ -17,9 +17,10 @@ use Type::Library
 use Type::Utils qw/ class_type coerce declare from /;
 use Types::Standard -types;
 
-class_type CathGemmaComputeProfileBuildTask, { class => "Cath::Gemma::ComputeProfileBuildTask" };
-class_type CathGemmaExecutables,             { class => "Cath::Gemma::Executables"             };
-class_type CathGemmaMerge,                   { class => "Cath::Gemma::Merge"                   };
+class_type CathGemmaComputeProfileBuildTask, { class => "Cath::Gemma::Compute::ProfileBuildTask" };
+class_type CathGemmaComputeWorkBatch,        { class => "Cath::Gemma::Compute::WorkBatch"        };
+class_type CathGemmaExecutables,             { class => "Cath::Gemma::Executables"               };
+class_type CathGemmaMerge,                   { class => "Cath::Gemma::Merge"                     };
 
 # coerce CathGemmaMerge,
 # 	from Str, via { 

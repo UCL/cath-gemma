@@ -20,6 +20,7 @@ use Types::Path::Tiny   qw/ Path                            /;
 use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
 
 # Cath
+use Cath::Gemma::Aligner;
 use Cath::Gemma::Types  qw/ CathGemmaExecutables            /;
 use Cath::Gemma::Util;
 
