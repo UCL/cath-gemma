@@ -19,7 +19,7 @@ use Time::Seconds;
 use v5.10;
 
 our @EXPORT = qw/
-	alignment_filename_of_starting_clusters
+	alignment_filebasename_of_starting_clusters
 	alignment_profile_suffix
 	cluster_name_spaceship
 	compass_profile_suffix
@@ -28,7 +28,7 @@ our @EXPORT = qw/
 	mergee_is_starting_cluster
 	raw_sequences_filename_of_starting_clusters
 	run_and_time_filemaking_cmd
-	scan_filename_of_cluster_ids
+	scan_filebasename_of_cluster_ids
 	time_fn
 	/;
 
@@ -66,8 +66,17 @@ sub run_and_time_filemaking_cmd {
 		sub {
 
 			if ( defined( $out_file ) ) {
-				if ( -s $out_file ) {
+				# warn "Checking for output file \"$out_file\"";
+				if ( -s "$out_file" ) {
+					# warn "Returning...";
 					return { out_filename => $out_file };
+				}
+
+				# use Cwd;
+				# warn 'Not returning...(cwd is ' . getcwd() . ')';
+
+				if ( "$out_file" eq 'temporary_example_data/output/1.10.150.120/n0de_9e4d22ff9a44d049cefaa240aae7e01d.l1st_9557d2b7962844e9ccaf3c8f2e8d6ab7.scan' ) {
+					sleep 1000;
 				}
 
 				if ( -e $out_file ) {
@@ -105,6 +114,7 @@ sub run_and_time_filemaking_cmd {
 		}
 	);
 
+	$outer_result->{ result }->{ duration } //= 0;
 	$outer_result->{ result }->{ wrapper_duration } = ( $outer_result->{ duration } - $outer_result->{ result }->{ duration } );
 
 	return $outer_result->{ result };
@@ -202,11 +212,11 @@ sub alignment_profile_suffix {
 	return '.faa';
 }
 
-=head2 alignment_filename_of_starting_clusters
+=head2 alignment_filebasename_of_starting_clusters
 
 =cut
 
-sub alignment_filename_of_starting_clusters {
+sub alignment_filebasename_of_starting_clusters {
 	my $starting_clusters = shift;
 	return id_of_starting_clusters( $starting_clusters ) . alignment_profile_suffix();
 }
@@ -220,11 +230,11 @@ sub raw_sequences_filename_of_starting_clusters {
 	return id_of_starting_clusters( $starting_clusters ) . '.fa';
 }
 
-=head2 scan_filename_of_cluster_ids
+=head2 scan_filebasename_of_cluster_ids
 
 =cut
 
-sub scan_filename_of_cluster_ids {
+sub scan_filebasename_of_cluster_ids {
 	state $check = compile( ArrayRef[Str], ArrayRef[Str] );
 	my ( $query_cluster_ids, $match_cluster_ids ) = $check->( @ARG );
 

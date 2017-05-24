@@ -1,4 +1,4 @@
-package Cath::Gemma::CompassProfileBuilder;
+package Cath::Gemma::Tool::CompassProfileBuilder;
 
 use strict;
 use warnings;
@@ -20,8 +20,11 @@ use Types::Path::Tiny   qw/ Path                            /;
 use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
 
 # Cath
-use Cath::Gemma::Aligner;
-use Cath::Gemma::Types  qw/ CathGemmaExecutables            /;
+use Cath::Gemma::Tool::Aligner;
+use Cath::Gemma::Types  qw/
+	CathGemmaDiskExecutables
+	CathGemmaDiskProfileDirSet
+/;
 use Cath::Gemma::Util;
 
 =head2 build_compass_profile
@@ -29,7 +32,7 @@ use Cath::Gemma::Util;
 =cut
 
 sub build_compass_profile {
-	state $check = compile( ClassName, CathGemmaExecutables, Path, Path, Optional[Path] );
+	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, Path, Optional[Path] );
 	my ( $class, $exes, $aln_file, $dest_dir, $tmp_dir ) = $check->( @ARG );
 	$tmp_dir //= $dest_dir;
 
@@ -90,30 +93,29 @@ sub build_compass_profile {
 =cut
 
 sub build_alignment_and_compass_profile {
-	state $check = compile( ClassName, CathGemmaExecutables, ArrayRef[Str], Path, Path, Path, Optional[Path] );
-	my ( $class, $exes, $starting_clusters, $starting_cluster_dir, $aln_dest_dir, $prof_dest_dir, $tmp_dir ) = $check->( @ARG );
-	$tmp_dir //= $aln_dest_dir;
+	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, Optional[Path] );
+	my ( $class, $exes, $starting_clusters, $profile_dir_set, $tmp_dir ) = $check->( @ARG );
+	$tmp_dir //= $profile_dir_set->aln_dir();
 
-	my $aln_file = $aln_dest_dir->child( alignment_filename_of_starting_clusters( $starting_clusters ) );
+	my $aln_file = $profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters );
 	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $tmp_dir );
 	my $alignment_result = 
 		( -s $aln_file )
 		? {
 			out_filename => $aln_file
 		}
-		: Cath::Gemma::Aligner->make_alignment_file(
+		: Cath::Gemma::Tool::Aligner->make_alignment_file(
 			$exes,
 			$starting_clusters,
-			$starting_cluster_dir,
-			$temp_aln_dir,
+			$profile_dir_set,
 			$tmp_dir
 		);
 
 	my $built_aln_file   = $alignment_result->{ out_filename  };
-	my $profile_result   = Cath::Gemma::CompassProfileBuilder->build_compass_profile(
+	my $profile_result   = Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile(
 		$exes,
 		$built_aln_file,
-		$prof_dest_dir,
+		$profile_dir_set->prof_dir,
 		$tmp_dir,
 	);
 

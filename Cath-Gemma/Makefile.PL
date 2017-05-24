@@ -16,6 +16,7 @@ WriteMakefile(
         'Capture::Tiny'       => 0,
         'File::AtomicWrite'   => 0,
         'JSON::MaybeXS'       => 0,
+        'List::MoreUtils'     => 0,
         'Log::Log4perl::Tiny' => 0,
         'Moo'                 => 0,
         'MooX::HandlesVia'    => 0,

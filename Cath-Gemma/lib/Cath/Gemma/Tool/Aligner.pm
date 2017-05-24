@@ -1,4 +1,4 @@
-package Cath::Gemma::Aligner;
+package Cath::Gemma::Tool::Aligner;
 
 use strict;
 use warnings;
@@ -22,7 +22,10 @@ use Types::Path::Tiny   qw/ Path                            /;
 use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
 
 # Cath
-use Cath::Gemma::Types  qw/ CathGemmaExecutables            /;
+use Cath::Gemma::Types  qw/
+	CathGemmaDiskExecutables
+	CathGemmaDiskProfileDirSet
+/;
 use Cath::Gemma::Util;
 
 =head2 build_raw_seqs_file
@@ -76,13 +79,13 @@ sub build_raw_seqs_file {
 =cut
 
 sub make_alignment_file {
-	state $check = compile( ClassName, CathGemmaExecutables, ArrayRef[Str], Path, Path, Optional[Path] );
-	my ( $class, $exes, $starting_clusters, $starting_cluster_dir, $dest_dir, $tmp_dir ) = $check->( @ARG );
-	$tmp_dir //= $dest_dir;
+	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, Optional[Path] );
+	my ( $class, $exes, $starting_clusters, $profile_dir_set, $tmp_dir ) = $check->( @ARG );
+	$tmp_dir //= $profile_dir_set->aln_dir();
 
 	return run_and_time_filemaking_cmd(
 		'mafft alignment',
-		$dest_dir->child( alignment_filename_of_starting_clusters( $starting_clusters ) ),
+		$profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters ),
 		sub {
 			my $aln_atomic_file = shift;
 			my $tmp_aln_file    = path( $aln_atomic_file->filename );
@@ -96,7 +99,7 @@ sub make_alignment_file {
 			                                               );
 			my $build_raw_seqs_result = __PACKAGE__->build_raw_seqs_file(
 				$starting_clusters,
-				$starting_cluster_dir,
+				$profile_dir_set->starting_cluster_dir(),
 				$raw_seqs_filename,
 			);
 			my $num_sequences = $build_raw_seqs_result->{ num_sequences };

@@ -9,8 +9,8 @@ Cath::Gemma::Types - TODOCUMENT
 use Type::Library
 	-base,
 	-declare => qw(
-		CathGemmaExecutables
-		CathGemmaMerge
+		CathGemmaDiskExecutables
+		CathGemmaTreeMerge
 		ComputeProfileBuildTask
 	);
 
@@ -19,13 +19,16 @@ use Types::Standard -types;
 
 class_type CathGemmaComputeProfileBuildTask, { class => "Cath::Gemma::Compute::ProfileBuildTask" };
 class_type CathGemmaComputeWorkBatch,        { class => "Cath::Gemma::Compute::WorkBatch"        };
-class_type CathGemmaExecutables,             { class => "Cath::Gemma::Executables"               };
-class_type CathGemmaMerge,                   { class => "Cath::Gemma::Merge"                     };
+class_type CathGemmaDiskExecutables,         { class => "Cath::Gemma::Disk::Executables"         };
+class_type CathGemmaDiskGemmaDirSet,         { class => "Cath::Gemma::Disk::GemmaDirSet"         };
+class_type CathGemmaDiskProfileDirSet,       { class => "Cath::Gemma::Disk::ProfileDirSet"       };
+class_type CathGemmaScanScanData,            { class => "Cath::Gemma::Scan::ScanData"            };
+class_type CathGemmaTreeMerge,               { class => "Cath::Gemma::Tree::Merge"               };
 
-# coerce CathGemmaMerge,
+# coerce CathGemmaTreeMerge,
 # 	from Str, via { 
-# 		require Cath::Gemma::Merge; 
-# 		Cath::Gemma::Merge->new_from_string( $_ ) 
+# 		require Cath::Gemma::Tree::Merge; 
+# 		Cath::Gemma::Tree::Merge->new_from_string( $_ ) 
 # 	};
 
 1;

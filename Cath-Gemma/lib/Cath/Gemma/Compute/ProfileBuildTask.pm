@@ -20,8 +20,12 @@ use Types::Path::Tiny  qw/ Path                             /;
 use Types::Standard    qw/ ArrayRef Int Object Optional Str /;
 
 # Cath
-use Cath::Gemma::CompassProfileBuilder;
-use Cath::Gemma::Types qw/ CathGemmaExecutables             /;
+use Cath::Gemma::Disk::ProfileDirSet;
+use Cath::Gemma::Tool::CompassProfileBuilder;
+use Cath::Gemma::Types qw/
+	CathGemmaDiskExecutables
+	CathGemmaDiskProfileDirSet
+/;
 use Cath::Gemma::Util;
 
 =head2 starting_cluster_lists
@@ -39,31 +43,14 @@ has starting_cluster_lists => (
 	}
 );
 
-=head2 starting_cluster_dir
+=head2 dir_set
 
 =cut
 
-has starting_cluster_dir => (
-	is  => 'ro',
-	isa => Path,
-);
-
-=head2 aln_dest_dir
-
-=cut
-
-has aln_dest_dir => (
-	is  => 'ro',
-	isa => Path,
-);
-
-=head2 prof_dest_dir
-
-=cut
-
-has prof_dest_dir => (
-	is  => 'ro',
-	isa => Path,
+has dir_set => (
+	is      => 'ro',
+	isa     => CathGemmaDiskProfileDirSet,
+	default => sub { CathGemmaDiskProfileDirSet->new(); },
 );
 
 =head2 id
@@ -108,7 +95,7 @@ sub total_num_starting_clusters {
 =cut
 
 sub execute_task {
-	state $check = compile( Object, CathGemmaExecutables, Optional[Path] );
+	state $check = compile( Object, CathGemmaDiskExecutables, Optional[Path] );
 	my ( $self, $exes, $tmp_dir ) = $check->( @ARG );
 
 	my $starting_cluster_lists = $self->starting_cluster_lists();
@@ -121,7 +108,7 @@ sub execute_task {
 		map
 		{
 			my $starting_clusters = $ARG;
-			Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
+			Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
 				$exes,
 				$starting_clusters,
 				$starting_cluster_dir,

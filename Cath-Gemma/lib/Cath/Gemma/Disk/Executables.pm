@@ -1,4 +1,4 @@
-package Cath::Gemma::Executables;
+package Cath::Gemma::Disk::Executables;
 
 use strict;
 use warnings;

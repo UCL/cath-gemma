@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 # Core
-# use feature qw/ say            /;
 use Carp                qw/ confess        /;
 use English             qw/ -no_match_vars /;
 use FindBin;
@@ -24,7 +23,7 @@ use lib "$FindBin::Bin/../lib";
 
 # Cath
 use Cath::Gemma::Compute::WorkBatch;
-use Cath::Gemma::Executables;
+use Cath::Gemma::Disk::Executables;
 
 WARN "Starting $PROGRAM_NAME on ".hostname;
 
@@ -37,8 +36,8 @@ if ( ! -s $batch_file ) {
 
 INFO "Processing batch file $batch_file";
 
-my $exes = Cath::Gemma::Executables->new()
-	or confess "Unable to create new Cath::Gemma::Executables";;
+my $exes = Cath::Gemma::Disk::Executables->new()
+	or confess "Unable to create new Cath::Gemma::Disk::Executables";;
 
 my $result = Cath::Gemma::Compute::WorkBatch->execute_from_file(
 	$batch_file,

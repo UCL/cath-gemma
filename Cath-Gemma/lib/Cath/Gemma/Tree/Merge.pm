@@ -1,4 +1,4 @@
-package Cath::Gemma::Merge;
+package Cath::Gemma::Tree::Merge;
 
 use strict;
 use warnings;
@@ -17,7 +17,7 @@ use Type::Params       qw/ compile                      /;
 use Types::Standard    qw/ Bool Num Object Optional Str /;
 
 # Cath
-use Cath::Gemma::Types qw/ CathGemmaMerge               /;
+use Cath::Gemma::Types qw/ CathGemmaTreeMerge           /;
 use Cath::Gemma::Util;
 
 =head2 mergee_a
@@ -26,7 +26,7 @@ use Cath::Gemma::Util;
 
 has mergee_a => (
 	is => 'ro',
-	isa => Str|CathGemmaMerge,
+	isa => Str|CathGemmaTreeMerge,
 );
 
 =head2 mergee_b
@@ -35,7 +35,7 @@ has mergee_a => (
 
 has mergee_b => (
 	is => 'ro',
-	isa => Str|CathGemmaMerge,
+	isa => Str|CathGemmaTreeMerge,
 );
 
 =head2 score

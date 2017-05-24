@@ -31,7 +31,7 @@ use Types::Standard    qw/ ArrayRef Object Optional /;
 use Cath::Gemma::Compute::ProfileBuildTask;
 use Cath::Gemma::Types qw/
 	CathGemmaComputeProfileBuildTask
-	CathGemmaExecutables
+	CathGemmaDiskExecutables
 	/;
 
 =head2 profile_batches
@@ -85,7 +85,7 @@ sub total_num_starting_clusters_in_profiles {
 =cut
 
 sub execute_task {
-	state $check = compile( Object, CathGemmaExecutables, Optional[Path] );
+	state $check = compile( Object, CathGemmaDiskExecutables, Optional[Path] );
 	my ( $self, $exes, $tmp_dir ) = $check->( @ARG );
 
 	my @results;
@@ -121,7 +121,7 @@ sub read_from_file {
 =cut
 
 sub execute_from_file {
-	state $check = compile( Invocant, Path, CathGemmaExecutables, Optional[Path] );
+	state $check = compile( Invocant, Path, CathGemmaDiskExecutables, Optional[Path] );
 	my ( $proto, $file, $exes, $tmp_dir ) = $check->( @ARG );
 
 	return $proto->read_from_file( $file )->execute_task( $exes, $tmp_dir );

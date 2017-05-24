@@ -17,15 +17,15 @@ use Path::Tiny;
 use lib "$FindBin::Bin/../lib";
 
 # Cath
-use Cath::Gemma::Aligner;
-use Cath::Gemma::CompassProfileBuilder;
-use Cath::Gemma::CompassScanner;
+use Cath::Gemma::Tool::Aligner;
+use Cath::Gemma::Tool::CompassProfileBuilder;
+use Cath::Gemma::Tool::CompassScanner;
 use Cath::Gemma::Compute::ProfileBuildTask;
 use Cath::Gemma::Compute::WorkBatcher;
-use Cath::Gemma::Executables;
-use Cath::Gemma::MergeList;
+use Cath::Gemma::Disk::Executables;
+use Cath::Gemma::Tree::MergeList;
 
-my $exes = Cath::Gemma::Executables->new();
+my $exes = Cath::Gemma::Disk::Executables->new();
 
 # my $trace_files_dir = path( '/cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/clustering_output' );
 
@@ -67,7 +67,7 @@ foreach my $project ( @projects ) {
 		}
 	}
 
-	my $mergelist = Cath::Gemma::MergeList->read_from_tracefile( $tracefile_path );
+	my $mergelist = Cath::Gemma::Tree::MergeList->read_from_tracefile( $tracefile_path );
 
 	# Print the starting clusters
 	warn join( " ", @{ $mergelist->starting_clusters() } );
@@ -82,7 +82,7 @@ foreach my $project ( @projects ) {
 
 	# # Build alignments and profiles for all starting_clusters
 	# foreach my $starting_cluster ( @{ $mergelist->starting_clusters() } ) {
-	# 	my $build_aln_and_prof_result = Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
+	# 	my $build_aln_and_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
 	# 		$exes,
 	# 		[ $starting_cluster ],
 	# 		$starting_clusters_dir,
@@ -99,7 +99,7 @@ foreach my $project ( @projects ) {
 	# 		my $merge = $mergelist->merge_of_index( $merge_ctr );
 
 	# 		foreach my $use_depth_first ( 0, 1 ) {
-	# 			my $build_aln_and_prof_result = Cath::Gemma::CompassProfileBuilder->build_alignment_and_compass_profile(
+	# 			my $build_aln_and_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
 	# 				$exes,
 	# 				$merge->starting_nodes( $use_depth_first ),
 	# 				$starting_clusters_dir,
@@ -116,7 +116,7 @@ foreach my $project ( @projects ) {
 
 	# # Perform all initial (ie starting cluster vs other starting clusters) scans
 	# foreach my $scan ( @{$mergelist->initial_scans()  } ) {
-	# 	my $result = Cath::Gemma::CompassScanner->compass_scan_to_file(
+	# 	my $result = Cath::Gemma::Tool::CompassScanner->compass_scan_to_file(
 	# 		$exes,
 	# 		$prof_out_dir,
 	# 		[ $scan->[ 0 ] ],
@@ -133,7 +133,7 @@ foreach my $project ( @projects ) {
 	# # Perform all merge node scans
 	# foreach my $use_depth_first ( 0, 1 ) {
 	# 	foreach my $scan ( @{ $mergelist->later_scans( $use_depth_first ) } ) {
-	# 		my $result = Cath::Gemma::CompassScanner->compass_scan_to_file(
+	# 		my $result = Cath::Gemma::Tool::CompassScanner->compass_scan_to_file(
 	# 			$exes,
 	# 			$prof_out_dir,
 	# 			[ $scan->[ 0 ] ],

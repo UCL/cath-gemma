@@ -120,14 +120,13 @@ sub add_profile_build_work {
 		my $batch_one_past_end_index = min( $num_in_fillup_batch + ( ( $batch_ctr + 1 ) * $self->profile_batch_size() ), $num_new_profiles );
 		push
 			@{ $profile_batches },
+
 			Cath::Gemma::Compute::WorkBatch->new(
 				profile_batches => [
 					Cath::Gemma::Compute::ProfileBuildTask->new(
 						starting_cluster_lists => [ @{ $profile_task->starting_cluster_lists() }[ $batch_begin_index .. ( $batch_one_past_end_index - 1 ) ] ],
-						starting_cluster_dir   => $profile_task->starting_cluster_dir(),
-						aln_dest_dir           => $profile_task->aln_dest_dir(),
-						prof_dest_dir          => $profile_task->prof_dest_dir(),
-					)
+						dir_set                => $profile_task->dir_set(),
+					),
 				]
 			);
 	}
