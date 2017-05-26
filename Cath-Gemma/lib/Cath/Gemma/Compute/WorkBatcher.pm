@@ -163,7 +163,7 @@ sub submit_to_compute_cluster {
 
 	my $submit_script = $job_dir->child( $id . '.' . 'job_script.bash' );
 	$submit_script->spew( <<"EOF" );
-#!/bin/bash
+#!/bin/bash -l
 
 # Inform scheduler that this is an array job
 # # \$ -o $stderr_file_stem
@@ -173,13 +173,8 @@ echo In the script
 
 echo Using shell \$SHELL
 
-echo About to module avail perl
-
-module avail perl
-
-echo Just did module avail perl
-
-( module avail perl 2>&1 grep perl ) && module load perl
+( ( module avail perl ) |& grep -q perl ) && module load gcc-libs perl
+( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl
 
 which perl
 
@@ -209,7 +204,7 @@ EOF
 		'-N', 'CathGemma'.$id,
 		'-e', "$stderr_file_stem",
 		'-o', "$stdout_file_stem",
-		'-S', '/bin/bash',
+		# '-S', '/bin/bash',
 		'-t', '1-'.$num_batches,
 		"$submit_script",
 	);
