@@ -53,9 +53,6 @@ sub _compass_scan_impl {
 		system( "$compass_scan_exe", @compass_scan_command );
 	};
 
-	use Data::Dumper;
-	warn join( ' ', "$compass_scan_exe", @compass_scan_command ) . ' ';
-
 	if ( $compass_exit != 0 ) {
 		confess
 			"COMPASS scan command "

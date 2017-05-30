@@ -59,7 +59,7 @@ sub build_compass_profile {
 				'-p2', $tmp_dummy_prof_file,
 			);
 
-			INFO 'About to build    COMPASS profile for ' . $output_stem;
+			INFO 'About to build    COMPASS profile for starting cluster ' . $output_stem;
 
 			my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
 				system( "$compass_build_exe", @compass_params );
@@ -72,7 +72,7 @@ sub build_compass_profile {
 					." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
 			}
 
-			INFO 'Finished building COMPASS profile for ' . $output_stem;
+			INFO 'Finished building COMPASS profile for starting cluster ' . $output_stem;
 
 			my ( $sed_stdout, $sed_stderr, $sed_exit ) = capture {
 				system( 'sed', '-i', '2s/^.*/#/', "$tmp_prof_file" );

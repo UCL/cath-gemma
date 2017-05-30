@@ -68,20 +68,23 @@ sub build_tree {
 		$scans_data->add_scan_data( Cath::Gemma::Scan::ScanData->read_from_file( $filename ) );
 	}
 
-	my $merges = Cath::Gemma::Tree::MergeList->new();
+	my @nodenames_and_merges;
 
 	while ( $scans_data->count() > 2 ) {
 		my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score() };
-		$merges->push( Cath::Gemma::Tree::Merge->new(
-			mergee_a => $id1,
-			mergee_b => $id2,
-			score    => $score,
-		) );
 
 		my $merged_starting_clusters = $scans_data->merge( $id1, $id2 );
 		my $other_ids                = $scans_data->sorted_ids();
+		my $merged_node_id           = $scans_data->add_node_of_starting_clusters( $merged_starting_clusters );
 
-		$scans_data->add_node_of_starting_clusters( $merged_starting_clusters );
+		push @nodenames_and_merges, [
+			$merged_node_id,
+			Cath::Gemma::Tree::Merge->new(
+				mergee_a => $id1,
+				mergee_b => $id2,
+				score    => $score,
+			),
+		];
 
 		my $new_scan_data = Cath::Gemma::Tool::CompassScanner->build_and_scan_merge_cluster_against_others(
 			$exes,
@@ -91,28 +94,20 @@ sub build_tree {
 			$working_dir,
 		)->{ result };
 
-		# use Data::Dumper;
-		# warn Dumper( [ $scans_data, $merged_starting_clusters, $other_ids ] ) . ' ';
-
 		$scans_data->add_scan_data( $new_scan_data );
-
-		# my $new_scan_filename = $gemma_dir_set->scan_filename_of_cluster_ids( [ $id1, $id2 ], [ $scans_data->ids() ] );
-		# $scans_data->add_scan_data( Cath::Gemma::Scan::ScanData->read_from_file( $new_scan_filename ) );
-
-		# use Data::Dumper;
-		# warn Dumper( $merges ) . ' ';
 	}
 
 	my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score() };
-	$merges->push( Cath::Gemma::Tree::Merge->new(
-		mergee_a => $id1,
-		mergee_b => $id2,
-		score    => $score,
-	) );
+	push @nodenames_and_merges, [
+		'final_merge',
+		Cath::Gemma::Tree::Merge->new(
+			mergee_a => $id1,
+			mergee_b => $id2,
+			score    => $score,
+		),
+	];
 
-	# use Data::Dumper;
-	# warn Dumper( $merges ) . ' ';
-	return $merges;
+	return Cath::Gemma::Tree::MergeList->build_from_nodenames_and_merges( \@nodenames_and_merges );
 }
 
 1;

@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                                     /;
-use English            qw/ -no_match_vars                              /;
-use List::Util         qw/ max sum                                     /;
+use Carp               qw/ confess                                           /;
+use English            qw/ -no_match_vars                                    /;
+use List::Util         qw/ max sum                                           /;
 use v5.10;
 
 # Moo
@@ -16,13 +16,13 @@ use strictures 1;
 
 # Non-core (local)
 use Path::Tiny;
-use Type::Params       qw/ compile Invocant                            /;
-use Types::Path::Tiny  qw/ Path                                        /;
-use Types::Standard    qw/ ArrayRef Bool ClassName Object Optional Str /;
+use Type::Params       qw/ compile Invocant                                  /;
+use Types::Path::Tiny  qw/ Path                                              /;
+use Types::Standard    qw/ ArrayRef Bool ClassName Object Optional Str Tuple /;
 
 # Cath
 use Cath::Gemma::Tree::Merge;
-use Cath::Gemma::Types qw/ CathGemmaTreeMerge                          /;
+use Cath::Gemma::Types qw/ CathGemmaTreeMerge                                /;
 use Cath::Gemma::Util;
 
 =head2 merges
@@ -53,26 +53,29 @@ sub to_tracefile_string {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	use Data::Dumper;
-	confess Dumper( $self ) . ' ';
-
 	my $max_id = max( @{ $self->starting_clusters() } );
 	++$max_id;
 
+	my %file_nodename_of_node_id;
+
 	my $result_str = '';
 	foreach my $merge ( @{ $self->merges() } ) {
+		my $mergee_a_id = $file_nodename_of_node_id{ $merge->mergee_a_id() } // $merge->mergee_a();
+		my $mergee_b_id = $file_nodename_of_node_id{ $merge->mergee_b_id() } // $merge->mergee_b();
 		$result_str .= (
-			  $merge->mergee_a()
+			  $mergee_a_id
 			. "\t"
-			. $merge->mergee_b()
+			. $mergee_b_id
 			. "\t"
 			. $max_id
 			. "\t"
 			. $merge->score()
 			. "\n"
 		);
+		$file_nodename_of_node_id{ $merge->id() } = $max_id;
 		++$max_id;
 	}
+
 	return $result_str;
 }
 
@@ -90,6 +93,37 @@ sub write_to_tracefile {
 	$output_file->spew( $self->to_tracefile_string() );
 }
 
+=head2 build_from_nodenames_and_merges
+
+=cut
+
+sub build_from_nodenames_and_merges {
+	state $check = compile( ClassName, ArrayRef[ Tuple[ Str,CathGemmaTreeMerge ] ] );
+	my ( $class, $nodenames_and_merges ) = $check->( @ARG );
+
+	my %merge_ref_of_mergee_number;
+	my @merges;
+	foreach my $nodename_and_merge ( @$nodenames_and_merges ) {
+		my ( $nodename, $merge ) = @$nodename_and_merge;
+
+		my $fix_mergee = sub {
+			my $mergee = shift;
+			return $merge_ref_of_mergee_number{ $mergee } // $mergee;
+		};
+
+		push @merges, Cath::Gemma::Tree::Merge->new(
+			mergee_a => $fix_mergee->( $merge->mergee_a() ),
+			mergee_b => $fix_mergee->( $merge->mergee_b() ),
+			score    => $merge->score,
+		);
+		$merge_ref_of_mergee_number{ $nodename } = $merges[ -1 ];
+	};
+
+	return __PACKAGE__->new(
+		merges => \@merges,
+	);
+}
+
 =head2 read_from_tracefile
 
 =cut
@@ -98,11 +132,10 @@ sub read_from_tracefile {
 	state $check = compile( ClassName, Path );
 	my ( $class, $input_path ) = $check->( @ARG );
 
-	my $data       = $input_path->slurp();
+	my $data = $input_path->slurp();
 
 	my @merges;
 	my @lines = split( /\n/, $data );
-	my %merge_ref_of_mergee_number;
 	foreach my $line ( @lines ) {
 		my @line_parts = split( /\s+/, $line );
 		if ( scalar( @line_parts ) != 4 ) {
@@ -110,23 +143,17 @@ sub read_from_tracefile {
 		}
 		my ( $mergee_a, $mergee_b, $merged, $score ) = @line_parts;
 
-		foreach my $mergee ( \$mergee_a, \$mergee_b ) {
-			if ( defined( $merge_ref_of_mergee_number{ $$mergee } ) ) {
-				$$mergee = $merge_ref_of_mergee_number{ $$mergee };
-			}
-		}
-
-		push @merges, Cath::Gemma::Tree::Merge->new(
-			mergee_a => $mergee_a,
-			mergee_b => $mergee_b,
-			score    => $score,
-		);
-		$merge_ref_of_mergee_number{ $merged } = $merges[ -1 ];
+		push @merges, [
+			$merged,
+			Cath::Gemma::Tree::Merge->new(
+				mergee_a => $mergee_a,
+				mergee_b => $mergee_b,
+				score    => $score,
+			),
+		];
 	};
 
-	return __PACKAGE__->new(
-		merges => \@merges,
-	);
+	return __PACKAGE__->build_from_nodenames_and_merges( \@merges );
 }
 
 =head2 starting_clusters
