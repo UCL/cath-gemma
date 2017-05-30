@@ -11,7 +11,6 @@ use warnings;
 
 # Core
 use Carp               qw/ confess             /;
-use Digest::MD5        qw/ md5_hex             /;
 use English            qw/ -no_match_vars      /;
 use List::Util         qw/ min                 /;
 use Storable           qw/ freeze              /;
@@ -19,14 +18,16 @@ use v5.10;
 
 # Moo
 use Moo;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Capture::Tiny      qw/ capture             /;
+use Capture::Tiny       qw/ capture             /;
+use Log::Log4perl::Tiny qw/ :easy               /;
 use Path::Tiny;
-use Type::Params       qw/ compile             /;
-use Types::Path::Tiny  qw/ Path                /;
-use Types::Standard    qw/ ArrayRef Int Object /;
+use Type::Params        qw/ compile             /;
+use Types::Path::Tiny   qw/ Path                /;
+use Types::Standard     qw/ ArrayRef Int Object /;
 
 # Cath
 use Cath::Gemma::Compute::WorkBatch;
@@ -42,7 +43,7 @@ use Cath::Gemma::Types qw/
 has profile_batch_size => (
 	is      => 'rwp',
 	isa     => Int,
-	default => 20,
+	default => 150,
 );
 
 =head2 profile_batches
@@ -63,7 +64,7 @@ sub id {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	return md5_hex( map { $ARG->id() } @{ $self->profile_batches() } );
+	return generic_id_of_clusters( [ map { $ARG->id() } @{ $self->profile_batches() } ] );
 }
 
 =head2 add_profile_build_work
@@ -100,16 +101,10 @@ sub add_profile_build_work {
 					@{ $prev_last_profile_batch->profile_batches() },
 					Cath::Gemma::Compute::ProfileBuildTask->new(
 						starting_cluster_lists => [ @{ $profile_task->starting_cluster_lists() }[ 0 .. ( $num_in_fillup_batch - 1 ) ] ],
-						starting_cluster_dir   => $profile_task->starting_cluster_dir(),
-						aln_dest_dir           => $profile_task->aln_dest_dir(),
-						prof_dest_dir          => $profile_task->prof_dest_dir(),
+						dir_set                => $profile_task->dir_set(),
 					)
 				]
 			);
-		# push
-
-		# 	@{ $profile_batches->[ -1 ] },
-		# 	@{ $profile_task->starting_cluster_lists() }[ 0 .. ( $num_in_fillup_batch - 1 ) ];
 	}
 
 	my $num_remaining_profiles = $num_new_profiles - $num_in_fillup_batch;
@@ -131,6 +126,10 @@ sub add_profile_build_work {
 			);
 	}
 }
+
+=head2 submit_to_compute_cluster
+
+=cut
 
 sub submit_to_compute_cluster {
 	state $check = compile( Object, Path );
@@ -157,26 +156,16 @@ sub submit_to_compute_cluster {
 
 	my $num_batches = scalar( @{ $self->profile_batches() } );
 
-	my $stderr_file_stem = $job_dir->child( $id . '.stderr' );
-	my $stdout_file_stem = $job_dir->child( $id . '.stdout' );
-
-
 	my $submit_script = $job_dir->child( $id . '.' . 'job_script.bash' );
 	$submit_script->spew( <<"EOF" );
 #!/bin/bash -l
 
-# Inform scheduler that this is an array job
-# # \$ -o $stderr_file_stem
-# # \$ -e $stdout_file_stem
-
-echo In the script
-
-echo Using shell \$SHELL
-
-( ( module avail perl ) |& grep -q perl ) && module load gcc-libs perl
+# Where a compute-cluster provides a more recent perl through the module system,
+# this will pick it up
 ( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl
 
-which perl
+# Ensure that the shared Perl is used on the CS cluster (with login node "bchuckle")
+export PATH=/share/apps/perl/bin:\$PATH
 
 BATCH_FILES_FILE=$batch_files_file
 echo BATCH_FILES_FILE : \$BATCH_FILES_FILE
@@ -196,28 +185,39 @@ EOF
 	                  ? 'legion.rc.ucl.ac.uk'
 	                  : 'bchuckle.cs.ucl.ac.uk';
 
+	my $stderr_file_stem   = $job_dir->child( $id );
+	my $stdout_file_stem   = $job_dir->child( $id );
+	my $stderr_file_suffix = '.stderr';
+	my $stdout_file_suffix = '.stdout';
+
 	my @qsub_command = (
 		'ssh', $submit_host,
 		'qsub',
 		'-l', 'vf=1G,h_vmem=1G,h_rt=00:30:00',
-		# '-l', 'vf=1G,tmem=1G,h_vmem=1G,h_rt=00:30:00',
 		'-N', 'CathGemma'.$id,
-		'-e', "$stderr_file_stem",
-		'-o', "$stdout_file_stem",
-		# '-S', '/bin/bash',
+		'-e', $stderr_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stderr_file_suffix,
+		'-o', $stdout_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stdout_file_suffix,
+		'-S', '/bin/bash',
 		'-t', '1-'.$num_batches,
 		"$submit_script",
 	);
-
-	warn join( ' ', @qsub_command ) . "\n";
 
 	my ( $qsub_stdout, $qsub_stderr, $qsub_exit ) = capture {
 		system( @qsub_command );
 	};
 
-	use Data::Dumper;
-	confess Dumper( [ \@qsub_command, $qsub_stdout, $qsub_stderr, $qsub_exit ] );
 
+	my $job_id;
+	if ( $qsub_stdout =~ /Your job-array (\d+)\.\d+\-\d+:\d+.* has been submitted/ ) {
+		$job_id = $1;
+	}
+	else {
+		use Data::Dumper;
+		confess Dumper( [ \@qsub_command, $qsub_stdout, $qsub_stderr, $qsub_exit ] );
+	}
+	INFO "Submitted compute-cluster job $job_id with $num_batches batches";
+
+	return $job_id;
 
 	# warn "$job_dir";
 

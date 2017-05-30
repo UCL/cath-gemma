@@ -55,9 +55,9 @@ foreach my $project ( @project_list ) {
 		$gemma_dir_set,
 		path( '/dev/shm' ), # $working_dir
 	);
-	say ( 'DAVE  (' . $dave_tree ->geometric_mean_score() . ', ' . $dave_tree_file . ") :\n" . $dave_tree ->to_tracefile_string() );
-	say ( 'DFX   (' . $dfx_tree  ->geometric_mean_score() . ', ' . $dfx_tree_file  . ") :\n" . $dfx_tree  ->to_tracefile_string() );
-	say ( 'CLEAN (' . $clean_tree->geometric_mean_score() . ', ' .                   ") :\n" . $clean_tree->to_tracefile_string() );
+	say ( 'DAVE  (' . $dave_tree ->geometric_mean_score() . ', ' . $dave_tree_file . ") :\n" . $dave_tree ->to_newick_string() ."\n". $dave_tree ->to_tracefile_string() );
+	say ( 'DFX   (' . $dfx_tree  ->geometric_mean_score() . ', ' . $dfx_tree_file  . ") :\n" . $dfx_tree  ->to_newick_string() ."\n". $dfx_tree  ->to_tracefile_string() );
+	say ( 'CLEAN (' . $clean_tree->geometric_mean_score() . ', ' .                   ") :\n" . $clean_tree->to_newick_string() ."\n". $clean_tree->to_tracefile_string() );
 	say '';
 	# }
 }

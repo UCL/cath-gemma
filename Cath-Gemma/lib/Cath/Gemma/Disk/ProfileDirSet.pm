@@ -4,11 +4,13 @@ use strict;
 use warnings;
 
 # Core
+use Carp              qw/ confess             /;
 use English           qw/ -no_match_vars      /;
 use v5.10;
 
 # Moo
 use Moo;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
@@ -29,7 +31,7 @@ has starting_cluster_dir => (
 );
 
 
-=head2 aln_dest_dir
+=head2 aln_dir
 
 =cut
 
@@ -39,7 +41,7 @@ has aln_dir => (
 );
 
 
-=head2 prof_dest_dir
+=head2 prof_dir
 
 =cut
 
@@ -49,6 +51,23 @@ has prof_dir => (
 );
 
 
+=head2 is_set
+
+=cut
+
+sub is_set {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return (
+		defined( $self->starting_cluster_dir() )
+		&&
+		defined( $self->aln_dir()              )
+		&&
+		defined( $self->prof_dir()             )
+	);
+}
+
 =head2 alignment_filename_of_starting_clusters
 
 =cut
@@ -56,6 +75,10 @@ has prof_dir => (
 sub alignment_filename_of_starting_clusters {
 	state $check = compile( Object, ArrayRef[Str] );
 	my ( $self, $starting_clusters ) = $check->( @ARG );
+
+	if ( ! $self->is_set() ) {
+		confess "Unable to use ProfileDirSet that isn't set";
+	}
 
 	return $self->aln_dir()->child( alignment_filebasename_of_starting_clusters( $starting_clusters ) );
 }

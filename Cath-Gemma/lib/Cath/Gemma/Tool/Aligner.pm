@@ -113,7 +113,7 @@ sub make_alignment_file {
 
 				my $mafft_exe = $exes->mafft();
 
-				INFO 'About to mafft-align    ' . $num_sequences . ' sequences for starting cluster ' . $id_of_clusters;
+				INFO 'About to mafft-align    ' . $num_sequences . ' sequences for cluster ' . $id_of_clusters;
 
 				my ( $mafft_stdout, $mafft_stderr, $mafft_exit ) = capture {
 					system( "$mafft_exe", @$mafft_params );
@@ -126,12 +126,12 @@ sub make_alignment_file {
 						." failed with:\nstderr:\n$mafft_stderr\nstdout:\n$mafft_stdout";
 				}
 
-				INFO 'Finished mafft-aligning ' . $num_sequences . ' sequences for starting cluster ' . $id_of_clusters;
+				INFO 'Finished mafft-aligning ' . $num_sequences . ' sequences for cluster ' . $id_of_clusters;
 
 				$tmp_aln_file->spew( $mafft_stdout );
 			}
 			else {
-				INFO 'Copying single sequence for starting cluster ' . $id_of_clusters;
+				INFO 'Copying single sequence for cluster ' . $id_of_clusters;
 				copy( $raw_seqs_filename, $tmp_aln_file )
 					or confess "Unable to copy single sequence file $raw_seqs_filename to $tmp_aln_file : $OS_ERROR";
 			}

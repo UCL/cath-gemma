@@ -40,6 +40,9 @@ sub _compass_scan_impl {
 
 	my $compass_scan_exe = $exes->compass_scan();
 
+	my $query_clusters_id = generic_id_of_clusters( $query_cluster_ids );
+	my $match_clusters_id = generic_id_of_clusters( $match_cluster_ids );
+
 	my @compass_scan_command = (
 		'-g', '0.50001',
 		'-i', $query_prof_lib,
@@ -47,7 +50,7 @@ sub _compass_scan_impl {
 		'-n', '0',
 	);
 
-	INFO "About to scan COMPASS profile";
+	INFO "About to scan COMPASS profile $query_clusters_id / $match_clusters_id";
 
 	my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
 		system( "$compass_scan_exe", @compass_scan_command );
@@ -60,7 +63,7 @@ sub _compass_scan_impl {
 			." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
 	}
 
-	INFO 'Finished scanning COMPASS profile';
+	INFO "Finished scanning COMPASS profile $query_clusters_id / $match_clusters_id";
 
 	my @compass_output_lines = split( /\n/, $compass_stdout );
 	return Cath::Gemma::Scan::ScanData->parse_from_raw_compass_scan_output_lines( \@compass_output_lines );

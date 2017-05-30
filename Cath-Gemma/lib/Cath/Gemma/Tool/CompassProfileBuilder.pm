@@ -13,6 +13,7 @@ use v5.10;
 
 # Non-core (local)
 use Capture::Tiny       qw/ capture                         /;
+use Cwd::Guard          qw/ cwd_guard                       /;
 use Log::Log4perl::Tiny qw/ :easy                           /;
 use Path::Tiny;
 use Type::Params        qw/ compile                         /;
@@ -51,15 +52,22 @@ sub build_compass_profile {
 
 			my $compass_build_exe = $exes->compass_build();
 
+			my $tmp_dummy_aln_absfile  = $tmp_dummy_aln_file->absolute();
+			my $tmp_prof_absfile       = $tmp_prof_file->absolute();
+			my $tmp_dummy_prof_absfile = $tmp_dummy_prof_file->absolute();
+
+			# The filename gets written into the profile so nice to make it local...
+			my $changed_directory_guard = cwd_guard( ''. $aln_file->parent->absolute() );
+
 			my @compass_params = (
 				'-g',  '0.50001',
-				'-i',  $aln_file,
-				'-j',  $tmp_dummy_aln_file,
-				'-p1', $tmp_prof_file,
-				'-p2', $tmp_dummy_prof_file,
+				'-i',  $aln_file->basename(),
+				'-j',  $tmp_dummy_aln_absfile,
+				'-p1', $tmp_prof_absfile,
+				'-p2', $tmp_dummy_prof_absfile,
 			);
 
-			INFO 'About to build    COMPASS profile for starting cluster ' . $output_stem;
+			INFO 'About to build    COMPASS profile for cluster ' . $output_stem;
 
 			my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
 				system( "$compass_build_exe", @compass_params );
@@ -72,10 +80,10 @@ sub build_compass_profile {
 					." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
 			}
 
-			INFO 'Finished building COMPASS profile for starting cluster ' . $output_stem;
+			INFO 'Finished building COMPASS profile for cluster ' . $output_stem;
 
 			my ( $sed_stdout, $sed_stderr, $sed_exit ) = capture {
-				system( 'sed', '-i', '2s/^.*/#/', "$tmp_prof_file" );
+				system( 'sed', '-i', '-e', '3i#', '-e', '2d', "$tmp_prof_absfile" );
 			};
 
 			if ( $sed_exit || $sed_stdout || $sed_stderr ) {

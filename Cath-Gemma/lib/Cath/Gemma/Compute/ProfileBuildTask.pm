@@ -4,13 +4,13 @@ use strict;
 use warnings;
 
 # Core
-use Digest::MD5        qw/ md5_hex                          /;
 use English            qw/ -no_match_vars                   /;
 use v5.10;
 
 # Moo
 use Moo;
 use MooX::HandlesVia;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
@@ -51,6 +51,11 @@ has dir_set => (
 	is      => 'ro',
 	isa     => CathGemmaDiskProfileDirSet,
 	default => sub { CathGemmaDiskProfileDirSet->new(); },
+	handles => {
+		starting_cluster_dir => 'starting_cluster_dir',
+		aln_dir              => 'aln_dir',
+		prof_dir             => 'prof_dir',
+	},
 );
 
 =head2 id
@@ -60,7 +65,7 @@ has dir_set => (
 sub id {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
-	return md5_hex( map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() } );
+	return generic_id_of_clusters( [ map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() } ] );
 }
 
 =head2 get_sub_task
@@ -74,8 +79,8 @@ sub get_sub_task {
 	return __PACKAGE__->new(
 		starting_cluster_lists => 0,
 		starting_cluster_dir   => $self->starting_cluster_dir(),
-		aln_dest_dir           => $self->aln_dest_dir(),
-		prof_dest_dir          => $self->prof_dest_dir(),
+		aln_dir                => $self->aln_dir(),
+		prof_dir               => $self->prof_dir(),
 	);
 }
 
@@ -98,11 +103,11 @@ sub execute_task {
 	state $check = compile( Object, CathGemmaDiskExecutables, Optional[Path] );
 	my ( $self, $exes, $tmp_dir ) = $check->( @ARG );
 
-	my $starting_cluster_lists = $self->starting_cluster_lists();
-	my $starting_cluster_dir   = $self->starting_cluster_dir();
-	my $aln_dest_dir           = $self->aln_dest_dir();
-	my $prof_dest_dir          = $self->prof_dest_dir();
-	$tmp_dir                 //= $aln_dest_dir;
+	$tmp_dir //= $self->aln_dir();
+
+	if ( ! $self->dir_set()->is_set() ) {
+		warn "Cannot execute_task on a ProfileBuildTask that doesn't have all its directories configured";
+	}
 
 	return [
 		map
@@ -111,13 +116,11 @@ sub execute_task {
 			Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
 				$exes,
 				$starting_clusters,
-				$starting_cluster_dir,
-				$aln_dest_dir,
-				$prof_dest_dir,
+				$self->dir_set(),
 				$tmp_dir
 			);
 		}
-		@$starting_cluster_lists
+		@{ $self->starting_cluster_lists() },
 	];
 }
 

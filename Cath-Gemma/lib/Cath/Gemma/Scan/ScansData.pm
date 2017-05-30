@@ -12,6 +12,7 @@ use v5.10;
 # Moo
 use Moo;
 use MooX::HandlesVia;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
@@ -22,6 +23,10 @@ use Types::Standard    qw/ ArrayRef ClassName HashRef Num Object slurpy Str /;
 # Cath
 use Cath::Gemma::Types qw/ CathGemmaScanScanData                            /;
 use Cath::Gemma::Util;
+
+=head2 starting_clusters_of_ids
+
+=cut
 
 has starting_clusters_of_ids => (
 	is          => 'rwp',
@@ -34,7 +39,7 @@ has starting_clusters_of_ids => (
 	default     => sub { {}; },
 );
 
-=head2 scans_data
+=head2 scans
 
 =cut
 
@@ -102,7 +107,7 @@ sub add_scan_data {
 }
 
 
-=head2 add_scan_data
+=head2 ids_and_score_of_lowest_score
 
 =cut
 
@@ -118,7 +123,12 @@ sub ids_and_score_of_lowest_score {
 		# warn "$id $min_score";
 		if ( scalar( @result ) == 0 || $min_score < $result[ -1 ] ) {
 			my $other_id = first_value { $scan_of_id->{ $ARG } == $min_score } sort( keys( %$scan_of_id ) );
-			@result = ( minstr( $id ), maxstr( $other_id ), $min_score );
+			my $spaceship_result = cluster_name_spaceship( $id, $other_id );
+			@result = (
+				( $spaceship_result < 0 ) ? $id       : $other_id,
+				( $spaceship_result < 0 ) ? $other_id : $id,
+				$min_score
+			);
 			# warn '[' . join( ' ', @result ) . ']'
 		}
 	}
@@ -152,7 +162,7 @@ sub remove {
 	return $starting_clusters;
 }
 
-=head2 merge
+=head2 add_node_of_starting_clusters
 
 =cut
 

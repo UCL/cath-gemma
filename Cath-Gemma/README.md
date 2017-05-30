@@ -29,6 +29,10 @@ script/prepare_research_data.pl
 ~~~
 
 ~~~
+rsync -av `whoami`@login05.external.legion.ucl.ac.uk:/home/ucbctnl/Scratch/Cath-Gemma/fred/                          ~/cath-gemma/legion_fred/
+rsync -av `whoami`@login05.external.legion.ucl.ac.uk:/home/ucbctnl/Scratch/Cath-Gemma/temporary_example_data/output/ ~/cath-gemma/legion_output/
+rsync -av `whoami`@bchuckle.cs.ucl.ac.uk:/home/ucbctnl/Cath-Gemma/fred/                                              ~/cath-gemma/bchuckle_fred/
+rsync -av `whoami`@bchuckle.cs.ucl.ac.uk:/home/ucbctnl/Cath-Gemma/temporary_example_data/output/                     ~/cath-gemma/bchuckle_output/
 ~~~
 
 ## Development

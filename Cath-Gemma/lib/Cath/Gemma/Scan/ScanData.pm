@@ -12,6 +12,7 @@ use v5.10;
 # Moo
 use Moo;
 use MooX::HandlesVia;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
@@ -56,7 +57,7 @@ sub read_from_file {
 	);
 }
 
-=head2 read_from_file
+=head2 write_to_file
 
 =cut
 
@@ -92,8 +93,8 @@ sub parse_from_raw_compass_scan_output_lines {
 			$prev_id1 = $1;
 			$prev_id2 = $2;
 			foreach my $prev_id ( \$prev_id1, \$prev_id2 ) {
-				if ( $$prev_id =~ /\/(\w+)$alignment_profile_suffix$/ ) {
-					$$prev_id = $1;
+				if ( $$prev_id =~ /^(.*\/)?(\w+)$alignment_profile_suffix$/ ) {
+					$$prev_id = $2;
 				}
 				else {
 					confess "Argh $$prev_id";

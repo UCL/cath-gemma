@@ -13,6 +13,7 @@ use v5.10;
 # Moo
 use Moo;
 use MooX::HandlesVia;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)

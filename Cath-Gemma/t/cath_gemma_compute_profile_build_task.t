@@ -20,7 +20,7 @@ my $data_dir        = path( 'data' );
 
 use_ok( 'Cath::Gemma::Compute::ProfileBuildTask' );
 
-my $starting_clusters_dir = $data_dir->child( 'starting_clusters' );
+my $starting_cluster_dir = $data_dir->child( 'starting_clusters' );
 
 =head2 make_example_profile_build_task
 
@@ -29,9 +29,11 @@ my $starting_clusters_dir = $data_dir->child( 'starting_clusters' );
 sub make_example_profile_build_task {
 	return Cath::Gemma::Compute::ProfileBuildTask->new(
 		starting_cluster_lists => [ [ qw/ a b / ] ],
-		starting_clusters_dir  => $starting_clusters_dir,
-		alignment_output_dir   => path( 'dummy_aln_dir'  ),
-		profile_dir            => path( 'dummy_prof_dir' ),
+		dir_set                => Cath::Gemma::Disk::ProfileDirSet->new(
+			starting_cluster_dir => $starting_cluster_dir,
+			aln_dir              => path( 'dummy_aln_dir'  ),
+			prof_dir             => path( 'dummy_prof_dir' ),
+		),
 	);
 }
 
@@ -39,9 +41,11 @@ subtest 'constructs_without_error' => sub {
 	plan tests => 1;
 	new_ok( 'Cath::Gemma::Compute::ProfileBuildTask' => [
 		starting_cluster_lists => [ [ qw/ a b / ] ],
-		starting_clusters_dir  => $starting_clusters_dir,
-		alignment_output_dir   => path( 'dummy_aln_dir'  ),
-		profile_dir            => path( 'dummy_prof_dir' ),
+		dir_set                => Cath::Gemma::Disk::ProfileDirSet->new(
+			starting_cluster_dir => $starting_cluster_dir,
+			aln_dir              => path( 'dummy_aln_dir'  ),
+			prof_dir             => path( 'dummy_prof_dir' ),
+		),
 	] );
 };
 

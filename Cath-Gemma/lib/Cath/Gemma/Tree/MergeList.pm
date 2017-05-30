@@ -12,6 +12,7 @@ use v5.10;
 # Moo
 use Moo;
 use MooX::HandlesVia;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
@@ -91,6 +92,22 @@ sub write_to_tracefile {
 	my ( $self, $output_file ) = $check->( @ARG );
 
 	$output_file->spew( $self->to_tracefile_string() );
+}
+
+sub to_newick_string {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my %newick_str_of_node_id;
+	my $last_id;
+	foreach my $merge ( @{ $self->merges() } ) {
+		my $mergee_a_id = $newick_str_of_node_id{ $merge->mergee_a_id() } // ( $merge->mergee_a() . '' );
+		my $mergee_b_id = $newick_str_of_node_id{ $merge->mergee_b_id() } // ( $merge->mergee_b() . '' );
+		$last_id = $merge->id();
+		$newick_str_of_node_id{ $last_id } = "($mergee_a_id,$mergee_b_id)";
+	}
+
+	return $newick_str_of_node_id{ $last_id };
 }
 
 =head2 build_from_nodenames_and_merges

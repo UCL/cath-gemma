@@ -10,7 +10,6 @@ use strict;
 use warnings;
 
 # Core
-use Digest::MD5        qw/ md5_hex                  /;
 use English            qw/ -no_match_vars           /;
 use List::Util         qw/ sum0                     /;
 use Storable           qw/ thaw                     /;
@@ -19,6 +18,7 @@ use v5.10;
 # Moo
 use Moo;
 use MooX::HandlesVia;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
@@ -57,7 +57,7 @@ sub id {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	return md5_hex( map { $ARG->id() } @{ $self->profile_batches() } );
+	return generic_id_of_clusters( [ map { $ARG->id() } @{ $self->profile_batches() } ] );
 }
 
 =head2 num_profiles

@@ -54,12 +54,12 @@ foreach my $project ( @projects ) {
 		confess "No such tracefile \"$tracefile_path\" for project $project";
 	}
 
-	my $starting_clusters_dir = $starting_clusters_base_dir->child( $project );
+	my $starting_clusters_dir = $starting_clusters_base_dir->child( $project )->realpath();
 	if ( ! -d $starting_clusters_dir ) {
 		confess "No such stating clusters dir \"$starting_clusters_dir\" for project $project"
 	}
-	my $aln_out_dir  = $aln_out_basedir ->child( $project );
-	my $prof_out_dir = $prof_out_basedir->child( $project );
+	my $aln_out_dir  = $aln_out_basedir ->child( $project )->realpath();
+	my $prof_out_dir = $prof_out_basedir->child( $project )->realpath();
 	foreach my $outdir ( $aln_out_dir, $prof_out_dir ) {
 		if ( ! -d $outdir ) {
 			$outdir->mkpath()
@@ -70,14 +70,16 @@ foreach my $project ( @projects ) {
 	my $mergelist = Cath::Gemma::Tree::MergeList->read_from_tracefile( $tracefile_path );
 
 	# Print the starting clusters
-	warn join( " ", @{ $mergelist->starting_clusters() } );
+	# warn join( " ", @{ $mergelist->starting_clusters() } );
 	# say join( " ", @{ $mergelist->starting_clusters() } );
 
 	$work_batcher->add_profile_build_work( Cath::Gemma::Compute::ProfileBuildTask->new(
 		starting_cluster_lists => [ map { [ $ARG ] } @{ $mergelist->starting_clusters() } ],
-		starting_cluster_dir   => $starting_clusters_dir,
-		aln_dest_dir           => $aln_out_dir,
-		prof_dest_dir          => $prof_out_dir,
+		dir_set => Cath::Gemma::Disk::ProfileDirSet->new(
+			starting_cluster_dir => $starting_clusters_dir,
+			aln_dir              => $aln_out_dir,
+			prof_dir             => $prof_out_dir,
+		),
 	) );
 
 	# # Build alignments and profiles for all starting_clusters

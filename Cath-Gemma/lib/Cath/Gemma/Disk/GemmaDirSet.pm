@@ -9,6 +9,7 @@ use v5.10;
 
 # Moo
 use Moo;
+use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
@@ -25,8 +26,8 @@ use Cath::Gemma::Util;
 =cut
 
 has profile_dir_set => (
-	is  => 'ro',
-	isa => CathGemmaDiskProfileDirSet,
+	is      => 'ro',
+	isa     => CathGemmaDiskProfileDirSet,
 	default => sub { Cath::Gemma::Disk::ProfileDirSet->new(); },
 	handles => {
 		starting_cluster_dir => 'starting_cluster_dir',
@@ -43,6 +44,21 @@ has scan_dir => (
 	is  => 'ro',
 	isa => Path,
 );
+
+=head2 is_set
+
+=cut
+
+sub is_set {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return (
+		$self->profile_dir_set->is_set()
+		&&
+		$self->scan_dir()
+	);
+}
 
 =head2 scan_filename_of_cluster_ids
 

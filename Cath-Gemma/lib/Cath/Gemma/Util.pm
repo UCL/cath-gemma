@@ -24,6 +24,7 @@ our @EXPORT = qw/
 	cluster_name_spaceship
 	compass_profile_suffix
 	compass_scan_suffix
+	generic_id_of_clusters
 	id_of_starting_clusters
 	mergee_is_starting_cluster
 	raw_sequences_filename_of_starting_clusters
@@ -156,6 +157,18 @@ sub cluster_name_spaceship {
 		: ( $a cmp $b );
 }
 
+=head2 generic_id_of_clusters
+
+=cut
+
+sub generic_id_of_clusters {
+	state $check = compile( ArrayRef[Str] );
+	my ( $clusters ) = $check->( @ARG );
+
+	return md5_hex( @$clusters );
+}
+
+
 =head2 id_of_starting_clusters
 
 =cut
@@ -168,7 +181,7 @@ sub id_of_starting_clusters {
 	if ( scalar( @$starting_clusters ) == 1 ) {
 		return $starting_clusters->[ 0 ]
 	}
-	return 'n0de_' . md5_hex( @$starting_clusters );
+	return 'n0de_' . generic_id_of_clusters( $starting_clusters );
 }
 
 
@@ -184,7 +197,7 @@ sub id_of_nodelist {
 	if ( scalar( @$clusters ) == 1 ) {
 		return $clusters->[ 0 ]
 	}
-	return 'l1st_' . md5_hex( @$clusters );
+	return 'l1st_' . generic_id_of_clusters( $clusters );
 }
 
 
