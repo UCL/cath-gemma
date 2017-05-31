@@ -49,6 +49,8 @@ To force the install of a module:
 cpanm -L extlib --force Params::Validate
 ~~~
 
+Consider graphing module dependencies, eg with https://metacpan.org/pod/App::PrereqGrapher
+
 #
 
 Update the projects list

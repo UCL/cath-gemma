@@ -83,4 +83,26 @@ sub alignment_filename_of_starting_clusters {
 	return $self->aln_dir()->child( alignment_filebasename_of_starting_clusters( $starting_clusters ) );
 }
 
+=head2 prof_file_of_aln_file
+
+=cut
+
+sub prof_file_of_aln_file {
+	state $check = compile( Object, Path);
+	my ( $self, $aln_file ) = $check->( @ARG );
+	return $self->prof_dir()->child( $aln_file->basename( alignment_profile_suffix() ) . compass_profile_suffix() );
+}
+
+=head2 compass_file_of_starting_clusters
+
+=cut
+
+sub compass_file_of_starting_clusters {
+	state $check = compile( Object, ArrayRef[Str]);
+	my ( $self, $starting_clusters ) = $check->( @ARG );
+	return $self->prof_file_of_aln_file(
+		$self->alignment_filename_of_starting_clusters( $starting_clusters )
+	);
+}
+
 1;

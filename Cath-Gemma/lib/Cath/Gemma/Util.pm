@@ -10,11 +10,11 @@ use strict;
 use warnings;
 
 # Core
-use Carp              qw/ confess                           /;
-use Digest::MD5       qw/ md5_hex                           /;
-use English           qw/ -no_match_vars                    /;
-use Exporter          qw/ import                            /;
-use Time::HiRes       qw/ gettimeofday tv_interval          /;
+use Carp              qw/ confess                                         /;
+use Digest::MD5       qw/ md5_hex                                         /;
+use English           qw/ -no_match_vars                                  /;
+use Exporter          qw/ import                                          /;
+use Time::HiRes       qw/ gettimeofday tv_interval                        /;
 use Time::Seconds;
 use v5.10;
 
@@ -34,9 +34,9 @@ our @EXPORT = qw/
 	/;
 
 # Non-core (local)
-use Type::Params      qw/ compile                           /;
-use Types::Path::Tiny qw/ Path                              /;
-use Types::Standard   qw/ ArrayRef CodeRef Maybe slurpy Str /;
+use Type::Params      qw/ compile                                         /;
+use Types::Path::Tiny qw/ Path                                            /;
+use Types::Standard   qw/ ArrayRef Bool CodeRef Maybe Optional slurpy Str /;
 
 =head2 time_fn
 
@@ -162,8 +162,12 @@ sub cluster_name_spaceship {
 =cut
 
 sub generic_id_of_clusters {
-	state $check = compile( ArrayRef[Str] );
-	my ( $clusters ) = $check->( @ARG );
+	state $check = compile( ArrayRef[Str], Optional[Bool] );
+	my ( $clusters, $leave_singletons ) = $check->( @ARG );
+
+	if ( $leave_singletons && scalar( @$clusters ) == 1 ) {
+		return $clusters->[0];
+	}
 
 	return md5_hex( @$clusters );
 }

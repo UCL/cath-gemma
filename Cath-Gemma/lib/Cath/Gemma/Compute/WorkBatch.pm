@@ -29,10 +29,13 @@ use Types::Standard    qw/ ArrayRef Object Optional /;
 
 # Cath
 use Cath::Gemma::Compute::ProfileBuildTask;
+use Cath::Gemma::Compute::ProfileScanTask;
 use Cath::Gemma::Types qw/
 	CathGemmaComputeProfileBuildTask
+	CathGemmaComputeProfileScanTask
 	CathGemmaDiskExecutables
 	/;
+use Cath::Gemma::Util;
 
 =head2 profile_batches
 
@@ -48,6 +51,22 @@ has profile_batches => (
 		profile_batch_of_index   => 'get',
 	}
 );
+
+=head2 scan_batches
+
+=cut
+
+has scan_batches => (
+	is  => 'ro',
+	isa => ArrayRef[CathGemmaComputeProfileScanTask],
+	handles_via => 'Array',
+	handles     => {
+		scan_batches_is_empty => 'is_empty',
+		num_scan_batches      => 'count',
+		scan_batch_of_index   => 'get',
+	}
+);
+
 
 =head2 id
 

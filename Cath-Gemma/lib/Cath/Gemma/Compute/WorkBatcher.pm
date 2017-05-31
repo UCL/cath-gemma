@@ -35,6 +35,7 @@ use Cath::Gemma::Types qw/
 	CathGemmaComputeProfileBuildTask
 	CathGemmaComputeWorkBatch
 	/;
+use Cath::Gemma::Util;
 
 =head2 profile_batch_size
 

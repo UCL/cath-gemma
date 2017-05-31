@@ -33,7 +33,7 @@ use Cath::Gemma::Util;
 =cut
 
 has starting_cluster_lists => (
-	is          => 'ro',
+	is          => 'rwp',
 	isa         => ArrayRef[ArrayRef[Str]],
 	handles_via => 'Array',
 	handles     => {
@@ -52,9 +52,9 @@ has dir_set => (
 	isa     => CathGemmaDiskProfileDirSet,
 	default => sub { CathGemmaDiskProfileDirSet->new(); },
 	handles => {
-		starting_cluster_dir => 'starting_cluster_dir',
 		aln_dir              => 'aln_dir',
 		prof_dir             => 'prof_dir',
+		starting_cluster_dir => 'starting_cluster_dir',
 	},
 );
 
@@ -68,21 +68,44 @@ sub id {
 	return generic_id_of_clusters( [ map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() } ] );
 }
 
-=head2 get_sub_task
+=head2 remove_already_present
 
 =cut
 
-sub get_sub_task {
-	state $check = compile( Object, Int, Int );
-	my ( $self, $begin, $end ) = $check->( @ARG );
+sub remove_already_present {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
 
-	return __PACKAGE__->new(
-		starting_cluster_lists => 0,
-		starting_cluster_dir   => $self->starting_cluster_dir(),
-		aln_dir                => $self->aln_dir(),
-		prof_dir               => $self->prof_dir(),
-	);
+	my $starting_cluster_lists = $self->starting_cluster_lists();
+
+	my @del_indices = grep {
+		-s ( '' . $self->dir_set()->compass_file_of_starting_clusters      ( $starting_cluster_lists->[ $ARG ] ) )
+		&&
+		-s ( '' . $self->dir_set()->alignment_filename_of_starting_clusters( $starting_cluster_lists->[ $ARG ] ) )
+	} ( 0 .. $#$starting_cluster_lists );
+
+	foreach my $reverse_index ( reverse( @del_indices ) ) {
+		splice( @$starting_cluster_lists, $reverse_index, 1 );
+	}
+
+	return $self;
 }
+
+# =head2 get_sub_task
+
+# =cut
+
+# sub get_sub_task {
+# 	state $check = compile( Object, Int, Int );
+# 	my ( $self, $begin, $end ) = $check->( @ARG );
+
+# 	return __PACKAGE__->new(
+# 		starting_cluster_lists => 0,
+# 		starting_cluster_dir   => $self->starting_cluster_dir(),
+# 		aln_dir                => $self->aln_dir(),
+# 		prof_dir               => $self->prof_dir(),
+# 	);
+# }
 
 =head2 total_num_starting_clusters
 

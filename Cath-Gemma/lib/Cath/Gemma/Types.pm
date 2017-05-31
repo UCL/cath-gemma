@@ -18,6 +18,7 @@ use Type::Utils qw/ class_type coerce declare from /;
 use Types::Standard -types;
 
 class_type CathGemmaComputeProfileBuildTask, { class => "Cath::Gemma::Compute::ProfileBuildTask" };
+class_type CathGemmaComputeProfileScanTask,  { class => "Cath::Gemma::Compute::ProfileScanTask"  };
 class_type CathGemmaComputeWorkBatch,        { class => "Cath::Gemma::Compute::WorkBatch"        };
 class_type CathGemmaDiskExecutables,         { class => "Cath::Gemma::Disk::Executables"         };
 class_type CathGemmaDiskGemmaDirSet,         { class => "Cath::Gemma::Disk::GemmaDirSet"         };

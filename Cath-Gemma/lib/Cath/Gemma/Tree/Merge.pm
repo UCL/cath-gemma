@@ -110,6 +110,9 @@ sub starting_nodes {
 
 	$use_depth_first //= 0;
 
+	# confess ' ';
+	no warnings 'recursion';
+
 	return
 		$use_depth_first
 		? [

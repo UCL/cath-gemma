@@ -94,6 +94,10 @@ sub write_to_tracefile {
 	$output_file->spew( $self->to_tracefile_string() );
 }
 
+=head2 to_newick_string
+
+=cut
+
 sub to_newick_string {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
@@ -109,6 +113,18 @@ sub to_newick_string {
 
 	return $newick_str_of_node_id{ $last_id };
 }
+
+=head2 write_to_newick_file
+
+=cut
+
+sub write_to_newick_file {
+	state $check = compile( Object, Path );
+	my ( $self, $output_file ) = $check->( @ARG );
+
+	$output_file->spew( $self->to_newick_string() . "\n" );
+}
+
 
 =head2 build_from_nodenames_and_merges
 
@@ -193,6 +209,19 @@ sub starting_clusters {
 	return [ sort { cluster_name_spaceship( $a, $b ) } ( keys ( %starting_clusters ) ) ];
 }
 
+
+=head2 starting_cluster_lists
+
+=cut
+
+sub starting_cluster_lists {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+
+	return [ map { [ $ARG ] } @{ $self->starting_clusters() } ];
+}
+
 =head2 inital_scans_of_starting_clusters
 
 =cut
@@ -202,11 +231,11 @@ sub inital_scans_of_starting_clusters {
 	my ( $proto, $starting_clusters ) = $check->( @ARG );
 
 	my @results;
-	for (my $cluster_ctr = 0; $cluster_ctr < ( scalar( @$starting_clusters ) - 1 ); ++$cluster_ctr) {
+	for (my $cluster_ctr = 0; $cluster_ctr < $#$starting_clusters; ++$cluster_ctr) {
 		my $starting_cluster = $starting_clusters->[ $cluster_ctr ];
 		push @results, [
 			$starting_clusters->[ $cluster_ctr ],
-			[ @$starting_clusters[ ( $cluster_ctr + 1 ) .. ( scalar ( @$starting_clusters ) - 1 ) ] ]
+			[ @$starting_clusters[ ( $cluster_ctr + 1 ) .. $#$starting_clusters ] ]
 		];
 	}
 

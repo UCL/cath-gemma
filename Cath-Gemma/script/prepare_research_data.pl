@@ -8,6 +8,8 @@ use Carp    qw/ confess        /;
 use English qw/ -no_match_vars /;
 use feature qw/ say            /;
 use FindBin;
+use Getopt::Long;
+use Pod::Usage;
 
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
@@ -25,6 +27,23 @@ use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Tree::MergeList;
 
+my $help = 0;
+my $submission_dir_name;
+Getopt::Long::Configure( 'bundling' );
+GetOptions(
+	'help'         => \$help,
+	'submit_dir=s' => \$submission_dir_name,
+) or pod2usage( 2 );
+if ( $help ) {
+	pod2usage( 1 );
+}
+
+# my $submission_dir_name = 'fred';
+
+use Data::Dumper;
+confess Dumper( $submission_dir_name );
+
+
 my $exes = Cath::Gemma::Disk::Executables->new();
 
 # my $trace_files_dir = path( '/cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/clustering_output' );
@@ -41,10 +60,6 @@ my $working_dir                = path( '/dev/shm'                               
 
 my $projects_list_data = $projects_list_file->slurp();
 my @projects = split( /\n+/, $projects_list_data );
-
-if ( scalar( @ARGV ) ) {
-	
-}
 
 my $work_batcher = Cath::Gemma::Compute::WorkBatcher->new();
 
@@ -73,14 +88,16 @@ foreach my $project ( @projects ) {
 	# warn join( " ", @{ $mergelist->starting_clusters() } );
 	# say join( " ", @{ $mergelist->starting_clusters() } );
 
-	$work_batcher->add_profile_build_work( Cath::Gemma::Compute::ProfileBuildTask->new(
-		starting_cluster_lists => [ map { [ $ARG ] } @{ $mergelist->starting_clusters() } ],
-		dir_set => Cath::Gemma::Disk::ProfileDirSet->new(
-			starting_cluster_dir => $starting_clusters_dir,
-			aln_dir              => $aln_out_dir,
-			prof_dir             => $prof_out_dir,
-		),
-	) );
+	$work_batcher->add_profile_build_work(
+		Cath::Gemma::Compute::ProfileBuildTask->new(
+			starting_cluster_lists => $mergelist->starting_cluster_lists(),
+			dir_set                => Cath::Gemma::Disk::ProfileDirSet->new(
+				starting_cluster_dir => $starting_clusters_dir,
+				aln_dir              => $aln_out_dir,
+				prof_dir             => $prof_out_dir,
+			),
+		)->remove_already_present()
+	);
 
 	# # Build alignments and profiles for all starting_clusters
 	# foreach my $starting_cluster ( @{ $mergelist->starting_clusters() } ) {
@@ -151,3 +168,31 @@ foreach my $project ( @projects ) {
 
 $work_batcher->submit_to_compute_cluster( path( 'fred' )->realpath() );
 
+__END__
+ 
+=head1 NAME
+ 
+prepare_research_data.pl - TODOCUMENT
+ 
+=head1 SYNOPSIS
+ 
+prepare_research_data.pl [options]
+ 
+ Options:
+   --help            brief help message
+ 
+=head1 OPTIONS
+ 
+=over 8
+ 
+=item B<--help>
+ 
+Print a brief help message and exits.
+ 
+=back
+ 
+=head1 DESCRIPTION
+ 
+B<This program> will TODOCUMENT
+ 
+=cut
