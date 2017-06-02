@@ -128,6 +128,66 @@ sub add_profile_build_work {
 	}
 }
 
+# =head2 add_profile_scan_work
+
+# =cut
+
+# sub add_profile_scan_work {
+# 	state $check = compile( Object, CathGemmaComputeProfileScanTask );
+# 	my ( $self, $profile_task ) = $check->( @ARG );
+
+# 	my $num_new_profiles = $profile_task->num_profiles();
+
+# 	my $profile_batches = $self->profile_batches();
+
+# 	my $num_profiles_in_new_task = $profile_task->num_profiles();
+
+# 	my $num_free_profiles_in_last_batch =
+# 		( scalar( @$profile_batches ) > 0 )
+# 		? $self->profile_batch_size() - $profile_batches->[ -1 ]->num_profiles()
+# 		: 0;
+
+# 	if ( scalar( @$profile_batches ) > 0 ) {
+# 		my @bob = map { $ARG->num_profiles(); } @$profile_batches;
+# 	}
+
+# 	my $num_in_fillup_batch = min( $num_free_profiles_in_last_batch, $num_new_profiles );
+
+# 	if ( $num_in_fillup_batch > 0 ) {
+# 		my $prev_last_profile_batch = pop @$profile_batches;
+# 		push
+# 			@{ $profile_batches },
+# 			Cath::Gemma::Compute::WorkBatch->new(
+# 				profile_batches => [
+# 					@{ $prev_last_profile_batch->profile_batches() },
+# 					Cath::Gemma::Compute::ProfileBuildTask->new(
+# 						starting_cluster_lists => [ @{ $profile_task->starting_cluster_lists() }[ 0 .. ( $num_in_fillup_batch - 1 ) ] ],
+# 						dir_set                => $profile_task->dir_set(),
+# 					)
+# 				]
+# 			);
+# 	}
+
+# 	my $num_remaining_profiles = $num_new_profiles - $num_in_fillup_batch;
+# 	my $num_remaining_batches  = (    int( $num_remaining_profiles / $self->profile_batch_size() )
+# 	                               + ( ( ( $num_remaining_profiles % $self->profile_batch_size() ) > 0 ) ? 1 : 0 ) );
+# 	for (my $batch_ctr = 0; $batch_ctr < $num_remaining_batches; ++$batch_ctr) {
+# 		my $batch_begin_index        =      $num_in_fillup_batch + (   $batch_ctr       * $self->profile_batch_size() );
+# 		my $batch_one_past_end_index = min( $num_in_fillup_batch + ( ( $batch_ctr + 1 ) * $self->profile_batch_size() ), $num_new_profiles );
+# 		push
+# 			@{ $profile_batches },
+
+# 			Cath::Gemma::Compute::WorkBatch->new(
+# 				profile_batches => [
+# 					Cath::Gemma::Compute::ProfileBuildTask->new(
+# 						starting_cluster_lists => [ @{ $profile_task->starting_cluster_lists() }[ $batch_begin_index .. ( $batch_one_past_end_index - 1 ) ] ],
+# 						dir_set                => $profile_task->dir_set(),
+# 					),
+# 				]
+# 			);
+# 	}
+# }
+
 =head2 submit_to_compute_cluster
 
 =cut
@@ -161,12 +221,8 @@ sub submit_to_compute_cluster {
 	$submit_script->spew( <<"EOF" );
 #!/bin/bash -l
 
-# Where a compute-cluster provides a more recent perl through the module system,
-# this will pick it up
+# Where a compute-cluster provides a more recent perl through the module system, this will pick it up
 ( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl
-
-# Ensure that the shared Perl is used on the CS cluster (with login node "bchuckle")
-export PATH=/share/apps/perl/bin:\$PATH
 
 BATCH_FILES_FILE=$batch_files_file
 echo BATCH_FILES_FILE : \$BATCH_FILES_FILE
@@ -198,9 +254,13 @@ EOF
 		'-N', 'CathGemma'.$id,
 		'-e', $stderr_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stderr_file_suffix,
 		'-o', $stdout_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stdout_file_suffix,
+		'-v', 'PATH', # Ensure that the PATH is passed through to the job (so that, in particular, it picks up the right Perl)
+		#'-v', 'PATH=/share/apps/perl/bin:$PATH', # Ensure that the shared Perl is used on the CS cluster (with login node "bchuckle")
 		'-S', '/bin/bash',
 		'-t', '1-'.$num_batches,
 		"$submit_script",
+		# -hold_jid
+		# -hold_jid_ad
 	);
 
 	my ( $qsub_stdout, $qsub_stderr, $qsub_exit ) = capture {

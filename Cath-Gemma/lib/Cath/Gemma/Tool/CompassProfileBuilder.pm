@@ -33,12 +33,12 @@ use Cath::Gemma::Util;
 =cut
 
 sub build_compass_profile {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, Path, Optional[Path] );
-	my ( $class, $exes, $aln_file, $dest_dir, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, CathGemmaDiskProfileDirSet, Optional[Path] );
+	my ( $class, $exes, $aln_file, $profile_dir_set, $tmp_dir ) = $check->( @ARG );
 
-	$tmp_dir //= $dest_dir;
+	$tmp_dir //= $profile_dir_set->prof_dir();
 
-	my $compass_prof_file = __PACKAGE__->prof_file_of_aln_file( $aln_file, $dest_dir );
+	my $compass_prof_file = $profile_dir_set->prof_file_of_aln_file( $aln_file );
 	my $output_stem       = $aln_file->basename( alignment_profile_suffix() );
 
 	return run_and_time_filemaking_cmd(

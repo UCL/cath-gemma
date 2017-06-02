@@ -29,15 +29,17 @@ use Cath::Gemma::Util;
 =head2 merges
 
 =cut
+
 has merges => (
 	is          => 'rw',
 	isa         => ArrayRef[CathGemmaTreeMerge],
 	handles_via => 'Array',
 	handles     => {
-		count          => 'count',
-		is_empty       => 'is_empty',
-		merge_of_index => 'get',
-		push           => 'push',
+		count           => 'count',
+		is_empty        => 'is_empty',
+		all             => 'all',
+		merge_of_index  => 'get',
+		push            => 'push',
 	},
 	default => sub { []; },
 );
@@ -209,7 +211,6 @@ sub starting_clusters {
 	return [ sort { cluster_name_spaceship( $a, $b ) } ( keys ( %starting_clusters ) ) ];
 }
 
-
 =head2 starting_cluster_lists
 
 =cut
@@ -218,8 +219,22 @@ sub starting_cluster_lists {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-
 	return [ map { [ $ARG ] } @{ $self->starting_clusters() } ];
+}
+
+=head2 merge_cluster_lists
+
+=cut
+
+sub merge_cluster_lists {
+	state $check = compile( Object, Optional[Bool] );
+	my ( $self, $use_depth_first ) = $check->( @ARG );
+
+	return [
+		map
+		{ $ARG->starting_nodes( $use_depth_first ); }
+		$self->all()
+	];
 }
 
 =head2 inital_scans_of_starting_clusters

@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp    qw/ confess        /;
-use English qw/ -no_match_vars /;
-use feature qw/ say            /;
+use Carp                qw/ confess        /;
+use English             qw/ -no_match_vars /;
+use feature             qw/ say            /;
 use FindBin;
 use Getopt::Long;
 use Pod::Usage;
@@ -14,6 +14,7 @@ use Pod::Usage;
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
 
 use lib "$FindBin::Bin/../lib";
@@ -28,7 +29,7 @@ use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Tree::MergeList;
 
 my $help = 0;
-my $submission_dir_name;
+my $submission_dir_name = 'fred';
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
 	'help'         => \$help,
@@ -37,12 +38,6 @@ GetOptions(
 if ( $help ) {
 	pod2usage( 1 );
 }
-
-# my $submission_dir_name = 'fred';
-
-use Data::Dumper;
-confess Dumper( $submission_dir_name );
-
 
 my $exes = Cath::Gemma::Disk::Executables->new();
 
@@ -82,56 +77,35 @@ foreach my $project ( @projects ) {
 		}
 	}
 
+	my $profile_dir_set = Cath::Gemma::Disk::ProfileDirSet->new(
+		starting_cluster_dir => $starting_clusters_dir,
+		aln_dir              => $aln_out_dir,
+		prof_dir             => $prof_out_dir,
+	);
+
 	my $mergelist = Cath::Gemma::Tree::MergeList->read_from_tracefile( $tracefile_path );
+	if ( $mergelist->is_empty() ) {
+		WARN "Cannot do any further processing for an empty merge list (read from file \"$tracefile_path\")";
+		return;
+	}
 
-	# Print the starting clusters
-	# warn join( " ", @{ $mergelist->starting_clusters() } );
-	# say join( " ", @{ $mergelist->starting_clusters() } );
-
+	# Build alignments and profiles for all starting_clusters
 	$work_batcher->add_profile_build_work(
 		Cath::Gemma::Compute::ProfileBuildTask->new(
 			starting_cluster_lists => $mergelist->starting_cluster_lists(),
-			dir_set                => Cath::Gemma::Disk::ProfileDirSet->new(
-				starting_cluster_dir => $starting_clusters_dir,
-				aln_dir              => $aln_out_dir,
-				prof_dir             => $prof_out_dir,
-			),
+			dir_set                => $profile_dir_set,
 		)->remove_already_present()
 	);
 
-	# # Build alignments and profiles for all starting_clusters
-	# foreach my $starting_cluster ( @{ $mergelist->starting_clusters() } ) {
-	# 	my $build_aln_and_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
-	# 		$exes,
-	# 		[ $starting_cluster ],
-	# 		$starting_clusters_dir,
-	# 		$aln_out_dir,
-	# 		$prof_out_dir,
-	# 		$working_dir,
-	# 	);
-	# 	say join( ', ', map { $ARG . ':' . $build_aln_and_prof_result->{ $ARG } } keys( %$build_aln_and_prof_result ) );
-	# }
-
-	# # Build alignments and profiles for all merge nodes
-	# if ( ! $mergelist->is_empty() ) {
-	# 	foreach my $merge_ctr ( 0 .. ( $mergelist->count() - 1 ) ) {
-	# 		my $merge = $mergelist->merge_of_index( $merge_ctr );
-
-	# 		foreach my $use_depth_first ( 0, 1 ) {
-	# 			my $build_aln_and_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
-	# 				$exes,
-	# 				$merge->starting_nodes( $use_depth_first ),
-	# 				$starting_clusters_dir,
-	# 				$aln_out_dir,
-	# 				$prof_out_dir,
-	# 				$working_dir,
-	# 			);
-	# 			say join( ', ', map { $ARG . ':' . $build_aln_and_prof_result->{ $ARG } } keys( %$build_aln_and_prof_result ) );
-	# 		}
-	# 	}
-	# }
-
-	# # say '';
+	# Build alignments and profiles for all merge nodes
+	foreach my $use_depth_first ( 0, 1 ) {
+		$work_batcher->add_profile_build_work(
+			Cath::Gemma::Compute::ProfileBuildTask->new(
+				starting_cluster_lists => $mergelist->merge_cluster_lists( $use_depth_first ),
+				dir_set                => $profile_dir_set,
+			)->remove_already_present()
+		);
+	}
 
 	# # Perform all initial (ie starting cluster vs other starting clusters) scans
 	# foreach my $scan ( @{$mergelist->initial_scans()  } ) {
@@ -166,7 +140,7 @@ foreach my $project ( @projects ) {
 	# }
 }
 
-$work_batcher->submit_to_compute_cluster( path( 'fred' )->realpath() );
+$work_batcher->submit_to_compute_cluster( path( $submission_dir_name )->realpath() );
 
 __END__
  

@@ -16,6 +16,7 @@ Login and test:
 
 ~~~
 ssh legion.rc.ucl.ac.uk
+qrsh -verbose -l h_rt=1:0:0,h_vmem=2G
 cd ~/Scratch/Cath-Gemma
 module load perl
 script/prepare_research_data.pl
@@ -23,6 +24,7 @@ script/prepare_research_data.pl
 # ...or...
 
 ssh bchuckle.cs.ucl.ac.uk
+qrsh -verbose -l h_rt=1:0:0,h_vmem=2G,tmem=2G
 cd ~/Cath-Gemma
 export PATH=/share/apps/perl/bin:$PATH
 script/prepare_research_data.pl
