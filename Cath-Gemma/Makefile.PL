@@ -13,6 +13,7 @@ WriteMakefile(
       : ()),
     PL_FILES            => {},
     PREREQ_PM => {
+        'Bio::AlignIO'            => 0,
         'Capture::Tiny'           => 0,
         'Cwd::Guard'              => 0,
         'File::AtomicWrite'       => 0,
