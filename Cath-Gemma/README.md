@@ -60,3 +60,22 @@ Update the projects list
 ~~~
 ls -1 temporary_example_data/tracefiles/ | sed 's/\.trace$//g' | sort -V > temporary_example_data/projects.txt
 ~~~
+
+To check all scripts compile:
+
+~~~
+find script -iname '*.pl' | sort | xargs -I VAR perl -c VAR
+~~~
+
+To check all modules compile:
+
+~~~
+find lib    -iname '*.pm' | sort | sed 's/^lib\///g' | sed 's/\.pm$//g' | sed 's/\.\///g' | sed 's/\//::/g' | xargs -I VAR perl -Ilib -Iextlib/lib/perl5    -MVAR -e ''
+~~~
+
+or
+
+~~~
+cd lib
+find .      -iname '*.pm' | sort | sed 's/^lib\///g' | sed 's/\.pm$//g' | sed 's/\.\///g' | sed 's/\//::/g' | xargs -I VAR perl -Ilib -I../extlib/lib/perl5 -MVAR -e ''
+~~~

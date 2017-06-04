@@ -34,6 +34,9 @@ use Cath::Gemma::Util;
 sub _compass_scan_impl {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, ArrayRef[Str], ArrayRef[Str], Path );
 	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $tmp_dir ) = $check->( @ARG );
+	
+	my $num_query_ids = scalar( @$query_cluster_ids );
+	my $num_match_ids = scalar( @$match_cluster_ids );
 
 	my $query_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $tmp_dir );
 	my $match_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $tmp_dir );
@@ -50,7 +53,7 @@ sub _compass_scan_impl {
 		'-n', '0',
 	);
 
-	INFO "About to scan COMPASS profile $query_clusters_id / $match_clusters_id";
+	INFO "About to COMPASS-scan $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
 
 	my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
 		system( "$compass_scan_exe", @compass_scan_command );
@@ -63,10 +66,11 @@ sub _compass_scan_impl {
 			." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
 	}
 
-	INFO "Finished scanning COMPASS profile $query_clusters_id / $match_clusters_id";
+	INFO "Finished COMPASS-scanning $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
 
 	my @compass_output_lines = split( /\n/, $compass_stdout );
-	return Cath::Gemma::Scan::ScanData->parse_from_raw_compass_scan_output_lines( \@compass_output_lines );
+	my $expected_num_results = $num_query_ids * $num_match_ids;
+	return Cath::Gemma::Scan::ScanData->parse_from_raw_compass_scan_output_lines( \@compass_output_lines, $expected_num_results );
 }
 
 =head2 build_temp_profile_lib_file

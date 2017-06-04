@@ -125,7 +125,7 @@ sub build_alignment_and_compass_profile {
 	my $profile_result   = Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile(
 		$exes,
 		$built_aln_file,
-		$profile_dir_set->prof_dir,
+		$profile_dir_set,
 		$tmp_dir,
 	);
 

@@ -18,7 +18,7 @@ use lib "$FindBin::Bin/../lib";
 use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Tree::MergeList;
-use Cath::Gemma::Tree::TreeBuilder;
+use Cath::Gemma::TreeBuilder::PureTreeBuilder;
 
 my $exes = Cath::Gemma::Disk::Executables->new();
 

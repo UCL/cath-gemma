@@ -56,7 +56,8 @@ my $working_dir                = path( '/dev/shm'                               
 my $projects_list_data = $projects_list_file->slurp();
 my @projects = split( /\n+/, $projects_list_data );
 
-my $work_batcher = Cath::Gemma::Compute::WorkBatcher->new();
+my $executor = Cath::Gemma::Executor::LocalExecutor->new();
+# my $executor = Cath::Gemma::Executor::HpcExecutor->new();
 
 foreach my $project ( @projects ) {
 	my $tracefile_path = $trace_files_dir->child( $project . $trace_files_ext );
@@ -77,10 +78,13 @@ foreach my $project ( @projects ) {
 		}
 	}
 
-	my $profile_dir_set = Cath::Gemma::Disk::ProfileDirSet->new(
-		starting_cluster_dir => $starting_clusters_dir,
-		aln_dir              => $aln_out_dir,
-		prof_dir             => $prof_out_dir,
+	my $gemma_dir_set = Cath::Gemma::Disk::ProfileDirSet->new(
+		profile_dir_set => Cath::Gemma::Disk::ProfileDirSet->new(
+			starting_cluster_dir => $starting_clusters_dir,
+			aln_dir              => $aln_out_dir,
+			prof_dir             => $prof_out_dir,
+		),
+		scan_dir        => $scan_dir,
 	);
 
 	my $mergelist = Cath::Gemma::Tree::MergeList->read_from_tracefile( $tracefile_path );
@@ -89,58 +93,53 @@ foreach my $project ( @projects ) {
 		return;
 	}
 
-	# Build alignments and profiles for all starting_clusters
-	$work_batcher->add_profile_build_work(
-		Cath::Gemma::Compute::ProfileBuildTask->new(
-			starting_cluster_lists => $mergelist->starting_cluster_lists(),
-			dir_set                => $profile_dir_set,
-		)->remove_already_present()
+	$executor->execute(
+
+		# Build alignments and profiles for...
+		[
+			# ...all starting_clusters
+			Cath::Gemma::Compute::ProfileBuildTask->new(
+				starting_cluster_lists => $mergelist    ->starting_cluster_lists(),
+				dir_set                => $gemma_dir_set->profile_dir_set       (),
+			)->remove_already_present(),
+
+			# ...all merge nodes (use_depth_first:0)
+			Cath::Gemma::Compute::ProfileBuildTask->new(
+				starting_cluster_lists => $mergelist    ->merge_cluster_lists( 0 ),
+				dir_set                => $gemma_dir_set->profile_dir_set    (   ),
+			)->remove_already_present(),
+
+			# ...all merge nodes (use_depth_first:1)
+			Cath::Gemma::Compute::ProfileBuildTask->new(
+				starting_cluster_lists => $mergelist    ->merge_cluster_lists( 1 ),
+				dir_set                => $gemma_dir_set->profile_dir_set    (   ),
+			)->remove_already_present(),
+		],
+
+		# Perform scans for...
+		[
+			# ...all initial nodes (ie starting cluster vs other starting clusters)
+			Cath::Gemma::Compute::ProfileScanTask->new(
+				$mergelist->initial_scan_lists( 0 ),
+				dir_set => $gemma_dir_set,
+			),
+
+			# ...all merge nodes (use_depth_first:0)
+			Cath::Gemma::Compute::ProfileScanTask->new(
+				$mergelist->later_scan_lists( 0 ),
+				dir_set => $gemma_dir_set,
+			),
+
+			# ...all merge nodes (use_depth_first:1)
+			Cath::Gemma::Compute::ProfileScanTask->new(
+				$mergelist->later_scan_lists( 1 ),
+				dir_set => $gemma_dir_set,
+			),
+
+		]
 	);
 
-	# Build alignments and profiles for all merge nodes
-	foreach my $use_depth_first ( 0, 1 ) {
-		$work_batcher->add_profile_build_work(
-			Cath::Gemma::Compute::ProfileBuildTask->new(
-				starting_cluster_lists => $mergelist->merge_cluster_lists( $use_depth_first ),
-				dir_set                => $profile_dir_set,
-			)->remove_already_present()
-		);
-	}
-
-	# # Perform all initial (ie starting cluster vs other starting clusters) scans
-	# foreach my $scan ( @{$mergelist->initial_scans()  } ) {
-	# 	my $result = Cath::Gemma::Tool::CompassScanner->compass_scan_to_file(
-	# 		$exes,
-	# 		$prof_out_dir,
-	# 		[ $scan->[ 0 ] ],
-	# 		$scan->[ 1 ],
-	# 		$scan_dir,
-	# 		$working_dir,
-	# 	);
-	# 	say join( ', ', map { $ARG . ':' . $result->{ $ARG } } keys( %$result ) );
-	# 	# say join( "\n", map { join( "\t", @$ARG ); } @{ $result->{ data } } );
-	# }
-
-	# # say '';
-
-	# # Perform all merge node scans
-	# foreach my $use_depth_first ( 0, 1 ) {
-	# 	foreach my $scan ( @{ $mergelist->later_scans( $use_depth_first ) } ) {
-	# 		my $result = Cath::Gemma::Tool::CompassScanner->compass_scan_to_file(
-	# 			$exes,
-	# 			$prof_out_dir,
-	# 			[ $scan->[ 0 ] ],
-	# 			$scan->[ 1 ],
-	# 			$scan_dir,
-	# 			$working_dir,
-	# 		);
-	# 		say join( ', ', map { $ARG . ':' . $result->{ $ARG } } keys( %$result ) );
-	# 		# say join( "\n", map { join( "\t", @$ARG ); } @{ $result->{ data } } );
-	# 	}
-	# }
 }
-
-$work_batcher->submit_to_compute_cluster( path( $submission_dir_name )->realpath() );
 
 __END__
  

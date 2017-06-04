@@ -73,9 +73,6 @@ sub run_and_time_filemaking_cmd {
 					return { out_filename => $out_file };
 				}
 
-				# use Cwd;
-				# warn 'Not returning...(cwd is ' . getcwd() . ')';
-
 				if ( "$out_file" eq 'temporary_example_data/output/1.10.150.120/n0de_9e4d22ff9a44d049cefaa240aae7e01d.l1st_9557d2b7962844e9ccaf3c8f2e8d6ab7.scan' ) {
 					sleep 1000;
 				}

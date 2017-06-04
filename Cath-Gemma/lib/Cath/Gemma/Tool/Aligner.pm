@@ -13,6 +13,7 @@ use Time::HiRes         qw/ gettimeofday tv_interval        /;
 use v5.10;
 
 # Non-core (local)
+use Bio::AlignIO;
 use Capture::Tiny       qw/ capture                         /;
 use File::AtomicWrite;
 use Log::Log4perl::Tiny qw/ :easy                           /;
@@ -128,7 +129,28 @@ sub make_alignment_file {
 
 				INFO 'Finished mafft-aligning ' . $num_sequences . ' sequences for cluster ' . $id_of_clusters;
 
-				$tmp_aln_file->spew( $mafft_stdout );
+				# Use Bio::AlignIO to rewrite the alignment to remove wrapping
+				# because wrapped alignments occasionally cause problems in COMPASS 2.45
+				my $flatten_filename  = Path::Tiny->tempfile( TEMPLATE => '.faa_flatten.XXXXXXXXXXX',
+				                                              DIR      => $tmp_dir,
+				                                              SUFFIX   => '.fa',
+				                                              CLEANUP  => 1,
+				                                              );
+				$flatten_filename->spew( $mafft_stdout );
+				my $fasta_in  = Bio::AlignIO->new(
+					'-file'   => "$flatten_filename",
+					'-format' => 'fasta',
+				);
+				my $fasta_out = Bio::AlignIO->new(
+					'-file'   => ">$tmp_aln_file",
+					'-flush'  => 0,
+					'-format' => 'fasta',
+					'-width'  => 32000,
+				);
+
+				while ( my $aln = $fasta_in->next_aln() ) {
+					$fasta_out->write_aln( $aln );
+				}
 			}
 			else {
 				INFO 'Copying single sequence for cluster ' . $id_of_clusters;

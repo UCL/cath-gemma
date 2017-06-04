@@ -4,9 +4,8 @@ use strict;
 use warnings;
 
 # Core
-# use List::Util        qw/ sum                           /;
-use Carp              qw/ confess                       /;
-use English           qw/ -no_match_vars                /;
+use Carp              qw/ confess                           /;
+use English           qw/ -no_match_vars                    /;
 use v5.10;
 
 # Moo
@@ -16,17 +15,11 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-# use Path::Tiny;
-# use Types::Standard    qw/ ArrayRef Bool ClassName Object Optional Str /;
-use Type::Params      qw/ compile Invocant              /;
-use Types::Path::Tiny qw/ Path                          /;
-use Types::Standard   qw/ ArrayRef Num Object Str Tuple /;
+use Type::Params      qw/ compile Invocant                  /;
+use Types::Path::Tiny qw/ Path                              /;
+use Types::Standard   qw/ ArrayRef Int Num Object Str Tuple /;
 
 # Cath
-# use Cath::Gemma::Tool::CompassProfileBuilder;
-# use Cath::Gemma::Tool::CompassScanner;
-# use Cath::Gemma::Disk::Executables;
-# use Cath::Gemma::Types qw/ CathGemmaDiskExecutables /;
 use Cath::Gemma::Util;
 
 =head2 scan_data
@@ -80,15 +73,20 @@ sub write_to_file {
 =cut
 
 sub parse_from_raw_compass_scan_output_lines {
-	state $check = compile( Invocant, ArrayRef[Str] );
-	my ( $proto, $compass_output_lines ) = $check->( @ARG );
+	state $check = compile( Invocant, ArrayRef[Str], Int );
+	my ( $proto, $compass_output_lines, $expected_num_results ) = $check->( @ARG );
+
+	my $num_results = 0;
 
 	my ( @outputs, $prev_id1, $prev_id2 );
 	my $alignment_profile_suffix = alignment_profile_suffix();
 	foreach my $compass_output_line ( @$compass_output_lines ) {
+		if ( $compass_output_line =~ /Irregular format in database/ ) {
+			confess 'Problem with COMPASS scan data : "' . $compass_output_line . '"';
+		}
 		if ( $compass_output_line =~ /^Ali1:\s+(\S+)\s+Ali2:\s+(\S+)/ ) {
 			if ( defined( $prev_id1 ) || defined( $prev_id2 ) ) {
-				confess "Argh:\n\"$compass_output_line\"\n$prev_id1\n$prev_id2\n";
+				confess "Argh:\n\"$compass_output_line\"\n$prev_id1\n$prev_id2  TODOCUMENT\n";
 			}
 			$prev_id1 = $1;
 			$prev_id2 = $2;
@@ -97,25 +95,30 @@ sub parse_from_raw_compass_scan_output_lines {
 					$$prev_id = $2;
 				}
 				else {
-					confess "Argh $$prev_id";
+					confess "Argh $$prev_id  TODOCUMENT";
 				}
 			}
 		}
 		if ( $compass_output_line =~ /\bEvalue (.*)$/ ) {
+			++$num_results;
 			if ( $1 ne '** not found **' ) {
 				if ( $compass_output_line =~ /\bEvalue = (\S+)$/ ) {
 					push @outputs, [ $prev_id1, $prev_id2, $1 ];
 				}
 				else {
-					confess "Argh";
+					confess "Argh TODOCUMENT";
 				}
 			}
 			if ( ! defined( $prev_id1 ) || ! defined( $prev_id2 ) ) {
-				confess "Argh";
+				confess "Argh TODOCUMENT";
 			}
 			$prev_id1 = undef;
 			$prev_id2 = undef;
 		}
+	}
+
+	if ( $num_results != $expected_num_results ) {
+		confess "Something wrong whilst parsing COMPASS results: expected to get $expected_num_results results but found $num_results."
 	}
 
 	return __PACKAGE__->new(

@@ -9,10 +9,17 @@ Cath::Gemma::Types - TODOCUMENT
 use Type::Library
 	-base,
 	-declare => qw(
+		CathGemmaComputeProfileBuildTask
+		CathGemmaComputeProfileScanTask
+		CathGemmaComputeWorkBatch
 		CathGemmaDiskExecutables
+		CathGemmaDiskGemmaDirSet
+		CathGemmaDiskProfileDirSet
+		CathGemmaScanScanData
 		CathGemmaTreeMerge
 		ComputeProfileBuildTask
 	);
+
 
 use Type::Utils qw/ class_type coerce declare from /;
 use Types::Standard -types;

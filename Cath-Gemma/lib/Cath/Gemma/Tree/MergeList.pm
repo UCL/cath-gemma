@@ -269,6 +269,21 @@ sub initial_scans {
 	return $self->inital_scans_of_starting_clusters( $self->starting_clusters() );
 }
 
+=head2 initial_scan_lists
+
+=cut
+
+sub initial_scan_lists {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return [
+		map
+		{ [ [ $ARG->[ 0 ] ], $ARG->[ 1 ] ]; }
+		@{ $self->initial_scans() }
+	]
+}
+
 =head2 later_scans
 
 =cut
@@ -299,6 +314,21 @@ sub later_scans {
 	}
 
 	return \@results;
+}
+
+=head2 later_scan_lists
+
+=cut
+
+sub later_scan_lists {
+	state $check = compile( Object, Optional[Bool] );
+	my ( $self, $use_depth_first ) = $check->( @ARG );
+
+	return [
+		map
+		{ [ [ $ARG->[ 0 ] ], $ARG->[ 1 ] ]; }
+		@{ $self->later_scans( $use_depth_first ) }
+	]
 }
 
 =head2 geometric_mean_score
