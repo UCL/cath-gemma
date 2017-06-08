@@ -4,23 +4,23 @@ use strict;
 use warnings;
 
 # Core
-use Carp                qw/ confess                         /;
-use English             qw/ -no_match_vars                  /;
-use File::Copy          qw/ copy move                       /;
+use Carp                qw/ confess                  /;
+use English             qw/ -no_match_vars           /;
+use File::Copy          qw/ copy move                /;
 use FindBin;
-use List::Util          qw/ sum0                            /;
-use Time::HiRes         qw/ gettimeofday tv_interval        /;
+use List::Util          qw/ sum0                     /;
+use Time::HiRes         qw/ gettimeofday tv_interval /;
 use v5.10;
 
 # Non-core (local)
 use Bio::AlignIO;
-use Capture::Tiny       qw/ capture                         /;
+use Capture::Tiny       qw/ capture                  /;
 use File::AtomicWrite;
-use Log::Log4perl::Tiny qw/ :easy                           /;
+use Log::Log4perl::Tiny qw/ :easy                    /;
 use Path::Tiny;
-use Type::Params        qw/ compile                         /;
-use Types::Path::Tiny   qw/ Path                            /;
-use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
+use Type::Params        qw/ compile                  /;
+use Types::Path::Tiny   qw/ Path                     /;
+use Types::Standard     qw/ ArrayRef ClassName Str   /;
 
 # Cath
 use Cath::Gemma::Types  qw/
@@ -80,9 +80,8 @@ sub build_raw_seqs_file {
 =cut
 
 sub make_alignment_file {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, Optional[Path] );
-	my ( $class, $exes, $starting_clusters, $profile_dir_set, $tmp_dir ) = $check->( @ARG );
-	$tmp_dir //= $profile_dir_set->aln_dir();
+	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet );
+	my ( $class, $exes, $starting_clusters, $profile_dir_set ) = $check->( @ARG );
 
 	return run_and_time_filemaking_cmd(
 		'mafft alignment',
@@ -94,7 +93,7 @@ sub make_alignment_file {
 			my $id_of_clusters = id_of_starting_clusters( $starting_clusters );
 
 			my $raw_seqs_filename  = Path::Tiny->tempfile( TEMPLATE => '.temp_raw_seqs.XXXXXXXXXXX',
-			                                               DIR      => $tmp_dir,
+			                                               DIR      => $exes->tmp_dir(),
 			                                               SUFFIX   => '.fa',
 			                                               CLEANUP  => 1,
 			                                               );
@@ -132,7 +131,7 @@ sub make_alignment_file {
 				# Use Bio::AlignIO to rewrite the alignment to remove wrapping
 				# because wrapped alignments occasionally cause problems in COMPASS 2.45
 				my $flatten_filename  = Path::Tiny->tempfile( TEMPLATE => '.faa_flatten.XXXXXXXXXXX',
-				                                              DIR      => $tmp_dir,
+				                                              DIR      => $exes->tmp_dir(),
 				                                              SUFFIX   => '.fa',
 				                                              CLEANUP  => 1,
 				                                              );

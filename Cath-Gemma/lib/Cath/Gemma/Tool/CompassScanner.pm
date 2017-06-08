@@ -4,24 +4,25 @@ use strict;
 use warnings;
 
 # Core
-use Carp                qw/ confess                         /;
-use English             qw/ -no_match_vars                  /;
-use File::Copy          qw/ copy move                       /;
+use Carp                qw/ confess                  /;
+use English             qw/ -no_match_vars           /;
+use File::Copy          qw/ copy move                /;
 use FindBin;
-use Time::HiRes         qw/ gettimeofday tv_interval        /;
+use Time::HiRes         qw/ gettimeofday tv_interval /;
 use v5.10;
 
 # Non-core (local)
-use Capture::Tiny       qw/ capture                         /;
-use Log::Log4perl::Tiny qw/ :easy                           /;
+use Capture::Tiny       qw/ capture                  /;
+use Log::Log4perl::Tiny qw/ :easy                    /;
 use Path::Tiny;
-use Type::Params        qw/ compile                         /;
-use Types::Path::Tiny   qw/ Path                            /;
-use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
+use Type::Params        qw/ compile                  /;
+use Types::Path::Tiny   qw/ Path                     /;
+use Types::Standard     qw/ ArrayRef ClassName Str   /;
 
 # Cath
 use Cath::Gemma::Scan::ScanData;
 use Cath::Gemma::Types  qw/
+	CathGemmaCompassProfileType
 	CathGemmaDiskExecutables
 	CathGemmaDiskGemmaDirSet
 /;
@@ -32,16 +33,19 @@ use Cath::Gemma::Util;
 =cut
 
 sub _compass_scan_impl {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, ArrayRef[Str], ArrayRef[Str], Path );
-	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $tmp_dir ) = $check->( @ARG );
-	
+	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
+	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $compass_profile_build_type ) = $check->( @ARG );
+
 	my $num_query_ids = scalar( @$query_cluster_ids );
 	my $num_match_ids = scalar( @$match_cluster_ids );
 
-	my $query_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $tmp_dir );
-	my $match_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $tmp_dir );
+	my $query_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
+	my $match_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
 
-	my $compass_scan_exe = $exes->compass_scan();
+	my $compass_scan_exe =
+		( $compass_profile_build_type eq 'mk_compass_db' )
+		? $exes->compass_scan_310()
+		: $exes->compass_scan_241();
 
 	my $query_clusters_id = generic_id_of_clusters( $query_cluster_ids, 1 );
 	my $match_clusters_id = generic_id_of_clusters( $match_cluster_ids, 1 );
@@ -53,7 +57,7 @@ sub _compass_scan_impl {
 		'-n', '0',
 	);
 
-	INFO "About to COMPASS-scan $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
+	INFO "About to COMPASS-[$compass_profile_build_type]-scan     $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
 
 	my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
 		system( "$compass_scan_exe", @compass_scan_command );
@@ -66,7 +70,7 @@ sub _compass_scan_impl {
 			." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
 	}
 
-	INFO "Finished COMPASS-scanning $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
+	INFO "Finished COMPASS-[$compass_profile_build_type]-scanning $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
 
 	my @compass_output_lines = split( /\n/, $compass_stdout );
 	my $expected_num_results = $num_query_ids * $num_match_ids;
@@ -78,8 +82,8 @@ sub _compass_scan_impl {
 =cut
 
 sub build_temp_profile_lib_file {
-	state $check = compile( ClassName, Path, ArrayRef[Str], Path );
-	my ( $class, $profile_dir, $cluster_ids, $dest_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, Path, ArrayRef[Str], Path, CathGemmaCompassProfileType );
+	my ( $class, $profile_dir, $cluster_ids, $dest_dir, $compass_profile_build_type ) = $check->( @ARG );
 
 	my $lib_filename = Path::Tiny->tempfile( TEMPLATE => '.' . id_of_starting_clusters( $cluster_ids ) . '.XXXXXXXXXXX',
 	                                         DIR      => $dest_dir,
@@ -90,7 +94,7 @@ sub build_temp_profile_lib_file {
 		or confess "Unable to open profile library file \"$lib_filename\" for writing : $OS_ERROR";
 
 	foreach my $cluster_id ( @$cluster_ids ) {
-		my $profile_file = $profile_dir->child( $cluster_id . compass_profile_suffix() );
+		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $compass_profile_build_type );
 		my $profile_fh = $profile_file->openr()
 			or confess "Unable to open profile file \"$profile_file\" for reading : $OS_ERROR";
 		copy( $profile_fh, $lib_fh )
@@ -105,8 +109,8 @@ sub build_temp_profile_lib_file {
 =cut
 
 sub compass_scan {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, ArrayRef[Str], ArrayRef[Str], Path );
-	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
+	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $compass_profile_build_type ) = $check->( @ARG );
 
 	return run_and_time_filemaking_cmd(
 		'COMPASS scan',
@@ -117,7 +121,7 @@ sub compass_scan {
 				$profile_dir,
 				$query_cluster_ids,
 				$match_cluster_ids,
-				$tmp_dir
+				$compass_profile_build_type,
 			);
 		}
 	);
@@ -128,12 +132,10 @@ sub compass_scan {
 =cut
 
 sub compass_scan_to_file {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[Path] );
-	my ( $class, $exes, $query_ids, $match_ids, $gemma_dir_set, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType );
+	my ( $class, $exes, $query_ids, $match_ids, $gemma_dir_set, $compass_profile_build_type ) = $check->( @ARG );
 
-	$tmp_dir //= $gemma_dir_set->scan_dir;
-
-	my $output_file = $gemma_dir_set->scan_filename_of_cluster_ids( $query_ids, $match_ids );
+	my $output_file = $gemma_dir_set->scan_filename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type );
 
 	my $result = run_and_time_filemaking_cmd(
 		'COMPASS scan',
@@ -147,7 +149,7 @@ sub compass_scan_to_file {
 				$gemma_dir_set->prof_dir(),
 				$query_ids,
 				$match_ids,
-				$tmp_dir
+				$compass_profile_build_type,
 			);
 
 			$result->write_to_file( $tmp_scan_file );
@@ -167,14 +169,14 @@ sub compass_scan_to_file {
 =cut
 
 sub build_and_scan_merge_cluster_against_others {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[Path] );
-	my ( $class, $exes, $query_starting_cluster_ids, $match_ids, $gemma_dir_set, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType );
+	my ( $class, $exes, $query_starting_cluster_ids, $match_ids, $gemma_dir_set, $compass_profile_build_type ) = $check->( @ARG );
 
 	my $build_aln_and_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
 		$exes,
 		$query_starting_cluster_ids,
 		$gemma_dir_set->profile_dir_set(),
-		$tmp_dir
+		$compass_profile_build_type,
 	);
 
 	return __PACKAGE__->compass_scan_to_file(
@@ -182,7 +184,7 @@ sub build_and_scan_merge_cluster_against_others {
 		[ id_of_starting_clusters( $query_starting_cluster_ids ) ],
 		$match_ids,
 		$gemma_dir_set,
-		$tmp_dir
+		$compass_profile_build_type,
 	);
 }
 

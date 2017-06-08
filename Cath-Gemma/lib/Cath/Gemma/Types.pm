@@ -15,14 +15,22 @@ use Type::Library
 		CathGemmaDiskExecutables
 		CathGemmaDiskGemmaDirSet
 		CathGemmaDiskProfileDirSet
+		CathGemmaExecutor
 		CathGemmaScanScanData
+		CathGemmaTreeBuilder
 		CathGemmaTreeMerge
 		ComputeProfileBuildTask
 	);
 
 
-use Type::Utils qw/ class_type coerce declare from /;
+use Type::Utils qw/ class_type coerce declare enum from role_type /;
 use Types::Standard -types;
+
+enum       CathGemmaCompassProfileType,      [ qw/
+	compass_wp_dummy_1st
+	compass_wp_dummy_2nd
+	mk_compass_db
+/ ];
 
 class_type CathGemmaComputeProfileBuildTask, { class => "Cath::Gemma::Compute::ProfileBuildTask" };
 class_type CathGemmaComputeProfileScanTask,  { class => "Cath::Gemma::Compute::ProfileScanTask"  };
@@ -32,6 +40,9 @@ class_type CathGemmaDiskGemmaDirSet,         { class => "Cath::Gemma::Disk::Gemm
 class_type CathGemmaDiskProfileDirSet,       { class => "Cath::Gemma::Disk::ProfileDirSet"       };
 class_type CathGemmaScanScanData,            { class => "Cath::Gemma::Scan::ScanData"            };
 class_type CathGemmaTreeMerge,               { class => "Cath::Gemma::Tree::Merge"               };
+
+role_type  CathGemmaExecutor,                { role  => "Cath::Gemma::Executor"                  };
+role_type  CathGemmaTreeBuilder,             { role  => "Cath::Gemma::TreeBuilder"               };
 
 # coerce CathGemmaTreeMerge,
 # 	from Str, via { 

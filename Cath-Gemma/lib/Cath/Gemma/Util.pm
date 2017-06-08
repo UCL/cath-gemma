@@ -24,19 +24,29 @@ our @EXPORT = qw/
 	cluster_name_spaceship
 	compass_profile_suffix
 	compass_scan_suffix
+	default_compass_profile_build_type
+	default_temp_dir
 	generic_id_of_clusters
 	id_of_starting_clusters
 	mergee_is_starting_cluster
+	ordered_cluster_name_pair
+	prof_file_of_prof_dir_and_aln_file
+	prof_file_of_prof_dir_and_cluster_id
 	raw_sequences_filename_of_starting_clusters
 	run_and_time_filemaking_cmd
 	scan_filebasename_of_cluster_ids
+	scan_filename_of_dir_and_cluster_ids
 	time_fn
 	/;
 
 # Non-core (local)
+use Path::Tiny;
 use Type::Params      qw/ compile                                         /;
 use Types::Path::Tiny qw/ Path                                            /;
 use Types::Standard   qw/ ArrayRef Bool CodeRef Maybe Optional slurpy Str /;
+
+# Cath
+use Cath::Gemma::Types qw/ CathGemmaCompassProfileType /;
 
 =head2 time_fn
 
@@ -139,7 +149,7 @@ sub cluster_name_spaceship {
 		my $prefix   = $1;
 		my $number_a = $2;
 		my $suffix   = $3;
-		
+
 		if ( $b =~ /^$prefix([\d]+)$suffix$/ ) {
 			my $number_b = $1;
 			return ( $number_a <=> $number_b );
@@ -148,10 +158,25 @@ sub cluster_name_spaceship {
 			return -1;
 		}
 	}
+
 	return
 		( $b =~ /^(\D*)([\d]+)(\D*)$/ )
 		? 1
 		: ( $a cmp $b );
+}
+
+=head2 ordered_cluster_name_pair
+
+=cut
+
+sub ordered_cluster_name_pair {
+	my $a = shift;
+	my $b = shift;
+
+	if ( cluster_name_spaceship( $a, $b ) > 0 ) {
+		return [ $b, $a ];
+	}
+	return [ $a, $b ];
 }
 
 =head2 generic_id_of_clusters
@@ -210,6 +235,23 @@ sub compass_profile_suffix {
 	return '.prof';
 }
 
+=head2 default_compass_profile_build_type
+
+=cut
+
+sub default_compass_profile_build_type {
+	return 'compass_wp_dummy_1st';
+}
+
+
+=head2 default_temp_dir
+
+=cut
+
+sub default_temp_dir {
+	return path( '/dev/shm' );
+}
+
 =head2 compass_scan_suffix
 
 =cut
@@ -235,6 +277,32 @@ sub alignment_filebasename_of_starting_clusters {
 	return id_of_starting_clusters( $starting_clusters ) . alignment_profile_suffix();
 }
 
+=head2 prof_file_of_prof_dir_and_aln_file
+
+=cut
+
+sub prof_file_of_prof_dir_and_aln_file {
+	state $check = compile( Path, Path, CathGemmaCompassProfileType );
+	my ( $prof_dir, $aln_file, $compass_profile_build_type ) = $check->( @ARG );
+
+	return prof_file_of_prof_dir_and_cluster_id(
+		$prof_dir,
+		$aln_file->basename( alignment_profile_suffix() ),
+		$compass_profile_build_type,
+	);
+}
+
+=head2 prof_file_of_prof_dir_and_cluster_id
+
+=cut
+
+sub prof_file_of_prof_dir_and_cluster_id {
+	state $check = compile( Path, Str, CathGemmaCompassProfileType );
+	my ( $prof_dir, $cluster_id, $compass_profile_build_type ) = $check->( @ARG );
+
+	return $prof_dir->child( $cluster_id . '.' . $compass_profile_build_type . compass_profile_suffix() );
+}
+
 =head2 raw_sequences_filename_of_starting_clusters
 
 =cut
@@ -249,14 +317,27 @@ sub raw_sequences_filename_of_starting_clusters {
 =cut
 
 sub scan_filebasename_of_cluster_ids {
-	state $check = compile( ArrayRef[Str], ArrayRef[Str] );
-	my ( $query_cluster_ids, $match_cluster_ids ) = $check->( @ARG );
+	state $check = compile( ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
+	my ( $query_cluster_ids, $match_cluster_ids, $compass_profile_build_type ) = $check->( @ARG );
 
 	return
 		  id_of_nodelist( $query_cluster_ids )
 		. '.'
 		. id_of_nodelist( $match_cluster_ids )
+		. '.'
+		. $compass_profile_build_type
 		. '.scan';
+}
+
+=head2 scan_filename_of_dir_and_cluster_ids
+
+=cut
+
+sub scan_filename_of_dir_and_cluster_ids {
+	state $check = compile( Path, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
+	my ( $dir, $query_ids, $match_ids, $compass_profile_build_type ) = $check->( @ARG );
+
+	return $dir->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type ) );
 }
 
 1;

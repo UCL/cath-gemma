@@ -4,9 +4,10 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                                                        /;
-use English            qw/ -no_match_vars                                                 /;
-use List::Util         qw/ max maxstr min minstr                                          /;
+use Carp               qw/ confess                                                              /;
+use English            qw/ -no_match_vars                                                       /;
+use List::Util         qw/ max maxstr min minstr                                                /;
+use POSIX              qw/ ceil log10                                                           /;
 use v5.10;
 
 # Moo
@@ -16,12 +17,12 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use List::MoreUtils    qw/ first_value                                                    /;
-use Type::Params       qw/ compile                                                        /;
-use Types::Standard    qw/ ArrayRef Bool ClassName HashRef Num Object Optional slurpy Str /;
+use List::MoreUtils    qw/ first_value                                                          /;
+use Type::Params       qw/ compile                                                              /;
+use Types::Standard    qw/ ArrayRef Bool ClassName HashRef Num Tuple Object Optional slurpy Str /;
 
 # Cath
-use Cath::Gemma::Types qw/ CathGemmaScanScanData                                          /;
+use Cath::Gemma::Types qw/ CathGemmaScanScanData                                                /;
 use Cath::Gemma::Util;
 
 =head2 starting_clusters_of_ids
@@ -35,6 +36,7 @@ has starting_clusters_of_ids => (
 	handles     => {
 		count    => 'count',
 		is_empty => 'is_empty',
+		ids      => 'keys',
 	},
 	default     => sub { {}; },
 );
@@ -47,6 +49,10 @@ has scans => (
 	is          => 'rwp',
 	isa         => HashRef[HashRef[Num]],
 	default     => sub { {}; },
+	handles_via => 'Hash',
+	handles     => {
+		scan_ids => 'keys',
+	},
 );
 
 =head2 sorted_ids
@@ -108,52 +114,99 @@ sub add_scan_data {
 }
 
 
+=head2 get_id_and_score_of_lowest_score_of_id
+
+=cut
+
+sub get_id_and_score_of_lowest_score_of_id {
+	state $check = compile( Object, Str, Optional[HashRef] );
+	my ( $self, $id, $excluded_ids ) = $check->( @ARG );
+
+	if ( $self->count() < 2 ) {
+		confess 'Argh TODOCUMENT';
+	}
+
+	my $scan_of_id       = $self->scans()->{ $id };
+	my @non_excluded_ids = grep { ! defined( $excluded_ids ) || ! defined( $excluded_ids->{ $ARG } ) } keys( %$scan_of_id );
+	my $min_score        = min( map { $scan_of_id->{ $ARG } } @non_excluded_ids );
+
+	if ( ! defined( $min_score ) ) {
+		my @all_ids      = sort( $self->ids() );
+		my $different_id = ( $id eq $all_ids[ 0 ] ) ? $all_ids[ 1 ]
+		                                            : $all_ids[ 0 ];
+		return [
+			$different_id,
+			undef
+		];
+	}
+
+	my $other_id = first_value { $scan_of_id->{ $ARG } == $min_score } sort( keys( %$scan_of_id ) );
+	return [
+		$other_id,
+		$min_score
+	];
+}
+
 =head2 ids_and_score_of_lowest_score
 
 =cut
 
 sub ids_and_score_of_lowest_score {
+	state $check = compile( Object, Optional[Tuple[Num,HashRef]] );
+	my ( $self, $extras ) = $check->( @ARG );
+
+	my ( $window_cutoff, $excluded_ids ) = @{ $extras // [] };
+
+	if ( $self->count() < 2 ) {
+		return [];
+	}
+
+	my $scans = $self->scans();
+	my @result;
+	foreach my $id ( sort( $self->scan_ids() ) ) {
+		if ( ! defined( $excluded_ids->{ $id } ) ) {
+			my ( $other_id, $score ) = @{ $self->get_id_and_score_of_lowest_score_of_id( $id, $excluded_ids ) };
+			if ( defined( $window_cutoff ) && ( ! defined( $score) || $score > $window_cutoff ) ) {
+				next;
+			}
+			if ( scalar( @result ) == 0 || ( defined( $score ) && ( ! defined( $result[ 2 ] ) || $score < $result[ 2 ] ) ) ) {
+				@result = (
+					@{ ordered_cluster_name_pair( $id, $other_id ) },
+					$score
+				);
+			}
+		}
+	}
+
+	if ( scalar( @result ) == 0 ) {
+		return;
+	}
+	return \@result;
+}
+
+=head2 ids_and_score_of_lowest_score_window
+
+=cut
+
+sub ids_and_score_of_lowest_score_window {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	my $really_bad_score = 100000000;
+	my ( $id1, $id2, $score ) = @{ $self->ids_and_score_of_lowest_score() };
 
-	my $scans = $self->scans();
-	my @all_ids = sort( keys( %{ $self->starting_clusters_of_ids() } ) );
-	if ( scalar( @all_ids ) <= 1 ) {
-		confess "Argh TODOCUMENT";
-	}
-	my @result;
-	foreach my $id ( sort( keys( %{ $scans } ) ) ) {
-		my $scan_of_id = $scans->{ $id };
-		my $min_score = min( values( %$scan_of_id ) );
+	my $evalue_cutoff = ( 10 ** ( ceil( log10( $score ) / 10 ) * 10 ) );
 
-		if ( ! defined( $min_score ) ) {
-			if ( scalar( @result ) == 0 ) {
-				@result = (
-					$id,
-					( ( $all_ids[ 0 ] eq $id ) ? $all_ids[ 1 ] : $all_ids[ 0 ] ),
-					$really_bad_score
-				);
-			}
-			$min_score = $really_bad_score;
-			next;
-		}
+	my @results = ( [ $id1, $id2, $score ] );
 
-		if ( scalar( @result ) == 0 || $min_score < $result[ -1 ] ) {
-			my $other_id = first_value { $scan_of_id->{ $ARG } == $min_score } sort( keys( %$scan_of_id ) );
-			my $spaceship_result = cluster_name_spaceship( $id, $other_id );
-			@result = (
-				( $spaceship_result < 0 ) ? $id       : $other_id,
-				( $spaceship_result < 0 ) ? $other_id : $id,
-				$min_score
-			);
-		}
+	my %excluded_ids = ( $id1 => 1, $id2 => 1 );
+	while ( my $next_result_in_window = $self->ids_and_score_of_lowest_score( [ $evalue_cutoff, \%excluded_ids ] ) ) {
+		push @results, $next_result_in_window;
+		my ( $next_id1, $next_id2, $next_score ) = @$next_result_in_window;
+		$excluded_ids{ $next_result_in_window->[ 0 ] } = 1;
+		$excluded_ids{ $next_result_in_window->[ 1 ] } = 1;
 	}
 
-	return ( scalar( @result ) > 0 )
-		? \@result
-		: [ $all_ids[ 0 ], $all_ids[ 1 ], $really_bad_score ];
+	return \@results;
 }
 
 =head2 remove

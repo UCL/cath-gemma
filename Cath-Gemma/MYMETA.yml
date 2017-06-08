@@ -4,6 +4,7 @@ author:
   - 'Tony E Lewis <a@b.com>'
 build_requires:
   ExtUtils::MakeMaker: '0'
+  Test::Differences: '0'
   Test::More: '0'
 configure_requires:
   ExtUtils::MakeMaker: '0'
@@ -30,6 +31,8 @@ requires:
   MooX::HandlesVia: '0'
   MooX::StrictConstructor: '0'
   Path::Tiny: '0'
+  Role::Singleton: '0'
+  Thread::Pool::Simple: '0'
   Try::Tiny: '0'
   Type::Tiny: '0'
   Types::Path::Tiny: '0'

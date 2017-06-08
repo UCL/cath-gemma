@@ -10,9 +10,9 @@ use strict;
 use warnings;
 
 # Core
-use English            qw/ -no_match_vars           /;
-use List::Util         qw/ sum0                     /;
-use Storable           qw/ thaw                     /;
+use English            qw/ -no_match_vars   /;
+use List::Util         qw/ sum0             /;
+use Storable           qw/ thaw             /;
 use v5.10;
 
 # Moo
@@ -23,9 +23,9 @@ use strictures 1;
 
 # Non-core (local)
 use Path::Tiny;
-use Type::Params       qw/ compile Invocant         /;
-use Types::Path::Tiny  qw/ Path                     /;
-use Types::Standard    qw/ ArrayRef Object Optional /;
+use Type::Params       qw/ compile Invocant /;
+use Types::Path::Tiny  qw/ Path             /;
+use Types::Standard    qw/ ArrayRef Object  /;
 
 # Cath
 use Cath::Gemma::Compute::ProfileBuildTask;
@@ -104,12 +104,12 @@ sub total_num_starting_clusters_in_profiles {
 =cut
 
 sub execute_task {
-	state $check = compile( Object, CathGemmaDiskExecutables, Optional[Path] );
-	my ( $self, $exes, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( Object, CathGemmaDiskExecutables );
+	my ( $self, $exes ) = $check->( @ARG );
 
 	my @results;
 	foreach my $profile_batch ( @{ $self->profile_batches() } ) {
-		push @results, $profile_batch->execute_task( $exes, $tmp_dir );
+		push @results, $profile_batch->execute_task( $exes, $exes->tmp_dir() );
 	}
 	return \@results;
 }
@@ -140,10 +140,10 @@ sub read_from_file {
 =cut
 
 sub execute_from_file {
-	state $check = compile( Invocant, Path, CathGemmaDiskExecutables, Optional[Path] );
-	my ( $proto, $file, $exes, $tmp_dir ) = $check->( @ARG );
+	state $check = compile( Invocant, Path, CathGemmaDiskExecutables );
+	my ( $proto, $file, $exes ) = $check->( @ARG );
 
-	return $proto->read_from_file( $file )->execute_task( $exes, $tmp_dir );
+	return $proto->read_from_file( $file )->execute_task( $exes, $exes->tmp_dir() );
 }
 
 1;

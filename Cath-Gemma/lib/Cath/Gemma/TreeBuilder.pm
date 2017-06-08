@@ -23,9 +23,14 @@ use Types::Path::Tiny qw/ Path                              /;
 use Types::Standard   qw/ ArrayRef Bool Object Optional Str /;
 
 # Cath
+use Cath::Gemma::Compute::ProfileBuildTask;
+use Cath::Gemma::Compute::ProfileScanTask;
+use Cath::Gemma::Executor;
+use Cath::Gemma::Scan::ScansDataFactory;
 use Cath::Gemma::Types qw/
-	CathGemmaDiskExecutables
+	CathGemmaCompassProfileType
 	CathGemmaDiskGemmaDirSet
+	CathGemmaExecutor
 /;
 
 =head2 requires build_tree
@@ -34,6 +39,12 @@ use Cath::Gemma::Types qw/
 
 requires 'build_tree';
 
+=head2 requires name
+
+=cut
+
+requires 'name';
+
 =head2 around build_tree
 
 =cut
@@ -41,45 +52,44 @@ requires 'build_tree';
 around build_tree => sub {
 	my $orig = shift;
 
-	state $check = compile( Object, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskGemmaDirSet, Path, Optional[Bool] );
-	my ( $self, $exes, $starting_clusters, $gemma_dir_set, $working_dir, $use_depth_first ) = $check->( @ARG );
-
-	# warn "In around build_tree";
+	state $check = compile( Object, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType, Optional[Bool] );
+	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $use_depth_first ) = $check->( @ARG );
 
 	$use_depth_first //= 0;
 
-	# Ensure all starting clusters have profiles
-	foreach my $starting_cluster ( @$starting_clusters ) {
-		my $build_aln_and_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
-			$exes,
-			[ $starting_cluster ],
-			$gemma_dir_set->profile_dir_set(),
-			$working_dir,
-		);
-	}
+	$executor->execute(
 
-	# Ensure scans are in place for all-vs-all scan of starting clusters
-	my $initial_scans = Cath::Gemma::Tree::MergeList->inital_scans_of_starting_clusters( $starting_clusters );
-	foreach my $initial_scan ( @$initial_scans ) {
-		my $result = Cath::Gemma::Tool::CompassScanner->compass_scan_to_file(
-			$exes,
-			[ $initial_scan->[ 0 ] ],
-			$initial_scan->[ 1 ],
-			$gemma_dir_set,
-			$working_dir,
-		);
-	}
+		# Build alignments and profiles for...
+		[
+			# ...all starting_clusters
+			Cath::Gemma::Compute::ProfileBuildTask->new(
+				starting_cluster_lists     => [ map { [ $ARG ] } @$starting_clusters ],
+				dir_set                    => $gemma_dir_set->profile_dir_set(),
+				compass_profile_build_type => $compass_profile_build_type,
+			)->remove_already_present(),
+		],
 
-	my $scans_data = Cath::Gemma::Scan::ScansData->new_from_starting_clusters( $starting_clusters );
-	foreach my $initial_scan ( @$initial_scans ) {
-		my ( $query_id, $match_cluster_ids ) = @$initial_scan;
-		my $filename  = $gemma_dir_set->scan_filename_of_cluster_ids( [ $query_id ], $match_cluster_ids );
-		$scans_data->add_scan_data( Cath::Gemma::Scan::ScanData->read_from_file( $filename ) );
-	}
+		# Perform scans for...
+		[
+			# ...all initial nodes (ie starting cluster vs other starting clusters)
+			Cath::Gemma::Compute::ProfileScanTask->new(
+				starting_cluster_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
+				dir_set                     => $gemma_dir_set,
+				compass_profile_build_type  => $compass_profile_build_type,
+			),
+		]
+	);
 
-	if ( scalar ( @_ ) < 6 ) {
+	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_starting_clusters_and_gemma_dir_set(
+		$starting_clusters,
+		$gemma_dir_set,
+		$compass_profile_build_type,
+	);
+
+	if ( scalar ( @ARG ) < 6 ) {
 		push @ARG, $use_depth_first;
 	}
+
 	push @ARG, $scans_data;
 
 	$orig->( @ARG );

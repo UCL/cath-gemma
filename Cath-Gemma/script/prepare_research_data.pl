@@ -51,7 +51,6 @@ my $projects_list_file         = path( 'temporary_example_data/projects.txt' );
 my $scan_dir                   = path( 'temporary_example_data/output'            );
 my $starting_clusters_base_dir = path( 'temporary_example_data/starting_clusters' );
 my $trace_files_dir            = path( 'temporary_example_data/tracefiles'        );
-my $working_dir                = path( '/dev/shm'                                 );
 
 my $projects_list_data = $projects_list_file->slurp();
 my @projects = split( /\n+/, $projects_list_data );
@@ -120,20 +119,20 @@ foreach my $project ( @projects ) {
 		[
 			# ...all initial nodes (ie starting cluster vs other starting clusters)
 			Cath::Gemma::Compute::ProfileScanTask->new(
-				$mergelist->initial_scan_lists( 0 ),
-				dir_set => $gemma_dir_set,
+				starting_cluster_list_pairs => $mergelist->initial_scan_lists( 0 ),
+				dir_set                     => $gemma_dir_set,
 			),
 
 			# ...all merge nodes (use_depth_first:0)
 			Cath::Gemma::Compute::ProfileScanTask->new(
-				$mergelist->later_scan_lists( 0 ),
-				dir_set => $gemma_dir_set,
+				starting_cluster_list_pairs => $mergelist->later_scan_lists( 0 ),
+				dir_set                     => $gemma_dir_set,
 			),
 
 			# ...all merge nodes (use_depth_first:1)
 			Cath::Gemma::Compute::ProfileScanTask->new(
-				$mergelist->later_scan_lists( 1 ),
-				dir_set => $gemma_dir_set,
+				starting_cluster_list_pairs => $mergelist->later_scan_lists( 1 ),
+				dir_set                     => $gemma_dir_set,
 			),
 
 		]
@@ -142,30 +141,30 @@ foreach my $project ( @projects ) {
 }
 
 __END__
- 
+
 =head1 NAME
- 
+
 prepare_research_data.pl - TODOCUMENT
- 
+
 =head1 SYNOPSIS
- 
+
 prepare_research_data.pl [options]
- 
+
  Options:
    --help            brief help message
- 
+
 =head1 OPTIONS
- 
+
 =over 8
- 
+
 =item B<--help>
- 
+
 Print a brief help message and exits.
- 
+
 =back
- 
+
 =head1 DESCRIPTION
- 
+
 B<This program> will TODOCUMENT
- 
+
 =cut

@@ -79,3 +79,10 @@ or
 cd lib
 find .      -iname '*.pm' | sort | sed 's/^lib\///g' | sed 's/\.pm$//g' | sed 's/\.\///g' | sed 's/\//::/g' | xargs -I VAR perl -Ilib -I../extlib/lib/perl5 -MVAR -e ''
 ~~~
+
+
+Of possible future interest
+--
+
+ * MooX::ConfigFromFile
+ * `shift if ref $_[0] eq __PACKAGE__;`

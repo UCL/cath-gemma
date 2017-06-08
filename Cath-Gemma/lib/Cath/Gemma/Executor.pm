@@ -43,8 +43,6 @@ before execute => sub {
 
 	$ARG[ 1 ] //= [];
 	$ARG[ 2 ] //= [];
-
-	warn "Checked params " . join( ', ', @ARG );
 };
 
 1;

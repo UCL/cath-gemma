@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 # Core
-use English            qw/ -no_match_vars                   /;
+use English            qw/ -no_match_vars            /;
 use v5.10;
 
 # Moo
@@ -15,14 +15,15 @@ use strictures 1;
 
 # Non-core (local)
 use Path::Tiny;
-use Type::Params       qw/ compile                          /;
-use Types::Path::Tiny  qw/ Path                             /;
-use Types::Standard    qw/ ArrayRef Object Optional Str Tuple /;
+use Type::Params       qw/ compile                   /;
+use Types::Path::Tiny  qw/ Path                      /;
+use Types::Standard    qw/ ArrayRef Object Str Tuple /;
 
 # Cath
 use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Tool::CompassScanner;
 use Cath::Gemma::Types qw/
+	CathGemmaCompassProfileType
 	CathGemmaDiskExecutables
 	CathGemmaDiskGemmaDirSet
 /;
@@ -41,6 +42,16 @@ has starting_cluster_list_pairs => (
 		num_scans                           => 'count',
 		starting_cluster_list_pair_of_index => 'get',
 	}
+);
+
+=head2 compass_profile_build_type
+
+=cut
+
+has compass_profile_build_type => (
+	is       => 'ro',
+	isa      => CathGemmaCompassProfileType,
+	required => 1,
 );
 
 =head2 dir_set
@@ -109,10 +120,8 @@ sub total_num_starting_clusters {
 =cut
 
 sub execute_task {
-	state $check = compile( Object, CathGemmaDiskExecutables, Optional[Path] );
-	my ( $self, $exes, $tmp_dir ) = $check->( @ARG );
-
-	$tmp_dir //= $self->scan_dir();
+	state $check = compile( Object, CathGemmaDiskExecutables );
+	my ( $self, $exes ) = $check->( @ARG );
 
 	if ( ! $self->dir_set()->is_set() ) {
 		warn "Cannot execute_task on a ProfileScanTask that doesn't have all its directories configured";
@@ -127,10 +136,31 @@ sub execute_task {
 				$query_ids,
 				$match_ids,
 				$self->dir_set(),
-				$tmp_dir
+				$self->compass_profile_build_type(),
 			);
 		}
 		@{ $self->starting_cluster_list_pairs() },
+	];
+}
+
+=head2 split
+
+=cut
+
+sub split {
+	state $check = compile( Object );
+	my ( $self  ) = $check->( @ARG );
+
+	return [
+		map
+			{
+				Cath::Gemma::Compute::ProfileScanTask->new(
+					compass_profile_build_type  => $self->compass_profile_build_type(),
+					dir_set                     => $self->dir_set(),
+					starting_cluster_list_pairs => [ $ARG ],
+				);
+			}
+			@{ $self->starting_cluster_list_pairs() }
 	];
 }
 

@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 # Core
-use English            qw/ -no_match_vars                   /;
+use English            qw/ -no_match_vars          /;
 use v5.10;
 
 # Moo
@@ -15,14 +15,15 @@ use strictures 1;
 
 # Non-core (local)
 use Path::Tiny;
-use Type::Params       qw/ compile                          /;
-use Types::Path::Tiny  qw/ Path                             /;
-use Types::Standard    qw/ ArrayRef Int Object Optional Str /;
+use Type::Params       qw/ compile                 /;
+use Types::Path::Tiny  qw/ Path                    /;
+use Types::Standard    qw/ ArrayRef Int Object Str /;
 
 # Cath
 use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Types qw/
+	CathGemmaCompassProfileType
 	CathGemmaDiskExecutables
 	CathGemmaDiskProfileDirSet
 /;
@@ -40,22 +41,34 @@ has starting_cluster_lists => (
 		is_empty                   => 'is_empty',
 		num_profiles               => 'count',
 		starting_clusters_of_index => 'get',
-	}
+	},
+	required    => 1,
+);
+
+=head2 compass_profile_build_type
+
+=cut
+
+has compass_profile_build_type => (
+	is       => 'ro',
+	isa      => CathGemmaCompassProfileType,
+	required => 1,
 );
 
 =head2 dir_set
 
 =cut
 
-has dir_set => (
-	is      => 'ro',
-	isa     => CathGemmaDiskProfileDirSet,
-	default => sub { CathGemmaDiskProfileDirSet->new(); },
-	handles => {
+has dir_set  => (
+	is       => 'ro',
+	isa      => CathGemmaDiskProfileDirSet,
+	default  => sub { CathGemmaDiskProfileDirSet->new(); },
+	handles  => {
 		aln_dir              => 'aln_dir',
 		prof_dir             => 'prof_dir',
 		starting_cluster_dir => 'starting_cluster_dir',
 	},
+	required => 1,
 );
 
 =head2 id
@@ -79,7 +92,7 @@ sub remove_already_present {
 	my $starting_cluster_lists = $self->starting_cluster_lists();
 
 	my @del_indices = grep {
-		-s ( '' . $self->dir_set()->compass_file_of_starting_clusters      ( $starting_cluster_lists->[ $ARG ] ) )
+		-s ( '' . $self->dir_set()->compass_file_of_starting_clusters      ( $starting_cluster_lists->[ $ARG ], $self->compass_profile_build_type() ) )
 		&&
 		-s ( '' . $self->dir_set()->alignment_filename_of_starting_clusters( $starting_cluster_lists->[ $ARG ] ) )
 	} ( 0 .. $#$starting_cluster_lists );
@@ -123,10 +136,8 @@ sub total_num_starting_clusters {
 =cut
 
 sub execute_task {
-	state $check = compile( Object, CathGemmaDiskExecutables, Optional[Path] );
-	my ( $self, $exes, $tmp_dir ) = $check->( @ARG );
-
-	$tmp_dir //= $self->aln_dir();
+	state $check = compile( Object, CathGemmaDiskExecutables );
+	my ( $self, $exes ) = $check->( @ARG );
 
 	if ( ! $self->dir_set()->is_set() ) {
 		warn "Cannot execute_task on a ProfileBuildTask that doesn't have all its directories configured";
@@ -140,10 +151,31 @@ sub execute_task {
 				$exes,
 				$starting_clusters,
 				$self->dir_set(),
-				$tmp_dir
+				$self->compass_profile_build_type(),
 			);
 		}
 		@{ $self->starting_cluster_lists() },
+	];
+}
+
+=head2 split
+
+=cut
+
+sub split {
+	state $check = compile( Object );
+	my ( $self  ) = $check->( @ARG );
+
+	return [
+		map
+			{
+				Cath::Gemma::Compute::ProfileBuildTask->new(
+					compass_profile_build_type => $self->compass_profile_build_type(),
+					dir_set                    => $self->dir_set(),
+					starting_cluster_lists     => [ $ARG ],
+				);
+			}
+			@{ $self->starting_cluster_lists() }
 	];
 }
 

@@ -14,6 +14,8 @@ use Test::More tests => 3;
 use JSON::MaybeXS;
 use Path::Tiny;
 
+use Cath::Gemma::Util;
+
 # my $bootstrap_tests = $ENV{ BOOTSTRAP_TESTS } // 0;
 # my $test_basename   = path( $PROGRAM_NAME )->basename( '.t' );
 my $data_dir        = path( 'data' );
@@ -28,8 +30,9 @@ my $starting_cluster_dir = $data_dir->child( 'starting_clusters' );
 
 sub make_example_profile_build_task {
 	return Cath::Gemma::Compute::ProfileBuildTask->new(
-		starting_cluster_lists => [ [ qw/ a b / ] ],
-		dir_set                => Cath::Gemma::Disk::ProfileDirSet->new(
+		starting_cluster_lists     => [ [ qw/ a b / ] ],
+		compass_profile_build_type => default_compass_profile_build_type(),
+		dir_set                    => Cath::Gemma::Disk::ProfileDirSet->new(
 			starting_cluster_dir => $starting_cluster_dir,
 			aln_dir              => path( 'dummy_aln_dir'  ),
 			prof_dir             => path( 'dummy_prof_dir' ),
@@ -40,8 +43,9 @@ sub make_example_profile_build_task {
 subtest 'constructs_without_error' => sub {
 	plan tests => 1;
 	new_ok( 'Cath::Gemma::Compute::ProfileBuildTask' => [
-		starting_cluster_lists => [ [ qw/ a b / ] ],
-		dir_set                => Cath::Gemma::Disk::ProfileDirSet->new(
+		starting_cluster_lists     => [ [ qw/ a b / ] ],
+		compass_profile_build_type => default_compass_profile_build_type(),
+		dir_set                    => Cath::Gemma::Disk::ProfileDirSet->new(
 			starting_cluster_dir => $starting_cluster_dir,
 			aln_dir              => path( 'dummy_aln_dir'  ),
 			prof_dir             => path( 'dummy_prof_dir' ),

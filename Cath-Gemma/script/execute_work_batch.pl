@@ -42,11 +42,8 @@ my $exes = Cath::Gemma::Disk::Executables->new()
 my $result = Cath::Gemma::Compute::WorkBatch->execute_from_file(
 	$batch_file,
 	$exes,
-	'/dev/shm'
+	'/dev/shm',
 );
-
-use Data::Dumper;
-say Dumper( $result );
 
 # use JSON::MaybeXS;
 # my $json = JSON::MaybeXS->new( convert_blessed => 1 );

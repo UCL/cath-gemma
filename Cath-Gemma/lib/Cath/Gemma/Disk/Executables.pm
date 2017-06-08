@@ -23,10 +23,29 @@ use Type::Params      qw/ compile        /;
 use Types::Path::Tiny qw/ Path           /;
 use Types::Standard   qw/ Object Str     /;
 
-my $compass_build_exe = path( "$FindBin::Bin/../tools/compass/compass_wp_245_fixed"              )->realpath;
-my $compass_scan_exe  = path( "$FindBin::Bin/../tools/compass/compass_db1Xdb2_241"               )->realpath;
-my $mafft_bin_dir     = path( "$FindBin::Bin/../tools/mafft-6.864-without-extensions/binaries"   )->realpath;
-my $mafft_src_exe     = path( "$FindBin::Bin/../tools/mafft-6.864-without-extensions/core/mafft" )->realpath;
+# Cath
+use Cath::Gemma::Types qw/ CathGemmaCompassProfileType /;
+use Cath::Gemma::Util;
+
+# COMPASS executables
+my $compass_build_exe    = path( "$FindBin::Bin/../tools/compass/compass_wp_245_fixed"              )->realpath;
+my $compass_scan_241_exe = path( "$FindBin::Bin/../tools/compass/compass_db1Xdb2_241"               )->realpath;
+my $compass_scan_310_exe = path( "$FindBin::Bin/../tools/compass/compass_db1Xdb2_310"               )->realpath;
+my $mk_compass_db_exe    = path( "$FindBin::Bin/../tools/compass/mk_compass_db_310"                 )->realpath;
+
+# MAFFT executables
+my $mafft_bin_dir        = path( "$FindBin::Bin/../tools/mafft-6.864-without-extensions/binaries"   )->realpath;
+my $mafft_src_exe        = path( "$FindBin::Bin/../tools/mafft-6.864-without-extensions/core/mafft" )->realpath;
+
+=head2 tmp_dir
+
+=cut
+
+has tmp_dir => (
+	is      => 'ro',
+	isa     => Path,
+	default => sub { default_temp_dir(); }
+);
 
 =head2 _exes_dir
 
@@ -46,11 +65,20 @@ has compass_build => (
 	isa => Path,
 );
 
-=head2 compass_scan
+=head2 compass_scan_241
 
 =cut
 
-has compass_scan => (
+has compass_scan_241 => (
+	is  => 'lazy',
+	isa => Path,
+);
+
+=head2 compass_scan_310
+
+=cut
+
+has compass_scan_310 => (
 	is  => 'lazy',
 	isa => Path,
 );
@@ -60,6 +88,15 @@ has compass_scan => (
 =cut
 
 has mafft => (
+	is  => 'lazy',
+	isa => Path,
+);
+
+=head2 mk_compass_db
+
+=cut
+
+has mk_compass_db => (
 	is  => 'lazy',
 	isa => Path,
 );
@@ -127,14 +164,24 @@ sub _build_compass_build {
 	return $self->_prepare_exe( 'compass_build', $compass_build_exe );
 }
 
-=head2 _build_compass_scan
+=head2 _build_compass_scan_241
 
 =cut
 
-sub _build_compass_scan {
+sub _build_compass_scan_241 {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
-	return $self->_prepare_exe( 'compass_scan', $compass_scan_exe );
+	return $self->_prepare_exe( 'compass_scan_241', $compass_scan_241_exe );
+}
+
+=head2 _build_compass_scan_310
+
+=cut
+
+sub _build_compass_scan_310 {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return $self->_prepare_exe( 'compass_scan_310', $compass_scan_310_exe );
 }
 
 =head2 _build_mafft
@@ -146,6 +193,31 @@ sub _build_mafft {
 	my ( $self ) = $check->( @ARG );
 	$self->_prepare_mafft_directories();
 	return $self->_prepare_exe( 'mafft', $mafft_src_exe );
+}
+
+=head2 _build_mk_compass_db
+
+=cut
+
+sub _build_mk_compass_db {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return $self->_prepare_exe( 'mk_compass_db', $mk_compass_db_exe );
+}
+
+=head2 prepare_all
+
+=cut
+
+sub prepare_all {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	$self->compass_build();
+	$self->compass_scan_241();
+	$self->compass_scan_310();
+	$self->mafft();
+	$self->mk_compass_db();
 }
 
 1;

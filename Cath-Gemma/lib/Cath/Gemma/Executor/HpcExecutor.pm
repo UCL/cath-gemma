@@ -19,6 +19,12 @@ use strictures 1;
 
 # Non-core (local)
 use Types::Path::Tiny qw/ Path           /;
+use Log::Log4perl::Tiny qw/ :easy        /; # ***** TEMPORARY ******
+
+# Cath
+use Cath::Gemma::Compute::WorkBatcher;
+
+with ( 'Cath::Gemma::Executor' );
 
 =head2 submission_dir
 
@@ -42,9 +48,10 @@ sub execute {
 	foreach my $build_task ( @$build_tasks ) {
 		$work_batcher->add_profile_build_work( $build_task );
 	}
-	foreach my $scan_task ( @$scan_tasks ) {
-		$work_batcher->add_profile_scan_work( $scan_task );
-	}
+	ERROR 'Should do $work_batcher->add_profile_scan_work( ... ) but it isn\'t implemented';
+	# foreach my $scan_task ( @$scan_tasks ) {
+	# 	$work_batcher->add_profile_scan_work( $scan_task );
+	# }
 
 	$work_batcher->submit_to_compute_cluster( $self->submission_dir()->realpath() );
 }

@@ -4,41 +4,65 @@ use strict;
 use warnings;
 
 # Core
-use Carp                qw/ confess                         /;
-use English             qw/ -no_match_vars                  /;
-use File::Copy          qw/ copy move                       /;
+use Carp                qw/ confess                  /;
+use English             qw/ -no_match_vars           /;
+use File::Copy          qw/ copy move                /;
 use FindBin;
-use Time::HiRes         qw/ gettimeofday tv_interval        /;
+use Time::HiRes         qw/ gettimeofday tv_interval /;
 use v5.10;
 
 # Non-core (local)
-use Capture::Tiny       qw/ capture                         /;
-use Cwd::Guard          qw/ cwd_guard                       /;
-use Log::Log4perl::Tiny qw/ :easy                           /;
+use Capture::Tiny       qw/ capture                  /;
+use Cwd::Guard          qw/ cwd_guard                /;
+use Log::Log4perl::Tiny qw/ :easy                    /;
 use Path::Tiny;
-use Type::Params        qw/ compile                         /;
-use Types::Path::Tiny   qw/ Path                            /;
-use Types::Standard     qw/ ArrayRef ClassName Optional Str /;
+use Type::Params        qw/ compile                  /;
+use Types::Path::Tiny   qw/ Path                     /;
+use Types::Standard     qw/ ArrayRef ClassName Str   /;
 
 # Cath
 use Cath::Gemma::Tool::Aligner;
 use Cath::Gemma::Types  qw/
+	CathGemmaCompassProfileType
 	CathGemmaDiskExecutables
 	CathGemmaDiskProfileDirSet
 /;
 use Cath::Gemma::Util;
 
-=head2 build_compass_profile
+=head2 _run_compass
 
 =cut
 
-sub build_compass_profile {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, CathGemmaDiskProfileDirSet, Optional[Path] );
-	my ( $class, $exes, $aln_file, $profile_dir_set, $tmp_dir ) = $check->( @ARG );
+sub _run_compass_build {
+	state $check = compile( ArrayRef[Str], Str, CathGemmaCompassProfileType );
+	my ( $cmd_parts, $output_stem, $compass_profile_build_type ) = $check->( @ARG );
 
-	$tmp_dir //= $profile_dir_set->prof_dir();
+	INFO 'About to build    ' . $compass_profile_build_type . ' COMPASS profile for cluster ' . $output_stem;
 
-	my $compass_prof_file = $profile_dir_set->prof_file_of_aln_file( $aln_file );
+	my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
+		system( @$cmd_parts );
+	};
+
+	if ( $compass_exit != 0 ) {
+		confess
+			"COMPASS profile-building command (for $output_stem) : "
+			.join( ' ', @$cmd_parts )
+			." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
+	}
+
+	INFO 'Finished building ' . $compass_profile_build_type . ' COMPASS profile for cluster ' . $output_stem;
+
+}
+
+=head2 build_compass_profile_in_dir
+
+=cut
+
+sub build_compass_profile_in_dir {
+	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, Path, CathGemmaCompassProfileType );
+	my ( $class, $exes, $aln_file, $prof_dir, $compass_profile_build_type ) = $check->( @ARG );
+
+	my $compass_prof_file = prof_file_of_prof_dir_and_aln_file( $prof_dir, $aln_file, $compass_profile_build_type );
 	my $output_stem       = $aln_file->basename( alignment_profile_suffix() );
 
 	return run_and_time_filemaking_cmd(
@@ -47,49 +71,74 @@ sub build_compass_profile {
 		sub {
 			my $prof_atomic_file = shift;
 			my $tmp_prof_file    = path( $prof_atomic_file->filename );
-
-			my $tmp_dummy_aln_file  = Path::Tiny->tempfile( DIR => $tmp_dir, TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => alignment_profile_suffix(), CLEANUP => 1 );
-			my $tmp_dummy_prof_file = Path::Tiny->tempfile( DIR => $tmp_dir, TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => compass_profile_suffix(),   CLEANUP => 1 );
-			$tmp_dummy_aln_file->spew( "'>A\nA\n" );
-
-			my $compass_build_exe = $exes->compass_build();
-
-			my $tmp_dummy_aln_absfile  = $tmp_dummy_aln_file->absolute();
-			my $tmp_prof_absfile       = $tmp_prof_file->absolute();
-			my $tmp_dummy_prof_absfile = $tmp_dummy_prof_file->absolute();
+			my $tmp_prof_absfile = $tmp_prof_file->absolute();
 
 			# The filename gets written into the profile so nice to make it local...
 			my $changed_directory_guard = cwd_guard( ''. $aln_file->parent->absolute() );
 
-			my @compass_params = (
-				'-g',  '0.50001',
-				'-i',  $aln_file->basename(),
-				'-j',  $tmp_dummy_aln_absfile,
-				'-p1', $tmp_prof_absfile,
-				'-p2', $tmp_dummy_prof_absfile,
-			);
+			if ( $compass_profile_build_type eq 'mk_compass_db' ) {
+				my $tmp_list_file = Path::Tiny->tempfile( DIR => $exes->tmp_dir(), TEMPLATE => '.mk_compass_db.list.XXXXXXXXXXX', SUFFIX => '.txt', CLEANUP => 1 );
+				$tmp_list_file->spew( $aln_file->basename() . "\n" );
 
-			INFO 'About to build    COMPASS profile for cluster ' . $output_stem;
+				_run_compass_build(
+					[
+						'' . $exes->mk_compass_db(),
+						'-g', '0.50001',
+						'-i', ''.$tmp_list_file,
+						'-o', ''.$tmp_prof_absfile,
+					],
+					$output_stem,
+					$compass_profile_build_type
+				);
 
-			my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
-				system( "$compass_build_exe", @compass_params );
-			};
-
-			if ( $compass_exit != 0 ) {
-				confess
-					"COMPASS profile-building command "
-					.join( ' ', ( "$compass_build_exe", @compass_params ) )
-					." failed with:\nstderr:\n$compass_stderr\nstdout:\n$compass_stdout";
+				my $length_file = $tmp_prof_absfile->sibling( $tmp_prof_absfile->basename() . '.len' );
+				if ( ! -s $length_file ) {
+					confess "Couldn't find non-empty length file \"$length_file\"";
+				}
+				$length_file->remove()
+					or confess "Unable to remove COMPASS profile \"$length_file\" : $OS_ERROR";
 			}
+			else {
+				my $tmp_dummy_aln_file  = Path::Tiny->tempfile( DIR => $exes->tmp_dir(), TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => alignment_profile_suffix(), CLEANUP => 1 );
+				my $tmp_dummy_prof_file = Path::Tiny->tempfile( DIR => $exes->tmp_dir(), TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => compass_profile_suffix(),   CLEANUP => 1 );
+				$tmp_dummy_aln_file->spew( ">A\nA\n" );
 
-			INFO 'Finished building COMPASS profile for cluster ' . $output_stem;
+				my $tmp_dummy_aln_absfile  = $tmp_dummy_aln_file->absolute();
+				my $tmp_dummy_prof_absfile = $tmp_dummy_prof_file->absolute();
 
-			my ( $sed_stdout, $sed_stderr, $sed_exit ) = capture {
-				system( 'sed', '-i', '-e', '3i#', '-e', '2d', "$tmp_prof_absfile" );
-			};
+				_run_compass_build(
+					[
+						'' . $exes->compass_build(),
+						'-g', '0.50001',
+						(
+							( $compass_profile_build_type eq 'compass_wp_dummy_1st' )
+							? (
+								# Matches trace_files_from_dfx_run_201705 :
+								'-i',  ''.$tmp_dummy_aln_absfile,
+								'-j',  ''.$aln_file->basename(),
+								'-p1', ''.$tmp_dummy_prof_absfile,
+								'-p2', ''.$tmp_prof_absfile,
+							)
+							: (
+								# Almost matches trace_files_from_daves_dirs :
+								'-i',  ''.$aln_file->basename(),
+								'-j',  ''.$tmp_dummy_aln_absfile,
+								'-p1', ''.$tmp_prof_absfile,
+								'-p2', ''.$tmp_dummy_prof_absfile,
+							)
+						)
+					],
+					$output_stem,
+					$compass_profile_build_type
+				);
 
-			if ( $sed_exit || $sed_stdout || $sed_stderr ) {
-				confess "Cannot run sed to standardise second comment line of COMPASS profile file \"$tmp_prof_file\"";
+				my ( $sed_stdout, $sed_stderr, $sed_exit ) = capture {
+					system( 'sed', '-i', '-e', '3i#', '-e', '2d', "$tmp_prof_absfile" );
+				};
+
+				if ( $sed_exit || $sed_stdout || $sed_stderr ) {
+					confess "Cannot run sed to standardise second comment line of COMPASS profile file \"$tmp_prof_file\":\n\n$sed_exit\n\n$sed_stdout\n\n$sed_stderr\n\n ";
+				}
 			}
 
 			return {};
@@ -98,17 +147,32 @@ sub build_compass_profile {
 }
 
 
+=head2 build_compass_profile
+
+=cut
+
+sub build_compass_profile {
+	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, CathGemmaDiskProfileDirSet, CathGemmaCompassProfileType );
+	my ( $class, $exes, $aln_file, $profile_dir_set, $compass_profile_build_type ) = $check->( @ARG );
+
+	return __PACKAGE__->build_compass_profile_in_dir(
+		$exes,
+		$aln_file,
+		$profile_dir_set->prof_dir(),
+		$compass_profile_build_type,
+	);
+}
+
 =head2 build_alignment_and_compass_profile
 
 =cut
 
 sub build_alignment_and_compass_profile {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, Optional[Path] );
-	my ( $class, $exes, $starting_clusters, $profile_dir_set, $tmp_dir ) = $check->( @ARG );
-	$tmp_dir //= $profile_dir_set->aln_dir();
+	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, CathGemmaCompassProfileType );
+	my ( $class, $exes, $starting_clusters, $profile_dir_set, $compass_profile_build_type ) = $check->( @ARG );
 
 	my $aln_file = $profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters );
-	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $tmp_dir );
+	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $exes->tmp_dir() );
 	my $alignment_result = 
 		( -s $aln_file )
 		? {
@@ -118,7 +182,6 @@ sub build_alignment_and_compass_profile {
 			$exes,
 			$starting_clusters,
 			$profile_dir_set,
-			$tmp_dir
 		);
 
 	my $built_aln_file   = $alignment_result->{ out_filename  };
@@ -126,7 +189,7 @@ sub build_alignment_and_compass_profile {
 		$exes,
 		$built_aln_file,
 		$profile_dir_set,
-		$tmp_dir,
+		$compass_profile_build_type,
 	);
 
 	if ( "$built_aln_file" ne "$aln_file" ) {

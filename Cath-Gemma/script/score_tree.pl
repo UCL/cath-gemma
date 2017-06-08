@@ -5,7 +5,10 @@ use warnings;
 
 # Core
 use feature qw/ say            /;
+use English qw/ -no_match_vars /;
 use FindBin;
+use Getopt::Long;
+use Pod::Usage;
 
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
@@ -17,13 +20,39 @@ use lib "$FindBin::Bin/../lib";
 # Cath
 use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Disk::ProfileDirSet;
+use Cath::Gemma::Executor::HpcExecutor; # ***** TEMPORARY (use factory) *****
+use Cath::Gemma::Executor::LocalExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::TreeBuilder::PureTreeBuilder;
+use Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
 
-my $exes = Cath::Gemma::Disk::Executables->new();
+my $help              = 0;
+my $local             = 0;
+my $submit_dir_name   = 'fred';
+my $max_num_threads = 6;
+Getopt::Long::Configure( 'bundling' );
+GetOptions(
+	'help'                => \$help,
+	'local'               => \$local,
+	'submit-dir=s'        => \$submit_dir_name,
+	# 'num-local-threads=d' => \$max_num_threads,
+
+) or pod2usage( 2 );
+if ( $help ) {
+	pod2usage( 1 );
+}
 
 # my $trace_files_dir = path( '/cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/clustering_output' );
 # /cath/people2/ucbctnl/GeMMA/v4_0_0/starting_clusters/
+
+my $executor =
+	$local
+		? Cath::Gemma::Executor::LocalExecutor->new(
+			max_num_threads => $max_num_threads,
+		)
+		: Cath::Gemma::Executor::HpcExecutor->new(
+			submission_dir  => path( $submit_dir_name ),
+		);
 
 my $tracefile_extension = '.trace';
 my $basedir             = path( 'temporary_example_data' );
@@ -44,30 +73,62 @@ foreach my $project ( @project_list ) {
 			prof_dir             => $basedir->child( 'output'            )->child( $project ),
 		),
 	);
+	foreach my $use_depth_first ( 0, 1 ) {
+		foreach my $compass_profile_build_type ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / ) {
+			foreach my $tree_builder ( Cath::Gemma::TreeBuilder::PureTreeBuilder    ->new(),
+			                           Cath::Gemma::TreeBuilder::WindowedTreeBuilder->new(),
+			                           ) {
+				my $dfx_tree_file = $dfx_tree_dir ->child( $project . $tracefile_extension );
+				my $dfx_tree      = Cath::Gemma::Tree::MergeList->read_from_tracefile( $dfx_tree_file  );
 
-	my $dave_tree_file = $dave_tree_dir->child( $project . $tracefile_extension );
-	my $dfx_tree_file  = $dfx_tree_dir ->child( $project . $tracefile_extension );
+				my $descriptive_string = '.' . $tree_builder->name() . '.df' . $use_depth_first . '.' . $compass_profile_build_type;
+				my $tree = $tree_builder->build_tree(
+					$executor,
+					$dfx_tree->starting_clusters(),
+					$gemma_dir_set,
+					$compass_profile_build_type,
+					$use_depth_first,
+				);
+				$tree  ->write_to_newick_file( $project . $descriptive_string . '.newick'      );
+				say ( 'WINDOW  (' . $descriptive_string . $tree  ->geometric_mean_score() . ") :\n" );
 
-	my $dave_tree  = Cath::Gemma::Tree::MergeList->read_from_tracefile( $dave_tree_file );
-	my $dfx_tree   = Cath::Gemma::Tree::MergeList->read_from_tracefile( $dfx_tree_file  );
-	my $clean_tree = Cath::Gemma::Tree::TreeBuilder->build_tree(
-		$exes,
-		$dfx_tree->starting_clusters(),
-		$gemma_dir_set,
-		path( '/dev/shm' ), # $working_dir
-	);
-
-
-	$dave_tree ->write_to_newick_file( $project . '.dave.newick' );
-	$dfx_tree  ->write_to_newick_file( $project . '.dfx.newick' );
-	$clean_tree->write_to_newick_file( $project . '.pure.newick' );
-
-	# say ( 'DAVE  (' . $dave_tree ->geometric_mean_score() . ', ' . $dave_tree_file . ") :\n" . $dave_tree ->to_tracefile_string() );
-	# say ( 'DFX   (' . $dfx_tree  ->geometric_mean_score() . ', ' . $dfx_tree_file  . ") :\n" . $dfx_tree  ->to_tracefile_string() );
-	# say ( 'CLEAN (' . $clean_tree->geometric_mean_score() . ', ' .                   ") :\n" . $clean_tree->to_tracefile_string() );
-	say ( 'DAVE  (' . $dave_tree ->geometric_mean_score() . ', ' . $dave_tree_file . ") :\n" );
-	say ( 'DFX   (' . $dfx_tree  ->geometric_mean_score() . ', ' . $dfx_tree_file  . ") :\n" );
-	say ( 'CLEAN (' . $clean_tree->geometric_mean_score() . ', ' .                   ") :\n" );
-	say '';
-	# }
+			}
+		}
+	}
 }
+
+=head1 NAME
+
+score_tree.pl - TODOCUMENT
+
+=head1 SYNOPSIS
+
+score_tree.pl [options]
+
+ Options:
+   --help              Brief help message
+   --local             Perform all computation locally
+   --submit-dir        The directory in which the compute cluster submission gubbins should be written
+   --num-local-threads The number of threads to use in a local run
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--help>
+
+Print a brief help message and exits.
+
+=item B<--submit_dir>
+
+The directory in which the compute cluster submission gubbins should be written
+
+TODOCUMENT
+
+=back
+
+=head1 DESCRIPTION
+
+B<This program> will TODOCUMENT
+
+=cut

@@ -18,7 +18,10 @@ use Types::Path::Tiny  qw/ Path                       /;
 use Types::Standard    qw/ ArrayRef Object Str        /;
 
 # Cath
-use Cath::Gemma::Types qw/ CathGemmaDiskProfileDirSet /;
+use Cath::Gemma::Types qw/
+	CathGemmaCompassProfileType
+	CathGemmaDiskProfileDirSet
+/;
 use Cath::Gemma::Util;
 
 =head2 profile_dir_set
@@ -65,10 +68,15 @@ sub is_set {
 =cut
 
 sub scan_filename_of_cluster_ids {
-	state $check = compile( Object, ArrayRef[Str], ArrayRef[Str] );
-	my ( $self, $query_ids, $match_ids ) = $check->( @ARG );
+	state $check = compile( Object, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
+	my ( $self, $query_ids, $match_ids, $compass_profile_build_type ) = $check->( @ARG );
 
-	return $self->scan_dir()->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids ) );
+	return scan_filename_of_dir_and_cluster_ids(
+		$self->scan_dir(),
+		$query_ids,
+		$match_ids,
+		$compass_profile_build_type,
+	);
 }
 
 1;

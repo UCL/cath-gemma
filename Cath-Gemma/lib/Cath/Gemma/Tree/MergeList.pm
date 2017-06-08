@@ -257,6 +257,21 @@ sub inital_scans_of_starting_clusters {
 	return \@results;
 }
 
+=head2 inital_scan_lists_of_starting_clusters
+
+=cut
+
+sub inital_scan_lists_of_starting_clusters {
+	state $check = compile( Invocant, ArrayRef[Str] );
+	my ( $proto, $starting_clusters ) = $check->( @ARG );
+
+	return [
+		map
+		{ [ [ $ARG->[ 0 ] ], $ARG->[ 1 ] ]; }
+		@{ $proto->inital_scans_of_starting_clusters( $starting_clusters ) }
+	];
+}
+
 =head2 initial_scans
 
 =cut
@@ -281,7 +296,7 @@ sub initial_scan_lists {
 		map
 		{ [ [ $ARG->[ 0 ] ], $ARG->[ 1 ] ]; }
 		@{ $self->initial_scans() }
-	]
+	];
 }
 
 =head2 later_scans
