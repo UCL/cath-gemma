@@ -10,11 +10,12 @@ use strict;
 use warnings;
 
 # Core
-use Carp              qw/ confess                                         /;
-use Digest::MD5       qw/ md5_hex                                         /;
-use English           qw/ -no_match_vars                                  /;
-use Exporter          qw/ import                                          /;
-use Time::HiRes       qw/ gettimeofday tv_interval                        /;
+use Carp              qw/ confess                                             /;
+use Digest::MD5       qw/ md5_hex                                             /;
+use English           qw/ -no_match_vars                                      /;
+use Exporter          qw/ import                                              /;
+use POSIX             qw/ ceil floor log10                                    /;
+use Time::HiRes       qw/ gettimeofday tv_interval                            /;
 use Time::Seconds;
 use v5.10;
 
@@ -26,6 +27,8 @@ our @EXPORT = qw/
 	compass_scan_suffix
 	default_compass_profile_build_type
 	default_temp_dir
+	evalue_window_ceiling
+	evalue_window_floor
 	generic_id_of_clusters
 	id_of_starting_clusters
 	mergee_is_starting_cluster
@@ -41,12 +44,14 @@ our @EXPORT = qw/
 
 # Non-core (local)
 use Path::Tiny;
-use Type::Params      qw/ compile                                         /;
-use Types::Path::Tiny qw/ Path                                            /;
-use Types::Standard   qw/ ArrayRef Bool CodeRef Maybe Optional slurpy Str /;
+use Type::Params      qw/ compile                                             /;
+use Types::Path::Tiny qw/ Path                                                /;
+use Types::Standard   qw/ ArrayRef Bool CodeRef Maybe Num Optional slurpy Str /;
 
 # Cath
-use Cath::Gemma::Types qw/ CathGemmaCompassProfileType /;
+use Cath::Gemma::Types qw/
+	CathGemmaCompassProfileType
+/;
 
 =head2 time_fn
 
@@ -250,6 +255,28 @@ sub default_compass_profile_build_type {
 
 sub default_temp_dir {
 	return path( '/dev/shm' );
+}
+
+=head2 evalue_window_ceiling
+
+=cut
+
+sub evalue_window_ceiling {
+	state $check = compile( Num );
+	my ( $evalue ) = $check->( @ARG );
+
+	( 10 ** ( ceil( log10( $evalue ) / 10 ) * 10 ) );
+}
+
+=head2 evalue_window_floor
+
+=cut
+
+sub evalue_window_floor {
+	state $check = compile( Num );
+	my ( $evalue ) = $check->( @ARG );
+
+	( 10 ** ( floor( log10( $evalue ) / 10 ) * 10 ) );
 }
 
 =head2 compass_scan_suffix

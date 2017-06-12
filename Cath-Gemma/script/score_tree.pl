@@ -62,9 +62,10 @@ my @tracefile_dirs      = ( $dave_tree_dir, $dfx_tree_dir );
 
 my $project_list_file   = $basedir->child( 'projects.txt' );
 my $project_list_data   = $project_list_file->slurp();
-my @project_list        = split( /\n/, $project_list_data );
+my @project_list        = grep( ! /^#/, split( /\n+/, $project_list_data ) );
 
 foreach my $project ( @project_list ) {
+	warn "Project : $project\n";
 	my $gemma_dir_set = Cath::Gemma::Disk::GemmaDirSet->new(
 		scan_dir        => $basedir->child( 'output' )->child( $project ),
 		profile_dir_set => Cath::Gemma::Disk::ProfileDirSet->new(
@@ -73,24 +74,34 @@ foreach my $project ( @project_list ) {
 			prof_dir             => $basedir->child( 'output'            )->child( $project ),
 		),
 	);
-	foreach my $use_depth_first ( 0, 1 ) {
+
+	# foreach my $clusts_ordering ( 'simple_ordering' ) {
+	# 	foreach my $compass_profile_build_type ( qw/ mk_compass_db / ) {
+	# 		foreach my $tree_builder ( Cath::Gemma::TreeBuilder::PureTreeBuilder->new(),
+	# 		                           ) {
+
+	foreach my $clusts_ordering ( 'simple_ordering', 'tree_df_ordering' ) {
 		foreach my $compass_profile_build_type ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / ) {
-			foreach my $tree_builder ( Cath::Gemma::TreeBuilder::PureTreeBuilder    ->new(),
-			                           Cath::Gemma::TreeBuilder::WindowedTreeBuilder->new(),
+			foreach my $tree_builder (
+			                           Cath::Gemma::TreeBuilder::PureTreeBuilder        ->new(),
+			                           Cath::Gemma::TreeBuilder::WindowedTreeBuilder    ->new(),
 			                           ) {
 				my $dfx_tree_file = $dfx_tree_dir ->child( $project . $tracefile_extension );
 				my $dfx_tree      = Cath::Gemma::Tree::MergeList->read_from_tracefile( $dfx_tree_file  );
 
-				my $descriptive_string = '.' . $tree_builder->name() . '.df' . $use_depth_first . '.' . $compass_profile_build_type;
+				my $descriptive_string = '.' . $tree_builder->name() . '.' . $clusts_ordering . '.' . $compass_profile_build_type;
+
+				warn "About to compute $descriptive_string";
+
 				my $tree = $tree_builder->build_tree(
 					$executor,
 					$dfx_tree->starting_clusters(),
 					$gemma_dir_set,
 					$compass_profile_build_type,
-					$use_depth_first,
+					$clusts_ordering,
 				);
 				$tree  ->write_to_newick_file( $project . $descriptive_string . '.newick'      );
-				say ( 'WINDOW  (' . $descriptive_string . $tree  ->geometric_mean_score() . ") :\n" );
+				say ( 'WINDOW  (' . $descriptive_string . $tree  ->geometric_mean_score( 1e-300 ) . ") :\n" );
 
 			}
 		}

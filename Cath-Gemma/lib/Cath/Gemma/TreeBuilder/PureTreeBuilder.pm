@@ -4,29 +4,16 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                    /;
-use English            qw/ -no_match_vars             /;
-use v5.10;
+use English  qw/ -no_match_vars /;
+
 
 # Moo
 use Moo;
-use MooX::HandlesVia;
 use MooX::StrictConstructor;
 use strictures 1;
 
-# Non-core (local)
-use Type::Params       qw/ compile Invocant           /;
-use Types::Path::Tiny  qw/ Path                       /;
-use Types::Standard    qw/ ArrayRef Bool Optional Str /;
 
-# Cath
-use Cath::Gemma::Scan::ScansData;
-use Cath::Gemma::Tool::CompassProfileBuilder;
-use Cath::Gemma::Tool::CompassScanner;
-use Cath::Gemma::Types qw/
-	CathGemmaDiskGemmaDirSet
-/;
-use Cath::Gemma::Util;
+
 
 with ( 'Cath::Gemma::TreeBuilder' );
 
@@ -45,7 +32,7 @@ Params checked in Cath::Gemma::TreeBuilder
 =cut
 
 sub build_tree {
-	my ( $proto, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $use_depth_first, $scans_data ) = ( @ARG );
+	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
 
 	my $really_bad_score = 100000000;
 	my %scores;
@@ -55,7 +42,7 @@ sub build_tree {
 	while ( $scans_data->count() > 2 ) {
 		my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score() };
 
-		my $merged_starting_clusters = $scans_data->merge_remove( $id1, $id2, $use_depth_first );
+		my $merged_starting_clusters = $scans_data->merge_remove( $id1, $id2, $clusts_ordering );
 		my $other_ids                = $scans_data->sorted_ids();
 		my $merged_node_id           = $scans_data->add_node_of_starting_clusters( $merged_starting_clusters );
 

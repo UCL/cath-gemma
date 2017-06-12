@@ -4,10 +4,10 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                                                              /;
-use English            qw/ -no_match_vars                                                       /;
-use List::Util         qw/ max maxstr min minstr                                                /;
-use POSIX              qw/ ceil log10                                                           /;
+use Carp               qw/ confess                                                         /;
+use English            qw/ -no_match_vars                                                  /;
+use List::Util         qw/ max maxstr min minstr sum                                       /;
+use POSIX              qw/ log10                                                           /;
 use v5.10;
 
 # Moo
@@ -17,12 +17,16 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use List::MoreUtils    qw/ first_value                                                          /;
-use Type::Params       qw/ compile                                                              /;
-use Types::Standard    qw/ ArrayRef Bool ClassName HashRef Num Tuple Object Optional slurpy Str /;
+use List::MoreUtils    qw/ first_value                                                     /;
+use Type::Params       qw/ compile                                                         /;
+use Types::Standard    qw/ ArrayRef ClassName HashRef Num Tuple Object Optional slurpy Str /;
 
 # Cath
-use Cath::Gemma::Types qw/ CathGemmaScanScanData                                                /;
+use Cath::Gemma::Types qw/
+	CathGemmaNodeOrdering
+	CathGemmaScanScanData
+	CathGemmaScanScansData
+/;
 use Cath::Gemma::Util;
 
 =head2 starting_clusters_of_ids
@@ -31,7 +35,7 @@ use Cath::Gemma::Util;
 
 has starting_clusters_of_ids => (
 	is          => 'rwp',
-	isa         => HashRef[Str,ArrayRef[Str]],
+	isa         => HashRef[ArrayRef[Str]],
 	handles_via => 'Hash',
 	handles     => {
 		count    => 'count',
@@ -122,12 +126,14 @@ sub get_id_and_score_of_lowest_score_of_id {
 	state $check = compile( Object, Str, Optional[HashRef] );
 	my ( $self, $id, $excluded_ids ) = $check->( @ARG );
 
+	$excluded_ids //= {};
+
 	if ( $self->count() < 2 ) {
 		confess 'Argh TODOCUMENT';
 	}
 
 	my $scan_of_id       = $self->scans()->{ $id };
-	my @non_excluded_ids = grep { ! defined( $excluded_ids ) || ! defined( $excluded_ids->{ $ARG } ) } keys( %$scan_of_id );
+	my @non_excluded_ids = grep { ! defined( $excluded_ids->{ $ARG } ) } keys( %$scan_of_id );
 	my $min_score        = min( map { $scan_of_id->{ $ARG } } @non_excluded_ids );
 
 	if ( ! defined( $min_score ) ) {
@@ -140,7 +146,9 @@ sub get_id_and_score_of_lowest_score_of_id {
 		];
 	}
 
-	my $other_id = first_value { $scan_of_id->{ $ARG } == $min_score } sort( keys( %$scan_of_id ) );
+	my $other_id = first_value {
+		( $scan_of_id->{ $ARG } == $min_score ) && ! defined( $excluded_ids->{ $ARG } );
+	} sort( keys( %$scan_of_id ) );
 	return [
 		$other_id,
 		$min_score
@@ -194,7 +202,7 @@ sub ids_and_score_of_lowest_score_window {
 
 	my ( $id1, $id2, $score ) = @{ $self->ids_and_score_of_lowest_score() };
 
-	my $evalue_cutoff = ( 10 ** ( ceil( log10( $score ) / 10 ) * 10 ) );
+	my $evalue_cutoff = evalue_window_ceiling( $score );
 
 	my @results = ( [ $id1, $id2, $score ] );
 
@@ -251,14 +259,14 @@ sub add_node_of_starting_clusters {
 =cut
 
 sub merge_remove {
-	state $check = compile( Object, Str, Str, Optional[Bool] );
-	my ( $self, $id1, $id2, $use_depth_first ) = $check->( @ARG );
+	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $id1, $id2, $clusts_ordering ) = $check->( @ARG );
 
 	my $starting_clusters_1 = $self->remove( $id1 );
 	my $starting_clusters_2 = $self->remove( $id2 );
 
 	my @starting_clusters =
-		$use_depth_first
+		$clusts_ordering
 		? (                                             @$starting_clusters_1, @$starting_clusters_2   )
 		: ( sort { cluster_name_spaceship( $a, $b ) } ( @$starting_clusters_1, @$starting_clusters_2 ) );
 
@@ -270,8 +278,8 @@ sub merge_remove {
 =cut
 
 sub merge_add_with_score_of_lowest {
-	state $check = compile( Object, Str, Str, Optional[Bool] );
-	my ( $self, $id1, $id2, $use_depth_first ) = $check->( @ARG );
+	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $id1, $id2, $clusts_ordering ) = $check->( @ARG );
 
 	my $scans = $self->scans();
 
@@ -291,7 +299,7 @@ sub merge_add_with_score_of_lowest {
 	my $starting_clusters_2 = $self->remove( $id2 );
 
 	my @starting_clusters =
-		$use_depth_first
+		$clusts_ordering
 		? (                                             @$starting_clusters_1, @$starting_clusters_2   )
 		: ( sort { cluster_name_spaceship( $a, $b ) } ( @$starting_clusters_1, @$starting_clusters_2 ) );
 
@@ -310,8 +318,8 @@ sub merge_add_with_score_of_lowest {
 =cut
 
 sub merge_add_with_score_of_highest {
-	state $check = compile( Object, Str, Str, Optional[Bool] );
-	my ( $self, $id1, $id2, $use_depth_first ) = $check->( @ARG );
+	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $id1, $id2, $clusts_ordering ) = $check->( @ARG );
 
 	my $scans = $self->scans();
 
@@ -331,7 +339,7 @@ sub merge_add_with_score_of_highest {
 	my $starting_clusters_2 = $self->remove( $id2 );
 
 	my @starting_clusters =
-		$use_depth_first
+		$clusts_ordering
 		? (                                             @$starting_clusters_1, @$starting_clusters_2   )
 		: ( sort { cluster_name_spaceship( $a, $b ) } ( @$starting_clusters_1, @$starting_clusters_2 ) );
 

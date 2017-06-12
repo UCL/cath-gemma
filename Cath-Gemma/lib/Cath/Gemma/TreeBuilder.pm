@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 # Core
-use English           qw/ -no_match_vars                    /;
+use English           qw/ -no_match_vars               /;
 use v5.10;
 
 # Moo
@@ -18,9 +18,9 @@ use Moo::Role;
 use strictures 1;
 
 # Non-core (local)
-use Type::Params      qw/ compile                           /;
-use Types::Path::Tiny qw/ Path                              /;
-use Types::Standard   qw/ ArrayRef Bool Object Optional Str /;
+use Type::Params      qw/ compile                      /;
+use Types::Path::Tiny qw/ Path                         /;
+use Types::Standard   qw/ ArrayRef Object Optional Str /;
 
 # Cath
 use Cath::Gemma::Compute::ProfileBuildTask;
@@ -31,6 +31,7 @@ use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
 	CathGemmaDiskGemmaDirSet
 	CathGemmaExecutor
+	CathGemmaNodeOrdering
 /;
 
 =head2 requires build_tree
@@ -52,10 +53,10 @@ requires 'name';
 around build_tree => sub {
 	my $orig = shift;
 
-	state $check = compile( Object, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType, Optional[Bool] );
-	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $use_depth_first ) = $check->( @ARG );
+	state $check = compile( Object, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering ) = $check->( @ARG );
 
-	$use_depth_first //= 0;
+	$clusts_ordering //= 'simple_ordering';
 
 	$executor->execute(
 
@@ -87,7 +88,7 @@ around build_tree => sub {
 	);
 
 	if ( scalar ( @ARG ) < 6 ) {
-		push @ARG, $use_depth_first;
+		push @ARG, $clusts_ordering;
 	}
 
 	push @ARG, $scans_data;

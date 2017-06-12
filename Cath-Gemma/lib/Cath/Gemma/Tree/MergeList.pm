@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                                           /;
-use English            qw/ -no_match_vars                                    /;
-use List::Util         qw/ max sum                                           /;
+use Carp               qw/ confess                                          /;
+use English            qw/ -no_match_vars                                   /;
+use List::Util         qw/ max sum                                          /;
 use v5.10;
 
 # Moo
@@ -17,13 +17,16 @@ use strictures 1;
 
 # Non-core (local)
 use Path::Tiny;
-use Type::Params       qw/ compile Invocant                                  /;
-use Types::Path::Tiny  qw/ Path                                              /;
-use Types::Standard    qw/ ArrayRef Bool ClassName Object Optional Str Tuple /;
+use Type::Params       qw/ compile Invocant                                 /;
+use Types::Path::Tiny  qw/ Path                                             /;
+use Types::Standard    qw/ ArrayRef ClassName Num Object Optional Str Tuple /;
 
 # Cath
 use Cath::Gemma::Tree::Merge;
-use Cath::Gemma::Types qw/ CathGemmaTreeMerge                                /;
+use Cath::Gemma::Types qw/
+	CathGemmaNodeOrdering
+	CathGemmaTreeMerge
+/;
 use Cath::Gemma::Util;
 
 =head2 merges
@@ -227,12 +230,12 @@ sub starting_cluster_lists {
 =cut
 
 sub merge_cluster_lists {
-	state $check = compile( Object, Optional[Bool] );
-	my ( $self, $use_depth_first ) = $check->( @ARG );
+	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
 	return [
 		map
-		{ $ARG->starting_nodes( $use_depth_first ); }
+		{ $ARG->starting_nodes( $clusts_ordering ); }
 		$self->all()
 	];
 }
@@ -304,19 +307,19 @@ sub initial_scan_lists {
 =cut
 
 sub later_scans {
-	state $check = compile( Object, Optional[Bool] );
-	my ( $self, $use_depth_first ) = $check->( @ARG );
+	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
-	$use_depth_first //= 0;
+	$clusts_ordering //= 'simple_ordering';
 
 	my %clusters = map { ( $ARG, 1 ) } @{ $self->starting_clusters() };
 	my $merges = $self->merges();
 
 	my @results;
 	foreach my $merge ( @$merges ) {
-		my $new_id = $merge->id         ( $use_depth_first );
-		my $id_a   = $merge->mergee_a_id( $use_depth_first );
-		my $id_b   = $merge->mergee_b_id( $use_depth_first );
+		my $new_id = $merge->id         ( $clusts_ordering );
+		my $id_a   = $merge->mergee_a_id( $clusts_ordering );
+		my $id_b   = $merge->mergee_b_id( $clusts_ordering );
 
 		delete $clusters{ $id_a };
 		delete $clusters{ $id_b };
@@ -336,13 +339,13 @@ sub later_scans {
 =cut
 
 sub later_scan_lists {
-	state $check = compile( Object, Optional[Bool] );
-	my ( $self, $use_depth_first ) = $check->( @ARG );
+	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
 	return [
 		map
 		{ [ [ $ARG->[ 0 ] ], $ARG->[ 1 ] ]; }
-		@{ $self->later_scans( $use_depth_first ) }
+		@{ $self->later_scans( $clusts_ordering ) }
 	]
 }
 
@@ -351,10 +354,10 @@ sub later_scan_lists {
 =cut
 
 sub geometric_mean_score {
-	state $check = compile( Object );
-	my ( $self ) = $check->( @ARG );
+	state $check = compile( Object, Optional[Num] );
+	my ( $self, $lower_bound ) = $check->( @ARG );
 
-	my @ln_scores = ( map { log( $ARG->score() ) } @{ $self->merges() } );
+	my @ln_scores = ( map { log( $ARG->score_with_lower_bound( $lower_bound // 1e-300 ) ) } @{ $self->merges() } );
 
 	return exp( sum( @ln_scores ) / scalar( @ln_scores ) );
 }

@@ -22,10 +22,10 @@ use Log::Log4perl::Tiny qw/ :easy                    /;
 use Thread::Pool::Simple;
 use Types::Path::Tiny   qw/ Path                     /;
 use Types::Standard     qw/ Int                      /;
-# use Types::Standard   qw/ ArrayRef Int Num Object Str Tuple /;
 
 # Cath
 use Cath::Gemma::Compute::TaskThreadPooler;
+use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Types  qw/ CathGemmaDiskExecutables /;
 
 with ( 'Cath::Gemma::Executor' );

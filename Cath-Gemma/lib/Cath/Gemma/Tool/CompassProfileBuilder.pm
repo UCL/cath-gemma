@@ -132,8 +132,27 @@ sub build_compass_profile_in_dir {
 					$compass_profile_build_type
 				);
 
+				# If the fourth line is empty, attempt to fix the broken COMPASS profile
+				# by removing an extra line
+				my $fourth_line    = ( split( /\n/, $tmp_prof_absfile->slurp() ) ) [ 3 ];
+				my $del_extra_line = $fourth_line !~ /\S/;
+
+				# Run sed in an attempt to tidy up the COMPASS profile
 				my ( $sed_stdout, $sed_stderr, $sed_exit ) = capture {
-					system( 'sed', '-i', '-e', '3i#', '-e', '2d', "$tmp_prof_absfile" );
+					system(
+						'sed',
+						'-i',
+						'-e',
+						'3i#',
+						'-e',
+						'2d',
+						(
+							$del_extra_line
+							? ( '-e', '3d' )
+							: (            )
+						),
+						"$tmp_prof_absfile"
+						);
 				};
 
 				if ( $sed_exit || $sed_stdout || $sed_stderr ) {

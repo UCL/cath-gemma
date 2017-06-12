@@ -53,7 +53,7 @@ my $starting_clusters_base_dir = path( 'temporary_example_data/starting_clusters
 my $trace_files_dir            = path( 'temporary_example_data/tracefiles'        );
 
 my $projects_list_data = $projects_list_file->slurp();
-my @projects = split( /\n+/, $projects_list_data );
+my @projects = grep( ! /^#/, split( /\n+/, $projects_list_data ) );
 
 my $executor = Cath::Gemma::Executor::LocalExecutor->new();
 # my $executor = Cath::Gemma::Executor::HpcExecutor->new();
@@ -102,16 +102,16 @@ foreach my $project ( @projects ) {
 				dir_set                => $gemma_dir_set->profile_dir_set       (),
 			)->remove_already_present(),
 
-			# ...all merge nodes (use_depth_first:0)
+			# ...all merge nodes (simple_ordering)
 			Cath::Gemma::Compute::ProfileBuildTask->new(
-				starting_cluster_lists => $mergelist    ->merge_cluster_lists( 0 ),
-				dir_set                => $gemma_dir_set->profile_dir_set    (   ),
+				starting_cluster_lists => $mergelist    ->merge_cluster_lists( 'simple_ordering'  ),
+				dir_set                => $gemma_dir_set->profile_dir_set    (                    ),
 			)->remove_already_present(),
 
-			# ...all merge nodes (use_depth_first:1)
+			# ...all merge nodes (tree_df_ordering)
 			Cath::Gemma::Compute::ProfileBuildTask->new(
-				starting_cluster_lists => $mergelist    ->merge_cluster_lists( 1 ),
-				dir_set                => $gemma_dir_set->profile_dir_set    (   ),
+				starting_cluster_lists => $mergelist    ->merge_cluster_lists( 'tree_df_ordering' ),
+				dir_set                => $gemma_dir_set->profile_dir_set    (                    ),
 			)->remove_already_present(),
 		],
 
@@ -119,19 +119,19 @@ foreach my $project ( @projects ) {
 		[
 			# ...all initial nodes (ie starting cluster vs other starting clusters)
 			Cath::Gemma::Compute::ProfileScanTask->new(
-				starting_cluster_list_pairs => $mergelist->initial_scan_lists( 0 ),
+				starting_cluster_list_pairs => $mergelist->initial_scan_lists(),
 				dir_set                     => $gemma_dir_set,
 			),
 
-			# ...all merge nodes (use_depth_first:0)
+			# ...all merge nodes (simple_ordering)
 			Cath::Gemma::Compute::ProfileScanTask->new(
-				starting_cluster_list_pairs => $mergelist->later_scan_lists( 0 ),
+				starting_cluster_list_pairs => $mergelist->later_scan_lists( 'simple_ordering'  ),
 				dir_set                     => $gemma_dir_set,
 			),
 
-			# ...all merge nodes (use_depth_first:1)
+			# ...all merge nodes (tree_df_ordering)
 			Cath::Gemma::Compute::ProfileScanTask->new(
-				starting_cluster_list_pairs => $mergelist->later_scan_lists( 1 ),
+				starting_cluster_list_pairs => $mergelist->later_scan_lists( 'tree_df_ordering' ),
 				dir_set                     => $gemma_dir_set,
 			),
 
