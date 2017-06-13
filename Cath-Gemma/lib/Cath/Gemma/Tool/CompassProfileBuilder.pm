@@ -134,8 +134,10 @@ sub build_compass_profile_in_dir {
 
 				# If the fourth line is empty, attempt to fix the broken COMPASS profile
 				# by removing an extra line
-				my $fourth_line    = ( split( /\n/, $tmp_prof_absfile->slurp() ) ) [ 3 ];
-				my $del_extra_line = $fourth_line !~ /\S/;
+				my @lines_4_and_5  = ( split( /\n/, $tmp_prof_absfile->slurp() ) ) [ 3..4 ];
+
+				my $del_extra_line_a = $lines_4_and_5[ 0 ] !~ /\S/;
+				my $del_extra_line_b = $lines_4_and_5[ 1 ] !~ /\S/;
 
 				# Run sed in an attempt to tidy up the COMPASS profile
 				my ( $sed_stdout, $sed_stderr, $sed_exit ) = capture {
@@ -147,12 +149,17 @@ sub build_compass_profile_in_dir {
 						'-e',
 						'2d',
 						(
-							$del_extra_line
+							$del_extra_line_a
 							? ( '-e', '3d' )
 							: (            )
 						),
+						(
+							$del_extra_line_b
+							? ( '-e', '4d' )
+							: (            )
+						),
 						"$tmp_prof_absfile"
-						);
+					);
 				};
 
 				if ( $sed_exit || $sed_stdout || $sed_stderr ) {
