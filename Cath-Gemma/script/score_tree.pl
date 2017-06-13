@@ -4,8 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use feature qw/ say            /;
+use Carp    qw/ confess        /;
 use English qw/ -no_match_vars /;
+use feature qw/ say            /;
 use FindBin;
 use Getopt::Long;
 use Pod::Usage;
@@ -29,17 +30,25 @@ use Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
 my $help              = 0;
 my $local             = 0;
 my $submit_dir_name   = 'fred';
+my $output_dir   = 'score_tree_output_data';
 my $max_num_threads = 6;
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
 	'help'                => \$help,
 	'local'               => \$local,
 	'submit-dir=s'        => \$submit_dir_name,
+	'output-dir=s'        => \$output_dir,
 	# 'num-local-threads=d' => \$max_num_threads,
 
 ) or pod2usage( 2 );
 if ( $help ) {
 	pod2usage( 1 );
+}
+
+$output_dir = path( $output_dir );
+if ( ! -d $output_dir ) {
+	$output_dir->mkpath()
+		or confess "Unable to make output directory \"$output_dir\" : $OS_ERROR";
 }
 
 # my $trace_files_dir = path( '/cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/clustering_output' );
@@ -75,6 +84,8 @@ foreach my $project ( @project_list ) {
 		),
 	);
 
+	my $project_out_dir = $output_dir->child( $project );
+
 	# foreach my $clusts_ordering ( 'simple_ordering' ) {
 	# 	foreach my $compass_profile_build_type ( qw/ mk_compass_db / ) {
 	# 		foreach my $tree_builder ( Cath::Gemma::TreeBuilder::PureTreeBuilder->new(),
@@ -86,12 +97,14 @@ foreach my $project ( @project_list ) {
 			                           Cath::Gemma::TreeBuilder::PureTreeBuilder        ->new(),
 			                           Cath::Gemma::TreeBuilder::WindowedTreeBuilder    ->new(),
 			                           ) {
-				my $dfx_tree_file = $dfx_tree_dir ->child( $project . $tracefile_extension );
-				my $dfx_tree      = Cath::Gemma::Tree::MergeList->read_from_tracefile( $dfx_tree_file  );
+				my $dfx_tree_file      = $dfx_tree_dir ->child( $project . $tracefile_extension );
+				my $dfx_tree           = Cath::Gemma::Tree::MergeList->read_from_tracefile( $dfx_tree_file  );
 
-				my $descriptive_string = '.' . $tree_builder->name() . '.' . $clusts_ordering . '.' . $compass_profile_build_type;
+				my $tree_builder_name  = $tree_builder->name();
+				my $flavour            = join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name );
+				my $flavour_out_dir    = $project_out_dir->child( $flavour );
 
-				warn "About to compute $descriptive_string";
+				warn "About to compute $flavour\n";
 
 				my $tree = $tree_builder->build_tree(
 					$executor,
@@ -100,8 +113,22 @@ foreach my $project ( @project_list ) {
 					$compass_profile_build_type,
 					$clusts_ordering,
 				);
-				$tree  ->write_to_newick_file( $project . $descriptive_string . '.newick'      );
-				say ( 'WINDOW  (' . $descriptive_string . $tree  ->geometric_mean_score( 1e-300 ) . ") :\n" );
+
+				# Ensure that all alignments have been built for a tree
+				# (which may not be true if the tree was built under a naive method)
+				$tree->ensure_all_alignments(
+					$clusts_ordering,
+					$executor->exes(), # TODO: Fix this appalling violation of OO principles
+					$gemma_dir_set->profile_dir_set(),
+				);
+
+				$tree->archive_in_dir(
+					$project,
+					$clusts_ordering,
+					$gemma_dir_set->aln_dir(),
+					$flavour_out_dir,
+				);
+				say ( 'geom mean for    ' . $flavour . ' : ' . $tree  ->geometric_mean_score( 1e-300 ) );
 
 			}
 		}
@@ -120,6 +147,7 @@ score_tree.pl [options]
    --help              Brief help message
    --local             Perform all computation locally
    --submit-dir        The directory in which the compute cluster submission gubbins should be written
+   --output-dir        The directory in which the output should be written
    --num-local-threads The number of threads to use in a local run
 
 =head1 OPTIONS
@@ -133,6 +161,10 @@ Print a brief help message and exits.
 =item B<--submit_dir>
 
 The directory in which the compute cluster submission gubbins should be written
+
+=item B<--output_dir>
+
+The directory in which the output should be written
 
 TODOCUMENT
 

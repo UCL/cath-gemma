@@ -129,21 +129,21 @@ sub starting_nodes {
 	no warnings 'recursion';
 
 	return
-		$clusts_ordering
+		( $clusts_ordering eq 'tree_df_ordering' )
 		? [
 			(
 				$self->mergee_a_is_starting_cluster()
 					? $self->mergee_a()
-					: @{ $self->mergee_a()->starting_nodes( 1 ) }
+					: @{ $self->mergee_a()->starting_nodes( $clusts_ordering ) }
 			),
 			(
 				$self->mergee_b_is_starting_cluster()
 					? $self->mergee_b()
-					: @{ $self->mergee_b()->starting_nodes( 1 ) }
+					: @{ $self->mergee_b()->starting_nodes( $clusts_ordering ) }
 			)
 		]
 		: [
-			sort { cluster_name_spaceship( $a, $b ) } @{ $self->starting_nodes( 1 ) }
+			sort { cluster_name_spaceship( $a, $b ) } @{ $self->starting_nodes( 'tree_df_ordering' ) }
 		];
 }
 

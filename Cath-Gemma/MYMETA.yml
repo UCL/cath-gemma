@@ -5,6 +5,7 @@ author:
 build_requires:
   ExtUtils::MakeMaker: '0'
   Test::Differences: '0'
+  Test::Files: '0'
   Test::More: '0'
 configure_requires:
   ExtUtils::MakeMaker: '0'

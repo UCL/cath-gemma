@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                                          /;
-use English            qw/ -no_match_vars                                   /;
-use List::Util         qw/ max sum                                          /;
+use Carp                qw/ confess                                                      /;
+use English             qw/ -no_match_vars                                               /;
+use List::Util          qw/ max sum                                                      /;
 use v5.10;
 
 # Moo
@@ -16,14 +16,17 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy                                                        /;
 use Path::Tiny;
-use Type::Params       qw/ compile Invocant                                 /;
-use Types::Path::Tiny  qw/ Path                                             /;
-use Types::Standard    qw/ ArrayRef ClassName Num Object Optional Str Tuple /;
+use Type::Params        qw/ compile Invocant                                             /;
+use Types::Path::Tiny   qw/ Path                                                         /;
+use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional Str Tuple /;
 
 # Cath
 use Cath::Gemma::Tree::Merge;
-use Cath::Gemma::Types qw/
+use Cath::Gemma::Types  qw/
+	CathGemmaDiskExecutables
+	CathGemmaDiskProfileDirSet
 	CathGemmaNodeOrdering
 	CathGemmaTreeMerge
 /;
@@ -47,6 +50,31 @@ has merges => (
 	default => sub { []; },
 );
 
+=head2 _perform_action_on_trace_style_list
+
+TODO: If efficiency not vital, *might* be simpler to
+      have this generate the list of prepped elements
+      rather than performing a callback on each of them.
+
+=cut
+
+sub _perform_action_on_trace_style_list {
+	state $check = compile( Object, CodeRef );
+	my ( $self, $action ) = $check->( @ARG );
+
+	my $max_id = max( @{ $self->starting_clusters() } );
+	++$max_id;
+
+	my %file_nodename_of_node_id;
+
+	foreach my $merge ( @{ $self->merges() } ) {
+		my $mergee_a_id = $file_nodename_of_node_id{ $merge->mergee_a_id() } // $merge->mergee_a();
+		my $mergee_b_id = $file_nodename_of_node_id{ $merge->mergee_b_id() } // $merge->mergee_b();
+		$action->( $mergee_a_id, $mergee_b_id, $max_id, $merge );
+		$file_nodename_of_node_id{ $merge->id() } = $max_id;
+		++$max_id;
+	}
+}
 
 =head2 to_tracefile_string
 
@@ -59,29 +87,22 @@ sub to_tracefile_string {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	my $max_id = max( @{ $self->starting_clusters() } );
-	++$max_id;
-
-	my %file_nodename_of_node_id;
-
 	my $result_str = '';
-	foreach my $merge ( @{ $self->merges() } ) {
-		my $mergee_a_id = $file_nodename_of_node_id{ $merge->mergee_a_id() } // $merge->mergee_a();
-		my $mergee_b_id = $file_nodename_of_node_id{ $merge->mergee_b_id() } // $merge->mergee_b();
+	$self->_perform_action_on_trace_style_list( sub {
+		state $check = compile( Str, Str, Int, CathGemmaTreeMerge );
+		my ( $mergee_a_id, $mergee_b_id, $new_id, $merge ) = $check->( @ARG );
+
 		$result_str .= (
 			  $mergee_a_id
 			. "\t"
 			. $mergee_b_id
 			. "\t"
-			. $max_id
+			. $new_id
 			. "\t"
 			. $merge->score()
 			. "\n"
 		);
-		$file_nodename_of_node_id{ $merge->id() } = $max_id;
-		++$max_id;
-	}
-
+	} );
 	return $result_str;
 }
 
@@ -347,6 +368,72 @@ sub later_scan_lists {
 		{ [ [ $ARG->[ 0 ] ], $ARG->[ 1 ] ]; }
 		@{ $self->later_scans( $clusts_ordering ) }
 	]
+}
+
+=head2 ensure_all_alignments
+
+=cut
+
+sub ensure_all_alignments {
+	state $check = compile( Object, CathGemmaNodeOrdering, CathGemmaDiskExecutables, CathGemmaDiskProfileDirSet );
+	my ( $self, $clusts_ordering, $exes, $profile_dir_set ) = $check->( @ARG );
+
+	foreach my $starting_cluster ( @{ $self->starting_clusters() } ) {
+		Cath::Gemma::Tool::Aligner->make_alignment_file( $exes, [ $starting_cluster ], $profile_dir_set );
+	}
+
+	foreach my $merge ( @{ $self->merges() } ) {
+		Cath::Gemma::Tool::Aligner->make_alignment_file( $exes, $merge->starting_nodes( $clusts_ordering ), $profile_dir_set );
+	}
+}
+
+=head2 archive_in_dir
+
+=cut
+
+sub archive_in_dir {
+	state $check = compile( Object, Str, CathGemmaNodeOrdering, Path, Path );
+	my ( $self, $project_name, $clusts_ordering, $aln_dir, $output_dir ) = $check->( @ARG );
+
+	INFO "Archiving $project_name [$clusts_ordering] to $output_dir (with alignments from $aln_dir)";
+
+	if ( ! -d $output_dir ) {
+		$output_dir->mkpath()
+			or confess "Unable to make results archive directory \"$output_dir\" : $OS_ERROR";
+	}
+
+	$self->write_to_newick_file( $output_dir->child( $project_name . '.newick' ) );
+	$self->write_to_tracefile  ( $output_dir->child( $project_name . '.trace'  ) );
+
+	my @src_dest_aln_file_pairs = map {
+		my $starting_cluster  = $ARG;
+		[
+			$aln_dir->child( alignment_filebasename_of_starting_clusters( [ $starting_cluster ] ) ),
+			$output_dir->child( $starting_cluster . alignment_profile_suffix() )
+		];
+	} @{ $self->starting_clusters() };
+
+
+	$self->_perform_action_on_trace_style_list( sub {
+		state $check = compile( Str, Str, Int, CathGemmaTreeMerge );
+		my ( $mergee_a_id, $mergee_b_id, $new_id, $merge ) = $check->( @ARG );
+
+		push @src_dest_aln_file_pairs, [
+			$aln_dir->child( alignment_filebasename_of_starting_clusters( $merge->starting_nodes( $clusts_ordering ) ) ),
+			$output_dir->child( $new_id . alignment_profile_suffix() )
+		];
+	} );
+
+	foreach my $src_dest_aln_file_pair ( @src_dest_aln_file_pairs ) {
+		my ( $source_aln_file, $dest_aln_file ) = @$src_dest_aln_file_pair;
+		warn "Copy $source_aln_file to $dest_aln_file";
+		if ( ! -s $source_aln_file ) {
+			confess "Argh";
+		}
+
+		$source_aln_file->copy( $dest_aln_file )
+			or confess "Unable to copy alignment file \"$source_aln_file\" to \"$dest_aln_file\" whilst archiving $project_name : $OS_ERROR";
+	}
 }
 
 =head2 geometric_mean_score

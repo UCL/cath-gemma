@@ -32,6 +32,7 @@ WriteMakefile(
     },
     TEST_REQUIRES => {
         'Test::Differences'       => 0,
+        'Test::Files'             => 0,
         'Test::More'              => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
