@@ -30,6 +30,7 @@ our @EXPORT = qw/
 	evalue_window_ceiling
 	evalue_window_floor
 	generic_id_of_clusters
+	get_starting_clusters_of_starting_cluster_dir
 	id_of_starting_clusters
 	mergee_is_starting_cluster
 	ordered_cluster_name_pair
@@ -199,6 +200,16 @@ sub generic_id_of_clusters {
 	return md5_hex( @$clusters );
 }
 
+=head2 get_starting_clusters_of_starting_cluster_dir
+
+=cut
+
+sub get_starting_clusters_of_starting_cluster_dir {
+	state $check = compile( Path );
+	my ( $dir ) = $check->( @ARG );
+
+	return [ map { $ARG->basename( '.faa' ); } $dir->children ];
+}
 
 =head2 id_of_starting_clusters
 

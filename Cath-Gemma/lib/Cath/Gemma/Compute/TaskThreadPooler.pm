@@ -16,7 +16,7 @@ use v5.10;
 
 # Non-core (local)
 use Log::Log4perl::Tiny qw/ :easy                    /;
-use Thread::Pool::Simple;
+# use Thread::Pool::Simple;
 use Type::Params        qw/ compile Invocant         /;
 use Types::Standard     qw/ ArrayRef CodeRef Int Str /;
 

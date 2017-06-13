@@ -19,7 +19,7 @@ use strictures 1;
 
 # Non-core (local)
 use Log::Log4perl::Tiny qw/ :easy                    /;
-use Thread::Pool::Simple;
+# use Thread::Pool::Simple;
 use Types::Path::Tiny   qw/ Path                     /;
 use Types::Standard     qw/ Int                      /;
 

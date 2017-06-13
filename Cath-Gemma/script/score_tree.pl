@@ -26,6 +26,7 @@ use Cath::Gemma::Executor::LocalExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::TreeBuilder::PureTreeBuilder;
 use Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
+use Cath::Gemma::Util;
 
 my $help              = 0;
 my $local             = 0;
@@ -65,9 +66,9 @@ my $executor =
 
 my $tracefile_extension = '.trace';
 my $basedir             = path( 'temporary_example_data' );
-my $dave_tree_dir       = $basedir->child( 'tracefiles' );
-my $dfx_tree_dir        = path( 'trace_files_from_2017_05_10_rerun_with_dfx_code' );
-my @tracefile_dirs      = ( $dave_tree_dir, $dfx_tree_dir );
+# my $dave_tree_dir       = path( '../benchmark/trace_files_from_daves_dirs'     );
+# my $dfx_tree_dir        = path( '../benchmark/trace_files_from_dfx_run_201705' );
+# my @tracefile_dirs      = ( $dave_tree_dir, $dfx_tree_dir );
 
 my $project_list_file   = $basedir->child( 'projects.txt' );
 my $project_list_data   = $project_list_file->slurp();
@@ -97,8 +98,16 @@ foreach my $project ( @project_list ) {
 			                           Cath::Gemma::TreeBuilder::PureTreeBuilder        ->new(),
 			                           Cath::Gemma::TreeBuilder::WindowedTreeBuilder    ->new(),
 			                           ) {
-				my $dfx_tree_file      = $dfx_tree_dir ->child( $project . $tracefile_extension );
-				my $dfx_tree           = Cath::Gemma::Tree::MergeList->read_from_tracefile( $dfx_tree_file  );
+				# my $dfx_tree_file      = $dfx_tree_dir ->child( $project . $tracefile_extension );
+				# my $dfx_tree           = Cath::Gemma::Tree::MergeList->read_from_tracefile( $dfx_tree_file  );
+
+				my $starting_clusters  = get_starting_clusters_of_starting_cluster_dir( $gemma_dir_set->starting_cluster_dir() );
+
+				# use Data::Dumper;
+				# confess Dumper( [
+				# 	$gemma_dir_set->starting_cluster_dir()."",
+				# 	$starting_clusters
+				# ] );
 
 				my $tree_builder_name  = $tree_builder->name();
 				my $flavour            = join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name );
@@ -108,7 +117,7 @@ foreach my $project ( @project_list ) {
 
 				my $tree = $tree_builder->build_tree(
 					$executor,
-					$dfx_tree->starting_clusters(),
+					$starting_clusters,
 					$gemma_dir_set,
 					$compass_profile_build_type,
 					$clusts_ordering,
