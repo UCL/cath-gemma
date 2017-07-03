@@ -23,8 +23,8 @@ use IPC::Run3;
 # my $example_sf = '1.20.58.70'   ; # Has 100 starting clusters, so 4950 all-vs-all
 my $example_sf = '1.10.150.120' ; # Has  45 starting clusters, so  990 all-vs-all
 
-use Digest::SHA1 qw/ sha1_hex /;
-
+use Digest::SHA1 qw/ sha1_hex   /;
+# use Digest::SHA  qw/ sha256_hex /;
 
 my $cluster_seqfile_suffix = '.faa';
 my $result_tree_suffix     = '.trace';
@@ -88,6 +88,9 @@ sub process_superfamily {
 	warn localtime(time()) . " : About to do initial all-vs-all...\n";
 	my $results = compass_all_vs_all( \@starting_cluster_nums, $sf_profiles_dir, $compass_profile_suffix );
 
+
+	#print_triples( $results);
+
 	my $new_seqfiles_dir = $sf_working_area->subdir( 'new_cluster_seqfiles' );
 	if ( ! -d $new_seqfiles_dir ) {
 		$new_seqfiles_dir->mkpath()
@@ -102,6 +105,65 @@ sub process_superfamily {
 		$starting_cluster_dir
 	);
 }
+
+sub print_triples {
+	my $all_vs_all_results = shift;
+
+	my %index_of_key = map { ( $_->[0], -1, $_->[1], -1 ) } @$all_vs_all_results;
+	my @ordered_keys = sort { $a <=> $b } keys(%index_of_key);
+	for (my $ctr = 0; $ctr < scalar( @ordered_keys ); ++$ctr) {
+		$index_of_key{ $ordered_keys[ $ctr ] } = $ctr;
+	}
+	# confess Dumper( \%index_of_key ) . ' ';
+	my @matrix;
+	foreach my $result ( @$all_vs_all_results ) {
+		my $index_0 = $index_of_key{ $result->[ 0 ] };
+		my $index_1 = $index_of_key{ $result->[ 1 ] };
+		$matrix[ $index_0 ]->[ $index_1 ] = $result->[ 2 ];
+		$matrix[ $index_1 ]->[ $index_0 ] = $result->[ 2 ];
+	}
+	# confess Dumper( \@matrix ) . ' ';
+
+	foreach my $ctr_a ( 0 .. ( scalar( @ordered_keys ) - 1 ) ) {
+		# warn $ctr_a;
+		foreach my $ctr_b ( 0 .. ( scalar( @ordered_keys ) - 1 ) ) {
+			if ( $ctr_a == $ctr_b ) {
+				next;
+			}
+			# warn "\t$ctr_b";
+			foreach my $ctr_c ( 0 .. ( scalar( @ordered_keys ) - 1 ) ) {
+				if ( $ctr_c == $ctr_a || $ctr_c == $ctr_b ) {
+					next;
+				}
+				# warn "\t\t$ctr_c";
+				if (
+					! defined( $matrix[ $ctr_a ]->[ $ctr_b ] )
+					||
+					! defined( $matrix[ $ctr_b ]->[ $ctr_c ] )
+					||
+					! defined( $matrix[ $ctr_c ]->[ $ctr_a ] )
+					) {
+					next;
+				}
+				my $val_a_b = $matrix[ $ctr_a ]->[ $ctr_b ];
+				# my $val_b_a = $matrix[ $ctr_b ]->[ $ctr_a ];
+				my $val_b_c = $matrix[ $ctr_b ]->[ $ctr_c ];
+				# my $val_c_b = $matrix[ $ctr_c ]->[ $ctr_b ];
+				my $val_c_a = $matrix[ $ctr_c ]->[ $ctr_a ];
+				# my $val_a_c = $matrix[ $ctr_a ]->[ $ctr_c ];
+				# say "$val_a_b $val_b_c ". ( 5 * int( ( log10( $val_c_a ) ) / 5 ) );
+				say "$val_a_b $val_b_c $val_c_a";
+				if ( $val_a_b == 9.94e-13 && $val_b_c == 5.01e-23 && $val_c_a == 3.99e-30 ) {
+					confess "$ctr_a $ctr_b $ctr_c " . $ordered_keys[ $ctr_a ] . " " . $ordered_keys[ $ctr_b ] . " " . $ordered_keys[ $ctr_c ];
+				}
+			}
+		}
+	}
+	confess " ";
+}
+
+# 781 975 1480
+# 9.94e-13 5.01e-23 3.99e-30
 
 # sub log10 {
 # 	my $n = shift;
@@ -246,6 +308,8 @@ sub process_to_evalue_cutoff {
 				}
 			} ( sort( { $a <=> $b } keys( %$index_of_cluster_id ) ) );
 
+			warn join( " ",  @combined_cluster_ids ) . "\n";
+
 			my $results = compass_single(
 				$compass_profiles_dir,
 				$$new_cluster_ctr_ref . '.' . sha1_hex( @combined_cluster_ids ),
@@ -288,7 +352,7 @@ sub compass_single {
 	$temp_db_fh->close()
 		or confess "";
 
-	warn localtime(time()) . " : About to run single COMPASS scan\n";
+	# warn localtime(time()) . " : About to run single COMPASS scan\n";
 	my $results = run_compass( $temp_db_file, $new_file );
 
 	$temp_db_file->remove()
