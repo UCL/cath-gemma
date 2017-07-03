@@ -1,3 +1,4 @@
+*.newick
 *.tar.gz
 .lwpcookies
 _build*
