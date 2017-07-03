@@ -31,8 +31,8 @@ use Cath::Gemma::Util;
 my $help              = 0;
 my $local             = 0;
 my $submit_dir_name   = 'fred';
-my $output_dir   = 'score_tree_output_data';
-my $max_num_threads = 6;
+my $output_dir        = 'score_tree_output_data';
+my $max_num_threads   = 6;
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
 	'help'                => \$help,

@@ -23,6 +23,7 @@ use strictures 1;
 
 # Non-core (local)
 use Capture::Tiny       qw/ capture             /;
+use Object::Util;
 use Log::Log4perl::Tiny qw/ :easy               /;
 use Path::Tiny;
 use Type::Params        qw/ compile             /;
@@ -100,9 +101,8 @@ sub add_profile_build_work {
 			Cath::Gemma::Compute::WorkBatch->new(
 				profile_batches => [
 					@{ $prev_last_profile_batch->profile_batches() },
-					Cath::Gemma::Compute::ProfileBuildTask->new(
+					$profile_task->$_clone(
 						starting_cluster_lists => [ @{ $profile_task->starting_cluster_lists() }[ 0 .. ( $num_in_fillup_batch - 1 ) ] ],
-						dir_set                => $profile_task->dir_set(),
 					)
 				]
 			);
@@ -119,9 +119,8 @@ sub add_profile_build_work {
 
 			Cath::Gemma::Compute::WorkBatch->new(
 				profile_batches => [
-					Cath::Gemma::Compute::ProfileBuildTask->new(
+					$profile_task->$_clone(
 						starting_cluster_lists => [ @{ $profile_task->starting_cluster_lists() }[ $batch_begin_index .. ( $batch_one_past_end_index - 1 ) ] ],
-						dir_set                => $profile_task->dir_set(),
 					),
 				]
 			);

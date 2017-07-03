@@ -20,70 +20,113 @@ use Path::Tiny;
 use lib "$FindBin::Bin/../lib";
 
 # Cath
+use Cath::Gemma::Compute::ProfileBuildTask;
+use Cath::Gemma::Compute::WorkBatcher;
+# use Cath::Gemma::Disk::Executables;
+use Cath::Gemma::Executor::HpcExecutor; # ***** TEMPORARY (use factory) *****
+use Cath::Gemma::Executor::LocalExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Tool::Aligner;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Tool::CompassScanner;
-use Cath::Gemma::Compute::ProfileBuildTask;
-use Cath::Gemma::Compute::WorkBatcher;
-use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Tree::MergeList;
 
-my $help = 0;
-my $submission_dir_name = 'fred';
+my $help            = 0;
+my $local           = 0;
+my $max_num_threads = 6;
+
+my $starting_clusters_rootdir ;
+my $projects_list_file;
+
+my $submission_dir_pattern = 'submit_dir.XXXXXXXXXXX';
+
+my $output_rootdir;
+my $output_aln_rootdir;
+my $output_prof_rootdir;
+my $output_scan_rootdir;
+# my $trace_files_rootdir;
+
+my $src_trace_files_rootdir;
+
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
-	'help'         => \$help,
-	'submit_dir=s' => \$submission_dir_name,
+	'help'                        => \$help,
+	'local'                       => \$local,
+	'submit-dir-pattern=s'        => \$submission_dir_pattern,
+
+	'starting-cluster-root-dir=s' => \$starting_clusters_rootdir,
+	'projects-list-file=s'        => \$projects_list_file,
+
+	'output-root-dir=s'           => \$output_rootdir,
+	# 'submit-dir=s'                => \$submission_dir_name,
+	# 'submit-dir=s'                => \$submission_dir_name,
 ) or pod2usage( 2 );
 if ( $help ) {
 	pod2usage( 1 );
 }
 
-my $exes = Cath::Gemma::Disk::Executables->new();
+if ( ! defined( $starting_clusters_rootdir ) ) {
+	confess "Must specify a starting-cluster-root-dir";
+}
+if ( ! defined( $projects_list_file ) ) {
+	confess "Must specify a projects-list-file";
+}
+if ( ! defined( $output_rootdir ) ) {
+	confess "Must specify a output-root-dir";
+}
 
-# my $trace_files_dir = path( '/cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/clustering_output' );
+$output_rootdir              = path( $output_rootdir             )->realpath();
+$projects_list_file          = path( $projects_list_file         )->realpath();
+$starting_clusters_rootdir   = path( $starting_clusters_rootdir  )->realpath();
+$submission_dir_pattern      = path( $submission_dir_pattern     )->realpath();
+$output_aln_rootdir        //= $output_rootdir->child( 'alignments'      );
+$output_prof_rootdir       //= $output_rootdir->child( 'profiles'        );
+$output_scan_rootdir       //= $output_rootdir->child( 'scans'           );
+$src_trace_files_rootdir   //= $output_rootdir->child( 'dave_tracefiles' );
+
+# foreach my $out_dir ( $output_rootdir,
+#                       $output_aln_rootdir,
+#                       $output_prof_rootdir,
+#                       $output_scan_rootdir,
+#                       # $trace_files_rootdir,
+#                       ) {
+# 	if ( ! -d $out_dir ) {
+# 		$out_dir->mkpath()
+# 			or confess "Unable to make output root directory $out_dir : $OS_ERROR";
+# 	}
+# }
+
+my $executor =
+	$local
+		? Cath::Gemma::Executor::LocalExecutor->new(
+			max_num_threads => $max_num_threads,
+		)
+		: Cath::Gemma::Executor::HpcExecutor->new(
+			submission_dir  => Path::Tiny->tempdir(
+				TEMPLATE => $submission_dir_pattern->basename(),
+				DIR      => $submission_dir_pattern->parent(),
+				CLEANUP  => 0,
+			)
+		);
 
 my $trace_files_ext            = '.trace';
 
-my $aln_out_basedir            = path( 'temporary_example_data/output'            );
-my $prof_out_basedir           = path( 'temporary_example_data/output'            );
-my $projects_list_file         = path( 'temporary_example_data/projects.txt' );
-my $scan_dir                   = path( 'temporary_example_data/output'            );
-my $starting_clusters_base_dir = path( 'temporary_example_data/starting_clusters' );
-my $trace_files_dir            = path( 'temporary_example_data/tracefiles'        );
-
-my $projects_list_data = $projects_list_file->slurp();
+my $projects_list_data = $projects_list_file->slurp()
+	or confess "Was unable to read any projects from project list file $projects_list_file";
 my @projects = grep( ! /^#/, split( /\n+/, $projects_list_data ) );
 
-my $executor = Cath::Gemma::Executor::LocalExecutor->new();
-# my $executor = Cath::Gemma::Executor::HpcExecutor->new();
-
 foreach my $project ( @projects ) {
-	my $tracefile_path = $trace_files_dir->child( $project . $trace_files_ext );
+	my $tracefile_path = $src_trace_files_rootdir->child( $project . $trace_files_ext );
 	if ( ! -s $tracefile_path ) {
 		confess "No such tracefile \"$tracefile_path\" for project $project";
 	}
 
-	my $starting_clusters_dir = $starting_clusters_base_dir->child( $project )->realpath();
-	if ( ! -d $starting_clusters_dir ) {
-		confess "No such stating clusters dir \"$starting_clusters_dir\" for project $project"
-	}
-	my $aln_out_dir  = $aln_out_basedir ->child( $project )->realpath();
-	my $prof_out_dir = $prof_out_basedir->child( $project )->realpath();
-	foreach my $outdir ( $aln_out_dir, $prof_out_dir ) {
-		if ( ! -d $outdir ) {
-			$outdir->mkpath()
-				or confess "Unable to make output directory \"$outdir\" : $OS_ERROR";
-		}
-	}
-
-	my $gemma_dir_set = Cath::Gemma::Disk::ProfileDirSet->new(
+	my $gemma_dir_set = Cath::Gemma::Disk::GemmaDirSet->new(
 		profile_dir_set => Cath::Gemma::Disk::ProfileDirSet->new(
-			starting_cluster_dir => $starting_clusters_dir,
-			aln_dir              => $aln_out_dir,
-			prof_dir             => $prof_out_dir,
+			starting_cluster_dir => $starting_clusters_rootdir->child( $project ),
+			aln_dir              => $output_aln_rootdir       ->child( $project ),
+			prof_dir             => $output_prof_rootdir      ->child( $project ),
 		),
-		scan_dir        => $scan_dir,
+		scan_dir => $output_scan_rootdir->child( $project ),
 	);
 
 	my $mergelist = Cath::Gemma::Tree::MergeList->read_from_tracefile( $tracefile_path );
@@ -92,51 +135,61 @@ foreach my $project ( @projects ) {
 		return;
 	}
 
-	$executor->execute(
 
-		# Build alignments and profiles for...
-		[
-			# ...all starting_clusters
-			Cath::Gemma::Compute::ProfileBuildTask->new(
-				starting_cluster_lists => $mergelist    ->starting_cluster_lists(),
-				dir_set                => $gemma_dir_set->profile_dir_set       (),
-			)->remove_already_present(),
+	foreach my $compass_profile_build_type ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / ) {
 
-			# ...all merge nodes (simple_ordering)
-			Cath::Gemma::Compute::ProfileBuildTask->new(
-				starting_cluster_lists => $mergelist    ->merge_cluster_lists( 'simple_ordering'  ),
-				dir_set                => $gemma_dir_set->profile_dir_set    (                    ),
-			)->remove_already_present(),
+		$executor->execute(
 
-			# ...all merge nodes (tree_df_ordering)
-			Cath::Gemma::Compute::ProfileBuildTask->new(
-				starting_cluster_lists => $mergelist    ->merge_cluster_lists( 'tree_df_ordering' ),
-				dir_set                => $gemma_dir_set->profile_dir_set    (                    ),
-			)->remove_already_present(),
-		],
+			# Build alignments and profiles for...
+			[
+				# ...all starting_clusters
+				Cath::Gemma::Compute::ProfileBuildTask->new(
+					starting_cluster_lists     => $mergelist    ->starting_cluster_lists(),
+					dir_set                    => $gemma_dir_set->profile_dir_set       (),
+					compass_profile_build_type => $compass_profile_build_type,
+				)->remove_already_present(),
 
-		# Perform scans for...
-		[
-			# ...all initial nodes (ie starting cluster vs other starting clusters)
-			Cath::Gemma::Compute::ProfileScanTask->new(
-				starting_cluster_list_pairs => $mergelist->initial_scan_lists(),
-				dir_set                     => $gemma_dir_set,
-			),
+				# ...all merge nodes (simple_ordering)
+				Cath::Gemma::Compute::ProfileBuildTask->new(
+					starting_cluster_lists     => $mergelist    ->merge_cluster_lists( 'simple_ordering'  ),
+					dir_set                    => $gemma_dir_set->profile_dir_set    (                    ),
+					compass_profile_build_type => $compass_profile_build_type,
+				)->remove_already_present(),
 
-			# ...all merge nodes (simple_ordering)
-			Cath::Gemma::Compute::ProfileScanTask->new(
-				starting_cluster_list_pairs => $mergelist->later_scan_lists( 'simple_ordering'  ),
-				dir_set                     => $gemma_dir_set,
-			),
+				# ...all merge nodes (tree_df_ordering)
+				Cath::Gemma::Compute::ProfileBuildTask->new(
+					starting_cluster_lists     => $mergelist    ->merge_cluster_lists( 'tree_df_ordering' ),
+					dir_set                    => $gemma_dir_set->profile_dir_set    (                    ),
+					compass_profile_build_type => $compass_profile_build_type,
+				)->remove_already_present(),
+			],
 
-			# ...all merge nodes (tree_df_ordering)
-			Cath::Gemma::Compute::ProfileScanTask->new(
-				starting_cluster_list_pairs => $mergelist->later_scan_lists( 'tree_df_ordering' ),
-				dir_set                     => $gemma_dir_set,
-			),
+			# Perform scans for...
+			[
+				# ...all initial nodes (ie starting cluster vs other starting clusters)
+				Cath::Gemma::Compute::ProfileScanTask->new(
+					starting_cluster_list_pairs => $mergelist->initial_scan_lists(),
+					dir_set                     => $gemma_dir_set,
+					compass_profile_build_type  => $compass_profile_build_type,
+				),
 
-		]
-	);
+				# ...all merge nodes (simple_ordering)
+				Cath::Gemma::Compute::ProfileScanTask->new(
+					starting_cluster_list_pairs => $mergelist->later_scan_lists( 'simple_ordering'  ),
+					dir_set                     => $gemma_dir_set,
+					compass_profile_build_type  => $compass_profile_build_type,
+				),
+
+				# ...all merge nodes (tree_df_ordering)
+				Cath::Gemma::Compute::ProfileScanTask->new(
+					starting_cluster_list_pairs => $mergelist->later_scan_lists( 'tree_df_ordering' ),
+					dir_set                     => $gemma_dir_set,
+					compass_profile_build_type  => $compass_profile_build_type,
+				),
+
+			]
+		);
+	}
 
 }
 

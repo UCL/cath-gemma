@@ -2,7 +2,39 @@
 
 ## Usage
 
-Send the code over to the relevant compute cluster:
+~~~
+setenv LOCAL_DATA_ROOT   /cath/people2/ucbctnl/GeMMA/v4_0_0
+setenv LEGION_DATA_ROOT  /scratch/scratch/`whoami`/gemma_data
+setenv CHUCKLE_DATA_ROOT /cluster/project6/cathrelease/work/2017_05_10.gemma_recode
+~~~
+
+...or for bash...
+
+~~~
+export LOCAL_DATA_ROOT=/cath/people2/ucbctnl/GeMMA/v4_0_0
+export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
+export CHUCKLE_DATA_ROOT=/cluster/project6/cathrelease/work/2017_05_10.gemma_recode
+~~~
+
+(please update these values in the docs as appropriate)
+
+### Send to compute cluster
+
+Send the starting clusters data:
+
+~~~
+rsync --dry-run -av --delete ${LOCAL_DATA_ROOT}/projects.txt       `whoami`@login05.external.legion.ucl.ac.uk:${LEGION_DATA_ROOT}/projects.txt
+rsync --dry-run -av --delete ${LOCAL_DATA_ROOT}/starting_clusters/ `whoami`@login05.external.legion.ucl.ac.uk:${LEGION_DATA_ROOT}/starting_clusters/
+rsync           -av --delete ${LOCAL_DATA_ROOT}/projects.txt       `whoami`@login05.external.legion.ucl.ac.uk:${LEGION_DATA_ROOT}/projects.txt
+rsync           -av --delete ${LOCAL_DATA_ROOT}/starting_clusters/ `whoami`@login05.external.legion.ucl.ac.uk:${LEGION_DATA_ROOT}/starting_clusters/
+# ...or...
+rsync --dry-run -av --delete ${LOCAL_DATA_ROOT}/projects.txt       `whoami`@bchuckle.cs.ucl.ac.uk:${CHUCKLE_DATA_ROOT}/projects.txt
+rsync --dry-run -av --delete ${LOCAL_DATA_ROOT}/starting_clusters/ `whoami`@bchuckle.cs.ucl.ac.uk:${CHUCKLE_DATA_ROOT}/starting_clusters/
+rsync           -av --delete ${LOCAL_DATA_ROOT}/projects.txt       `whoami`@bchuckle.cs.ucl.ac.uk:${CHUCKLE_DATA_ROOT}/projects.txt
+rsync           -av --delete ${LOCAL_DATA_ROOT}/starting_clusters/ `whoami`@bchuckle.cs.ucl.ac.uk:${CHUCKLE_DATA_ROOT}/starting_clusters/
+~~~
+
+Send the code:
 
 ~~~
 rsync --dry-run -av --delete ~/cath-gemma/Cath-Gemma/ `whoami`@login05.external.legion.ucl.ac.uk:/scratch/scratch/`whoami`/Cath-Gemma/
@@ -12,22 +44,26 @@ rsync --dry-run -av --delete ~/cath-gemma/Cath-Gemma/ `whoami`@bchuckle.cs.ucl.a
 rsync           -av --delete ~/cath-gemma/Cath-Gemma/ `whoami`@bchuckle.cs.ucl.ac.uk:/home/`whoami`/Cath-Gemma/
 ~~~
 
+### Run
+
 Login and test:
 
 ~~~
 ssh legion.rc.ucl.ac.uk
 qrsh -verbose -l h_rt=1:0:0,h_vmem=2G
+# <set data environment variables, as above>
 cd ~/Scratch/Cath-Gemma
 module load perl
-script/prepare_research_data.pl
+script/prepare_research_data.pl --starting-cluster-root-dir ${LEGION_DATA_ROOT}/starting_clusters  --projects-list-file ${LEGION_DATA_ROOT}/projects.txt --output-root-dir ${LEGION_DATA_ROOT}
 
 # ...or...
 
 ssh bchuckle.cs.ucl.ac.uk
 qrsh -verbose -l h_rt=1:0:0,h_vmem=2G,tmem=2G
+# <set data environment variables, as above>
 cd ~/Cath-Gemma
 export PATH=/share/apps/perl/bin:$PATH
-script/prepare_research_data.pl
+script/prepare_research_data.pl --starting-cluster-root-dir ${CHUCKLE_DATA_ROOT}/starting_clusters --projects-list-file ${CHUCKLE_DATA_ROOT}/projects.txt --output-root-dir ${CHUCKLE_DATA_ROOT}
 ~~~
 
 ~~~
@@ -86,3 +122,11 @@ Of possible future interest
 
  * MooX::ConfigFromFile
  * `shift if ref $_[0] eq __PACKAGE__;`
+
+
+To do:
+
+ * Add Executor factory with necessary options - abstract that out of scripts
+ * Abstract common options out of scripts
+ * Copy batch_into_n() from /cath/homes2/ucbctnl/cath-gemma/tree_inspection/get_ec_codes_by_starting_cluster.pl into Util.pm
+ * Use batch_into_n() for batching in WorkBatcher::add_profile_build_work()
