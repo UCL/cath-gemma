@@ -1,0 +1,62 @@
+{
+   "starting_clusters" : [
+      {
+         "ec_codes" : {
+            "3.2.2.21" : 32,
+            "4.2.99.18" : 4,
+            "2.1.1.n11" : 25,
+            "2.1.1.63" : 45
+         },
+         "cluster_name" : 19
+      },
+      {
+         "ec_codes" : {
+            "3.2.2.21" : 59,
+            "2.1.1.63" : 58
+         },
+         "cluster_name" : 93
+      },
+      {
+         "ec_codes" : {
+            "2.1.1.n11" : 53,
+            "2.1.1.63" : 371
+         },
+         "cluster_name" : 184
+      },
+      {
+         "ec_codes" : {
+            "2.1.1.63" : 1
+         },
+         "cluster_name" : 185
+      },
+      {
+         "ec_codes" : {
+            "2.1.1.63" : 74
+         },
+         "cluster_name" : 244
+      },
+      {
+         "ec_codes" : {
+            "2.1.1.n11" : 3,
+            "2.1.1.63" : 3
+         },
+         "cluster_name" : 520
+      },
+      {
+         "ec_codes" : {},
+         "cluster_name" : 1049
+      },
+      {
+         "ec_codes" : {},
+         "cluster_name" : 1121
+      },
+      {
+         "ec_codes" : {},
+         "cluster_name" : 1248
+      },
+      {
+         "ec_codes" : {},
+         "cluster_name" : 1318
+      }
+   ]
+}
