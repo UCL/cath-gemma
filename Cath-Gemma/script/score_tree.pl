@@ -24,6 +24,9 @@ use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Executor::HpcExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Executor::LocalExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Tree::MergeList;
+use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
+use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
+use Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder;
 use Cath::Gemma::TreeBuilder::PureTreeBuilder;
 use Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
 use Cath::Gemma::Util;
@@ -95,6 +98,9 @@ foreach my $project ( @project_list ) {
 	foreach my $clusts_ordering ( 'simple_ordering', 'tree_df_ordering' ) {
 		foreach my $compass_profile_build_type ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / ) {
 			foreach my $tree_builder (
+			                           Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder->new(),
+			                           Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder ->new(),
+			                           Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder   ->new(),
 			                           Cath::Gemma::TreeBuilder::PureTreeBuilder        ->new(),
 			                           Cath::Gemma::TreeBuilder::WindowedTreeBuilder    ->new(),
 			                           ) {

@@ -59,6 +59,7 @@ sub build_tree {
 
 	my @nodenames_and_merges;
 
+	my $num_merge_batches = 0;
 	while ( $scans_data->count() > 1 ) {
 		my $ids_and_score_list = $scans_data->ids_and_score_of_lowest_score_window();
 
@@ -70,6 +71,7 @@ sub build_tree {
 			my $merged_starting_clusters = $scans_data->merge_remove( $id1, $id2, $clusts_ordering );
 			my $other_ids                = $scans_data->sorted_ids();
 			my $merged_node_id           = $scans_data->add_node_of_starting_clusters( $merged_starting_clusters );
+			# warn sprintf( "%40s + %40s -> %40s\n", $id1, $id2, $merged_node_id );
 
 			push @nodenames_and_merges, [
 				$merged_node_id,
@@ -94,7 +96,11 @@ sub build_tree {
 
 			$scans_data->add_scan_data( $new_scan_data );
 		}
+		# warn "\n";
+		++$num_merge_batches;
 	}
+
+	warn "Number of merge-batches : $num_merge_batches\n";
 
 	return Cath::Gemma::Tree::MergeList->build_from_nodenames_and_merges( \@nodenames_and_merges );
 }

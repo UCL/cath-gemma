@@ -353,6 +353,64 @@ sub merge_add_with_score_of_highest {
 	return $merged_id;
 }
 
+=head2 merge_add_with_unweighted_geometric_mean_score
+
+=cut
+
+sub merge_add_with_unweighted_geometric_mean_score {
+	state $check = compile( Object, Str, Str, CathGemmaScanScansData, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $id1, $id2, $orig_scans, $clusts_ordering ) = $check->( @ARG );
+
+	my $really_bad_score = 100000000;
+
+	my $starting_clusters_1 = $self->starting_clusters_of_ids()->{ $id1 };
+	my $starting_clusters_2 = $self->starting_clusters_of_ids()->{ $id2 };
+
+	my $scans = $self->scans();
+
+	my @new_results;
+	foreach my $other_id ( sort( keys( %{ $scans->{ $id1 } } ) ) ) {
+		if ( $other_id ne $id1 && $other_id ne $id2 ) {
+			my $other_starting_clusters = $self->starting_clusters_of_ids()->{ $other_id };
+			my @log_10_scores = 0;
+			foreach my $starting_cluster ( @$starting_clusters_1, @$starting_clusters_2 ) {
+				foreach my $other_starting_cluster ( @$other_starting_clusters ) {
+					# if ( $starting_cluster eq '97' && $other_starting_cluster eq '38' ) {
+					# 	warn "*******  HERE *******";
+					# }
+					my $score = $orig_scans->scans()->{ $starting_cluster }->{ $other_starting_cluster };
+					# If undefined, make      large
+					# If zero,      make very small
+					# Otherwise,    use value
+					push @log_10_scores, log10( ( $score // 1e10 ) || 1e-200 );
+				}
+			}
+			my $geom_mean_score = 10 ** ( sum( @log_10_scores ) / scalar( @log_10_scores ) );
+			push @new_results, [
+				$other_id,
+				$geom_mean_score
+			];
+		}
+	}
+
+	$self->remove( $id1 );
+	$self->remove( $id2 );
+
+	my @starting_clusters =
+		$clusts_ordering
+		? (                                             @$starting_clusters_1, @$starting_clusters_2   )
+		: ( sort { cluster_name_spaceship( $a, $b ) } ( @$starting_clusters_1, @$starting_clusters_2 ) );
+
+	my $merged_id = id_of_starting_clusters( \@starting_clusters );
+	$self->starting_clusters_of_ids()->{ $merged_id } = \@starting_clusters;
+
+	foreach my $new_result ( @new_results ) {
+		$self->add_scan_entry( $merged_id, @$new_result );
+	}
+
+	return $merged_id;
+}
+
 =head2 new_from_starting_clusters
 
 =cut
