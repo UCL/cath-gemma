@@ -216,13 +216,7 @@ sub split_into_singles {
 
 	return [
 		map
-			{
-				Cath::Gemma::Compute::Task::ProfileScanTask->new(
-					compass_profile_build_type  => $self->compass_profile_build_type(),
-					dir_set                     => $self->dir_set(),
-					starting_cluster_list_pairs => [ $ARG ],
-				);
-			}
+			{ $self->$_clone( starting_cluster_list_pairs => [ $ARG ] ); }
 			@{ $self->starting_cluster_list_pairs() }
 	];
 }

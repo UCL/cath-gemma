@@ -33,12 +33,12 @@ with ( 'Cath::Gemma::Executor::HpcRunner' );
 
 sub _patch_job_id_and_task_id_into_file_pattern {
 	state $check = compile( Path, Int, Int );
-	my ( $file_pattern, $job_id, $task_id ) = $check->( @ARG );
+	my ( $file_pattern, $job_id, $task_num ) = $check->( @ARG );
 
 	my $basename = $file_pattern->basename();
 
 	$basename =~ s/\\\$JOB_ID/$job_id/g;
-	$basename =~ s/\\\$TASK_ID/$task_id/g;
+	$basename =~ s/\\\$TASK_ID/$task_num/g;
 
 	return $file_pattern->parent()->child( $basename );
 }
@@ -58,8 +58,8 @@ sub run_job_array {
 
 	foreach my $task_id ( 0 .. ( $num_batches - 1 ) ) {
 		my $task_num = ( $task_id + 1 );
-		$stderr_file_pattern = _patch_job_id_and_task_id_into_file_pattern( $stderr_file_pattern, $fake_job_id, $task_num );
-		$stdout_file_pattern = _patch_job_id_and_task_id_into_file_pattern( $stdout_file_pattern, $fake_job_id, $task_num );
+		my $job_stderr_file = _patch_job_id_and_task_id_into_file_pattern( $stderr_file_pattern, $fake_job_id, $task_num );
+		my $job_stdout_file = _patch_job_id_and_task_id_into_file_pattern( $stdout_file_pattern, $fake_job_id, $task_num );
 
 		my @run_command = ( "$submit_script" );
 
@@ -72,11 +72,11 @@ sub run_job_array {
 		};
 		undef $ENV{ SGE_TASK_ID };
 
-		$stderr_file_pattern->spew( $run_stderr );
-		$stdout_file_pattern->spew( $run_stdout );
+		$job_stderr_file->spew( $run_stderr );
+		$job_stdout_file->spew( $run_stdout );
 
 		if ( $run_exit != 0 ) {
-			WARN 'HpcLocalRunner job finished with non-zero return code ' . $run_exit . ' - see ' . join( ', ', $stderr_file_pattern, $stdout_file_pattern );
+			WARN 'HpcLocalRunner job finished with non-zero return code ' . $run_exit . ' - see ' . join( ', ', $job_stderr_file, $job_stdout_file );
 		}
 	}
 }

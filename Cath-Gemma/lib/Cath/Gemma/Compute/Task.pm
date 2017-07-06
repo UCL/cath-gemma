@@ -76,8 +76,8 @@ sub estimate_num_steps_to_fill_time_from_index {
 
 	my $total_time = Time::Seconds->new( 0 );
 	my $num_steps  = 0;
-	while ( $num_steps < $self->num_steps() ) {
-		$total_time += $self->estimate_time_to_execute_step_of_index( $num_steps );
+	while ( $start_index + $num_steps < $self->num_steps() ) {
+		$total_time += $self->estimate_time_to_execute_step_of_index( $start_index + $num_steps );
 		if ( $total_time > $duration ) {
 			last;
 		}

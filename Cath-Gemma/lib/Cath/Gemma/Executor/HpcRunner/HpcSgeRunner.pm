@@ -19,7 +19,9 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
+use Capture::Tiny       qw/ capture        /;
 use Log::Log4perl::Tiny qw/ :easy          /;
+
 
 with ( 'Cath::Gemma::Executor::HpcRunner' );
 

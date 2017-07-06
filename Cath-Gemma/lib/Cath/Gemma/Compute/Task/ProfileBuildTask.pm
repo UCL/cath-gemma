@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 # Core
+use Carp               qw/ confess                 /;
 use English            qw/ -no_match_vars          /;
 use v5.10;
 
@@ -188,13 +189,7 @@ sub split_into_singles {
 
 	return [
 		map
-			{
-				Cath::Gemma::Compute::Task::ProfileBuildTask->new(
-					compass_profile_build_type => $self->compass_profile_build_type(),
-					dir_set                    => $self->dir_set(),
-					starting_cluster_lists     => [ $ARG ],
-				);
-			}
+			{ $self->$_clone( starting_cluster_lists => [ $ARG ] ); }
 			@{ $self->starting_cluster_lists() }
 	];
 }
@@ -230,12 +225,24 @@ sub estimate_time_to_execute_step_of_index {
 
 sub make_batch_of_indices {
 	my ( $self, $start_index, $num_steps ) = @ARG;
+
+	if ( $start_index + $num_steps > $self->num_steps() ) {
+		confess 'Request to make a batch of steps that do not exist (indices requested: [ '
+			. $start_index
+			. ', '
+			. ( $start_index + $num_steps )
+			. ' ), num_steps available: '
+			. $self->num_steps()
+			. ')';
+	}
+
 	return Cath::Gemma::Compute::WorkBatch->new(
 		profile_tasks => [
 			$self->$_clone(
 				starting_cluster_lists => [ @{ $self->starting_cluster_lists() } [ $start_index .. ( $start_index + $num_steps - 1 ) ] ]
 			)
 		],
+
 	);
 }
 

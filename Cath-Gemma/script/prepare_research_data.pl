@@ -40,6 +40,9 @@ use Cath::Gemma::Types  qw/
 	CathGemmaTreeMergeList
 /;
 
+use Type::Tiny;
+$Error::TypeTiny::StackTrace = 1;
+
 my $trace_files_ext            = '.trace';
 
 {
@@ -105,7 +108,7 @@ my $projects_list_data = $projects_list_file->slurp()
 my @projects = grep( ! /^#/, split( /\n+/, $projects_list_data ) );
 
 my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
-	batches => map {
+	batches => [ map {
 		my $project = $ARG;
 
 		# Grab the source merge list
@@ -126,8 +129,8 @@ my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 			scan_dir => $output_scan_rootdir->child( $project ),
 		);
 
-		work_batches_for_mergelist( $gemma_dir_set, $mergelist );
-	} @projects,
+		@{ work_batches_for_mergelist( $gemma_dir_set, $mergelist ) };
+	} @projects ],
 );
 
 
@@ -141,7 +144,8 @@ my $executor =
 				TEMPLATE => $submission_dir_pattern->basename(),
 				DIR      => $submission_dir_pattern->parent(),
 				CLEANUP  => 0,
-			)
+			),
+			hpc_mode => 'hpc_sge',
 		);
 
 $executor->execute( $work_batch_list );

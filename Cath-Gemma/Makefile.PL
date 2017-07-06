@@ -13,6 +13,7 @@ WriteMakefile(
       : ()),
     PL_FILES            => {},
     PREREQ_PM => {
+        'Array::Utils'            => 0,
         'Bio::AlignIO'            => 0,
         'Capture::Tiny'           => 0,
         'Cwd::Guard'              => 0,
@@ -27,6 +28,7 @@ WriteMakefile(
         'Object::Util'            => 0,
         'Path::Tiny'              => 0,
         'Role::Singleton'         => 0,
+        'Switch'                  => 0,
         'Thread::Pool::Simple'    => 0,
         'Try::Tiny'               => 0,
         'Type::Tiny'              => 0,

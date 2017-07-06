@@ -47,6 +47,7 @@ our @EXPORT = qw/
 	scan_filebasename_of_cluster_ids
 	scan_filename_of_dir_and_cluster_ids
 	time_fn
+	unique_by_hashing
 	/;
 
 # Non-core (local)
@@ -450,6 +451,15 @@ sub scan_filename_of_dir_and_cluster_ids {
 	my ( $dir, $query_ids, $match_ids, $compass_profile_build_type ) = $check->( @ARG );
 
 	return $dir->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type ) );
+}
+
+=head2 unique_by_hashing
+
+=cut
+
+sub unique_by_hashing {
+	my $cmp = shift;
+	sort( keys( %{ { map { ( $ARG, 1 ) } @ARG } } ) );
 }
 
 1;

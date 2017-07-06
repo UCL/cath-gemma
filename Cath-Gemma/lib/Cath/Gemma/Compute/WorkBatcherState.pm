@@ -11,7 +11,6 @@ use warnings;
 
 # Core
 use English            qw/ -no_match_vars      /;
-use List::Util         qw/ uniq uniqnum        /;
 use v5.10;
 
 # Moo
@@ -32,6 +31,7 @@ use Cath::Gemma::Types qw/
 	CathGemmaComputeWorkBatch
 	TimeSeconds
 	/;
+use Cath::Gemma::Util;
 
 =head2 build_batches
 
@@ -99,6 +99,10 @@ sub get_new_batch_list {
 	my $num_build_batches = $self->num_build_batches();
 	my $scans_deps_arrays = $self->indices_of_build_batches_needed_by_scan_batches();
 
+	# use Carp qw/ confess /;
+	# use Data::Dumper;
+	# confess Dumper( $scans_deps_arrays ) . ' ';
+
 	return Cath::Gemma::Compute::WorkBatchList->new(
 		batches => [
 			@{ $self->build_batches() },
@@ -111,7 +115,7 @@ sub get_new_batch_list {
 
 			# A dependencies array for each of the scan indices
 			map
-				{ _get_final_dependency_offsets( $ARG, $scans_deps_arrays->[ $ARG ], $num_build_batches ); }
+				{ _get_final_dependency_offsets( $ARG, $scans_deps_arrays->[ $ARG ] // [], $num_build_batches ); }
 				( 0 .. $#$scans_deps_arrays )
 		],
 	);
@@ -172,10 +176,10 @@ sub set_indices {
 	my ( $self, $scan_batch_indices, $build_batch_indices ) = $check->( @ARG );
 
 	foreach my $scan_batch_index ( @$scan_batch_indices ) {
-		my @indices = uniq( sort(
+		my @indices = sort { $a <=> $b } unique_by_hashing(
 			@{ $self->indices_of_build_batches_needed_by_scan_batches()->[ $scan_batch_index ] // [] },
 			@$scan_batch_indices
-		) );
+		);
 		$self->indices_of_build_batches_needed_by_scan_batches()->[ $scan_batch_index ] = \@indices;
 	}
 }
@@ -188,12 +192,12 @@ sub _add_in_tasks {
 	state $check = compile( Object, ArrayRef[CathGemmaComputeWorkBatch], ArrayRef[CathGemmaComputeTask], TimeSeconds );
 	my ( $self, $batches, $build_tasks, $estimate_duration_per_batch ) = $check->( @ARG );
 
-	return [ uniqnum( sort { $a <=> $b } (
+	return [ sort { $a <=> $b } unique_by_hashing(
 		# Add in task and append the resulting new task batches' indices
 		map
 		{ ( @{ $self->_add_in_task( $batches, $ARG, $estimate_duration_per_batch ) } ); }
 		@$build_tasks
-	) ) ];
+	) ];
 }
 
 =head2 _add_in_tasks

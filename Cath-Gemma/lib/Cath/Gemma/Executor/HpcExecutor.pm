@@ -109,6 +109,13 @@ sub execute {
 
 	$batches = $self->_work_batcher()->rebatch( $batches );
 
+	use Carp qw/ confess /;
+	use Data::Dumper;
+	confess Dumper([
+		$batches->num_batches(),
+		$batches->dependencies(),
+	]);
+
 	my $job_dir = $self->submission_dir()->realpath();
 
 	if ( ! -d $job_dir ) {
