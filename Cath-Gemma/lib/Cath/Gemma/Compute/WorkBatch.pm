@@ -4,6 +4,8 @@ package Cath::Gemma::Compute::WorkBatch;
 
 Cath::Gemma::Compute::WorkBatch - TODOCUMENT
 
+It should be assumed that the scan_tasks may depend on the profile_tasks
+
 =cut
 
 use strict;
@@ -12,6 +14,7 @@ use warnings;
 # Core
 use English            qw/ -no_match_vars   /;
 use List::Util         qw/ sum0             /;
+use Storable           qw/ freeze thaw      /;
 use Storable           qw/ thaw             /;
 use v5.10;
 
@@ -28,45 +31,61 @@ use Types::Path::Tiny  qw/ Path             /;
 use Types::Standard    qw/ ArrayRef Object  /;
 
 # Cath
-use Cath::Gemma::Compute::ProfileBuildTask;
-use Cath::Gemma::Compute::ProfileScanTask;
+use Cath::Gemma::Compute::Task::ProfileBuildTask;
+use Cath::Gemma::Compute::Task::ProfileScanTask;
 use Cath::Gemma::Types qw/
 	CathGemmaComputeProfileBuildTask
 	CathGemmaComputeProfileScanTask
+	CathGemmaComputeWorkBatch
 	CathGemmaDiskExecutables
 	/;
 use Cath::Gemma::Util;
 
-=head2 profile_batches
+=head2 profile_tasks
 
 =cut
 
-has profile_batches => (
-	is  => 'ro',
-	isa => ArrayRef[CathGemmaComputeProfileBuildTask],
+has profile_tasks => (
+	is          => 'rwp',
+	isa         => ArrayRef[CathGemmaComputeProfileBuildTask],
+	default     => sub { []; },
 	handles_via => 'Array',
 	handles     => {
-		profile_batches_is_empty => 'is_empty',
-		num_profile_batches      => 'count',
-		profile_batch_of_index   => 'get',
+		_push_profile_tasks    => 'push',
+		num_profile_tasks      => 'count',
+		profile_task_of_index  => 'get',
+		profile_tasks_is_empty => 'is_empty',
 	}
 );
 
-=head2 scan_batches
+=head2 scan_tasks
 
 =cut
 
-has scan_batches => (
-	is  => 'ro',
-	isa => ArrayRef[CathGemmaComputeProfileScanTask],
+has scan_tasks => (
+	is          => 'rwp',
+	isa         => ArrayRef[CathGemmaComputeProfileScanTask],
+	default     => sub { []; },
 	handles_via => 'Array',
 	handles     => {
-		scan_batches_is_empty => 'is_empty',
-		num_scan_batches      => 'count',
-		scan_batch_of_index   => 'get',
+		_push_scan_tasks    => 'push',
+		num_scan_tasks      => 'count',
+		scan_task_of_index  => 'get',
+		scan_tasks_is_empty => 'is_empty',
 	}
 );
 
+=head2 append
+
+=cut
+
+sub append {
+	state $check = compile( Object, CathGemmaComputeWorkBatch );
+	my ( $self, $rhs ) = $check->( @ARG );
+
+	$self->_push_profile_tasks( @{ $rhs->profile_tasks() } );
+	$self->_push_scan_tasks   ( @{ $rhs->scan_tasks   () } );
+}
 
 =head2 id
 
@@ -76,17 +95,27 @@ sub id {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	return generic_id_of_clusters( [ map { $ARG->id() } @{ $self->profile_batches() } ] );
+	return generic_id_of_clusters( [ map { $ARG->id() } @{ $self->profile_tasks() } ] );
 }
 
-=head2 num_profiles
+=head2 num_profile_steps
 
 =cut
 
-sub num_profiles {
+sub num_profile_steps {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
-	return sum0( map { $ARG->num_profiles(); } @{ $self->profile_batches() } );
+	return sum0( map { $ARG->num_steps(); } @{ $self->profile_tasks() } );
+}
+
+=head2 num_scan_steps
+
+=cut
+
+sub num_scan_steps {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return sum0( map { $ARG->num_steps(); } @{ $self->scan_tasks() } );
 }
 
 =head2 total_num_starting_clusters_in_profiles
@@ -96,7 +125,26 @@ sub num_profiles {
 sub total_num_starting_clusters_in_profiles {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
-	return sum0( map { $ARG->total_num_starting_clusters(); } @{ $self->profile_batches() } );
+	return sum0( map { $ARG->total_num_starting_clusters(); } @{ $self->profile_tasks() } );
+}
+
+=head2 estimate_time_to_execute
+
+=cut
+
+sub estimate_time_to_execute {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return sum0(
+		map
+			{ $ARG->estimate_time_to_execute(); }
+			(
+				@{ $self->profile_tasks() },
+				@{ $self->scan_tasks   () },
+			)
+	);
+
 }
 
 =head2 execute_task
@@ -107,11 +155,14 @@ sub execute_task {
 	state $check = compile( Object, CathGemmaDiskExecutables );
 	my ( $self, $exes ) = $check->( @ARG );
 
-	my @results;
-	foreach my $profile_batch ( @{ $self->profile_batches() } ) {
-		push @results, $profile_batch->execute_task( $exes, $exes->tmp_dir() );
-	}
-	return \@results;
+	return [
+		map
+			{ $ARG->execute_task( $exes ); }
+			(
+				@{ $self->profile_tasks() },
+				@{ $self->scan_tasks() },
+			)
+	];
 }
 
 =head2 write_to_file
@@ -143,7 +194,7 @@ sub execute_from_file {
 	state $check = compile( Invocant, Path, CathGemmaDiskExecutables );
 	my ( $proto, $file, $exes ) = $check->( @ARG );
 
-	return $proto->read_from_file( $file )->execute_task( $exes, $exes->tmp_dir() );
+	return $proto->read_from_file( $file )->execute_task( $exes );
 }
 
 1;

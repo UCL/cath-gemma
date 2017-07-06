@@ -23,8 +23,8 @@ use Types::Path::Tiny qw/ Path                         /;
 use Types::Standard   qw/ ArrayRef Object Optional Str /;
 
 # Cath
-use Cath::Gemma::Compute::ProfileBuildTask;
-use Cath::Gemma::Compute::ProfileScanTask;
+use Cath::Gemma::Compute::Task::ProfileBuildTask;
+use Cath::Gemma::Compute::Task::ProfileScanTask;
 use Cath::Gemma::Executor;
 use Cath::Gemma::Scan::ScansDataFactory;
 use Cath::Gemma::Types qw/
@@ -63,7 +63,7 @@ around build_tree => sub {
 		# Build alignments and profiles for...
 		[
 			# ...all starting_clusters
-			Cath::Gemma::Compute::ProfileBuildTask->new(
+			Cath::Gemma::Compute::Task::ProfileBuildTask->new(
 				starting_cluster_lists     => [ map { [ $ARG ] } @$starting_clusters ],
 				dir_set                    => $gemma_dir_set->profile_dir_set(),
 				compass_profile_build_type => $compass_profile_build_type,
@@ -73,7 +73,7 @@ around build_tree => sub {
 		# Perform scans for...
 		[
 			# ...all initial nodes (ie starting cluster vs other starting clusters)
-			Cath::Gemma::Compute::ProfileScanTask->new(
+			Cath::Gemma::Compute::Task::ProfileScanTask->new(
 				starting_cluster_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
 				dir_set                     => $gemma_dir_set,
 				compass_profile_build_type  => $compass_profile_build_type,

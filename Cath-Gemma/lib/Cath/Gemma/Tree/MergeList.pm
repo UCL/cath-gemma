@@ -26,6 +26,7 @@ use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional S
 use Cath::Gemma::Tree::Merge;
 use Cath::Gemma::Types  qw/
 	CathGemmaDiskExecutables
+	CathGemmaDiskGemmaDirSet
 	CathGemmaDiskProfileDirSet
 	CathGemmaNodeOrdering
 	CathGemmaTreeMerge
@@ -395,7 +396,7 @@ sub archive_in_dir {
 	state $check = compile( Object, Str, CathGemmaNodeOrdering, Path, Path );
 	my ( $self, $project_name, $clusts_ordering, $aln_dir, $output_dir ) = $check->( @ARG );
 
-	INFO "Archiving $project_name [$clusts_ordering] to $output_dir (with alignments from $aln_dir)";
+	DEBUG "Archiving $project_name [$clusts_ordering] to $output_dir (with alignments from $aln_dir)";
 
 	if ( ! -d $output_dir ) {
 		$output_dir->mkpath()
@@ -426,7 +427,6 @@ sub archive_in_dir {
 
 	foreach my $src_dest_aln_file_pair ( @src_dest_aln_file_pairs ) {
 		my ( $source_aln_file, $dest_aln_file ) = @$src_dest_aln_file_pair;
-		warn "Copy $source_aln_file to $dest_aln_file";
 		if ( ! -s $source_aln_file ) {
 			confess "Argh";
 		}
@@ -447,6 +447,39 @@ sub geometric_mean_score {
 	my @ln_scores = ( map { log( $ARG->score_with_lower_bound( $lower_bound // 1e-300 ) ) } @{ $self->merges() } );
 
 	return exp( sum( @ln_scores ) / scalar( @ln_scores ) );
+}
+
+# =head2 rescore
+
+# =cut
+
+# sub rescore {
+# 	state $check = compile( Object, CathGemmaDiskGemmaDirSet, CathGemmaNodeOrdering );
+# 	my ( $self, $gemma_dir_set, $clusts_ordering ) = $check->( @ARG );
+
+# 	foreach my $merge ( @{ $self->merges() } ) {
+# 		$merge->score(
+# 			get_pair_scan_score(
+# 				$merge->starting_clusters_a( $clusts_ordering ),
+# 				$merge->starting_clusters_b( $clusts_ordering ),
+# 			)
+# 		);
+# 	}
+# 	# state $check = compile( Object );
+# 	# my ( $self ) = $check->( @ARG );
+# }
+
+=head2 rescore_copy
+
+=cut
+
+sub rescore_copy {
+	state $check = compile( Object, CathGemmaDiskGemmaDirSet, CathGemmaNodeOrdering );
+	my ( $self, $gemma_dir_set, $clusts_ordering ) = $check->( @ARG );
+
+	my $copy = bless( dclone( $self ), __PACKAGE__ );
+	$copy->rescore( $gemma_dir_set, $clusts_ordering);
+	return $copy;
 }
 
 1;

@@ -188,4 +188,12 @@ sub build_and_scan_merge_cluster_against_others {
 	);
 }
 
+=head2 get_pair_scan_score
+
+=cut
+
+sub get_pair_scan_score {
+	
+}
+
 1;

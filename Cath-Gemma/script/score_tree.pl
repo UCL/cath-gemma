@@ -129,6 +129,8 @@ foreach my $project ( @project_list ) {
 					$clusts_ordering,
 				);
 
+				# $tree->rescore( $gemma_dir_set, $clusts_ordering );
+
 				# Ensure that all alignments have been built for a tree
 				# (which may not be true if the tree was built under a naive method)
 				$tree->ensure_all_alignments(

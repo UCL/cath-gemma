@@ -1,8 +1,8 @@
-package Cath::Gemma::Executor::TaskThreadPooler;
+package Cath::Gemma::Compute::TaskThreadPooler;
 
 =head1 NAME
 
-Cath::Gemma::Executor::TaskThreadPooler - TODOCUMENT
+Cath::Gemma::Compute::TaskThreadPooler - TODOCUMENT
 
 =cut
 

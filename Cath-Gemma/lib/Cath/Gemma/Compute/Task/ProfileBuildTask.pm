@@ -1,4 +1,4 @@
-package Cath::Gemma::Compute::ProfileBuildTask;
+package Cath::Gemma::Compute::Task::ProfileBuildTask;
 
 use strict;
 use warnings;
@@ -14,8 +14,10 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy /; # ***** TEMPORARY ******
+use Object::Util;
 use Path::Tiny;
-use Type::Params       qw/ compile                 /;
+use Type::Params       qw/ compile Invocant        /;
 use Types::Path::Tiny  qw/ Path                    /;
 use Types::Standard    qw/ ArrayRef Int Object Str /;
 
@@ -24,26 +26,41 @@ use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
+	CathGemmaComputeProfileBuildTask
 	CathGemmaDiskExecutables
 	CathGemmaDiskProfileDirSet
 /;
 use Cath::Gemma::Util;
+
+with ( 'Cath::Gemma::Compute::Task' );
 
 =head2 starting_cluster_lists
 
 =cut
 
 has starting_cluster_lists => (
-	is          => 'rwp',
+	is          => 'ro', # TODO: Can we get away with ro or does it need to be rwp?
 	isa         => ArrayRef[ArrayRef[Str]],
 	handles_via => 'Array',
 	handles     => {
-		is_empty                   => 'is_empty',
-		num_profiles               => 'count',
-		starting_clusters_of_index => 'get',
+		is_empty       => 'is_empty',
+		num_steps_impl => 'count',
+		step_of_index  => 'get',
 	},
 	required    => 1,
 );
+
+=head2 num_steps
+
+This pass-through is to satisfy the corresponding 'requires' in Task,
+which isn't satisfied by the 'handles' above
+
+=cut
+
+sub num_steps {
+	my $self = shift;
+	return $self->num_steps_impl();
+}
 
 =head2 compass_profile_build_type
 
@@ -78,7 +95,10 @@ has dir_set  => (
 sub id {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
-	return generic_id_of_clusters( [ map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() } ] );
+	return generic_id_of_clusters( [
+		$self->compass_profile_build_type(),
+		map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
+	] );
 }
 
 =head2 remove_already_present
@@ -158,18 +178,18 @@ sub execute_task {
 	];
 }
 
-=head2 split
+=head2 split_into_singles
 
 =cut
 
-sub split {
+sub split_into_singles {
 	state $check = compile( Object );
 	my ( $self  ) = $check->( @ARG );
 
 	return [
 		map
 			{
-				Cath::Gemma::Compute::ProfileBuildTask->new(
+				Cath::Gemma::Compute::Task::ProfileBuildTask->new(
 					compass_profile_build_type => $self->compass_profile_build_type(),
 					dir_set                    => $self->dir_set(),
 					starting_cluster_lists     => [ $ARG ],
@@ -177,6 +197,46 @@ sub split {
 			}
 			@{ $self->starting_cluster_lists() }
 	];
+}
+
+=head2 remove_duplicate_build_tasks
+
+=cut
+
+sub remove_duplicate_build_tasks {
+	state $check = compile( Invocant, ArrayRef[CathGemmaComputeProfileBuildTask] );
+	my ( $proto, $build_tasks ) = $check->( @ARG );
+
+	WARN "Not yet implemented remove_duplicate_build_tasks()";
+
+	return $build_tasks;
+}
+
+=head2 estimate_time_to_execute_step_of_index
+
+# TODO: Make this estimate time more sensibly than assuming 1 second per profile step
+
+=cut
+
+sub estimate_time_to_execute_step_of_index {
+	my ( $self, $index ) = @ARG;
+	my $step = $self->step_of_index( $index );
+	return Time::Seconds->new( 1 );
+}
+
+=head2 make_batch_of_indices
+
+=cut
+
+sub make_batch_of_indices {
+	my ( $self, $start_index, $num_steps ) = @ARG;
+	return Cath::Gemma::Compute::WorkBatch->new(
+		profile_tasks => [
+			$self->$_clone(
+				starting_cluster_lists => [ @{ $self->starting_cluster_lists() } [ $start_index .. ( $start_index + $num_steps - 1 ) ] ]
+			)
+		],
+	);
 }
 
 1;

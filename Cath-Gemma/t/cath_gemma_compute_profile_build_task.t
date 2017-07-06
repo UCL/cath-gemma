@@ -20,7 +20,7 @@ use Cath::Gemma::Util;
 # my $test_basename   = path( $PROGRAM_NAME )->basename( '.t' );
 my $data_dir        = path( 'data' );
 
-use_ok( 'Cath::Gemma::Compute::ProfileBuildTask' );
+use_ok( 'Cath::Gemma::Compute::Task::ProfileBuildTask' );
 
 my $starting_cluster_dir = $data_dir->child( 'starting_clusters' );
 
@@ -29,7 +29,7 @@ my $starting_cluster_dir = $data_dir->child( 'starting_clusters' );
 =cut
 
 sub make_example_profile_build_task {
-	return Cath::Gemma::Compute::ProfileBuildTask->new(
+	return Cath::Gemma::Compute::Task::ProfileBuildTask->new(
 		starting_cluster_lists     => [ [ qw/ a b / ] ],
 		compass_profile_build_type => default_compass_profile_build_type(),
 		dir_set                    => Cath::Gemma::Disk::ProfileDirSet->new(
@@ -42,7 +42,7 @@ sub make_example_profile_build_task {
 
 subtest 'constructs_without_error' => sub {
 	plan tests => 1;
-	new_ok( 'Cath::Gemma::Compute::ProfileBuildTask' => [
+	new_ok( 'Cath::Gemma::Compute::Task::ProfileBuildTask' => [
 		starting_cluster_lists     => [ [ qw/ a b / ] ],
 		compass_profile_build_type => default_compass_profile_build_type(),
 		dir_set                    => Cath::Gemma::Disk::ProfileDirSet->new(

@@ -1,5 +1,11 @@
 # Cath::Gemma
 
+## Running locally:
+
+~~~
+script/prepare_research_data.pl --starting-cluster-root-dir ~/gemma_data_dump/starting_clusters --projects-list-file ~/gemma_data_dump/projects.txt --output-root-dir ~/gemma_data_dump/outputs
+~~~~
+
 ## Usage
 
 ~~~
@@ -116,6 +122,11 @@ cd lib
 find .      -iname '*.pm' | sort | sed 's/^lib\///g' | sed 's/\.pm$//g' | sed 's/\.\///g' | sed 's/\//::/g' | xargs -I VAR perl -Ilib -I../extlib/lib/perl5 -MVAR -e ''
 ~~~
 
+To check for errors in `package` statements:
+
+~~~
+lsp | xargs grep -P '^package ' | tr ';' ' ' | sed 's/.pm:package//g' | sed 's/\//::/g' | sed 's/^t:://g' | sed 's/^lib:://g' | awk '$1 != $2'
+~~~
 
 Of possible future interest
 --
@@ -128,5 +139,4 @@ To do:
 
  * Add Executor factory with necessary options - abstract that out of scripts
  * Abstract common options out of scripts
- * Copy batch_into_n() from /cath/homes2/ucbctnl/cath-gemma/tree_inspection/get_ec_codes_by_starting_cluster.pl into Util.pm
  * Use batch_into_n() for batching in WorkBatcher::add_profile_build_work()

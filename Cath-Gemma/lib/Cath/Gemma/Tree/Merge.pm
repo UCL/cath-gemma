@@ -29,16 +29,13 @@ use Cath::Gemma::Util;
 
 =cut
 
-has mergee_a => (
-	is => 'ro',
-	isa => Str|CathGemmaTreeMerge,
-);
 
 =head2 mergee_b
 
 =cut
 
-has mergee_b => (
+
+has [ qw/ mergee_a mergee_b / ] => (
 	is => 'ro',
 	isa => Str|CathGemmaTreeMerge,
 );
@@ -48,7 +45,7 @@ has mergee_b => (
 =cut
 
 has score => (
-	is  => 'ro',
+	is  => 'rw',
 	isa => Num,
 );
 
@@ -115,6 +112,36 @@ sub mergee_b_id {
 		: $self->mergee_b()->id( $clusts_ordering );
 }
 
+=head2 starting_clusters_a
+
+=cut
+
+sub starting_clusters_a {
+	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $clusts_ordering ) = $check->( @ARG );
+
+	$clusts_ordering //= 'simple_ordering';
+
+	return $self->mergee_a_is_starting_cluster()
+		? [ $self->mergee_a() ]
+		: $self->mergee_a()->starting_nodes( $clusts_ordering )
+}
+
+=head2 starting_clusters_b
+
+=cut
+
+sub starting_clusters_b {
+	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $clusts_ordering ) = $check->( @ARG );
+
+	$clusts_ordering //= 'simple_ordering';
+
+	return $self->mergee_b_is_starting_cluster()
+		? [ $self->mergee_b() ]
+		: $self->mergee_b()->starting_nodes( $clusts_ordering )
+}
+
 =head2 starting_nodes
 
 =cut
@@ -131,16 +158,8 @@ sub starting_nodes {
 	return
 		( $clusts_ordering eq 'tree_df_ordering' )
 		? [
-			(
-				$self->mergee_a_is_starting_cluster()
-					? $self->mergee_a()
-					: @{ $self->mergee_a()->starting_nodes( $clusts_ordering ) }
-			),
-			(
-				$self->mergee_b_is_starting_cluster()
-					? $self->mergee_b()
-					: @{ $self->mergee_b()->starting_nodes( $clusts_ordering ) }
-			)
+			@{ $self->starting_clusters_a( $clusts_ordering ); },
+			@{ $self->starting_clusters_b( $clusts_ordering ); },
 		]
 		: [
 			sort { cluster_name_spaceship( $a, $b ) } @{ $self->starting_nodes( 'tree_df_ordering' ) }

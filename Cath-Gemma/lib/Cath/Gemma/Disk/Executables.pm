@@ -51,55 +51,38 @@ has tmp_dir => (
 
 =cut
 
-has _exes_dir => (
-	is  => 'lazy',
-	isa => Path,
-);
 
 =head2 compass_build
 
 =cut
 
-has compass_build => (
-	is  => 'lazy',
-	isa => Path,
-);
 
 =head2 compass_scan_241
 
 =cut
 
-has compass_scan_241 => (
-	is  => 'lazy',
-	isa => Path,
-);
 
 =head2 compass_scan_310
 
 =cut
 
-has compass_scan_310 => (
-	is  => 'lazy',
-	isa => Path,
-);
 
 =head2 mafft
 
 =cut
 
-has mafft => (
-	is  => 'lazy',
-	isa => Path,
-);
 
 =head2 mk_compass_db
 
 =cut
 
-has mk_compass_db => (
+
+
+has [ qw/ _exes_dir compass_build compass_scan_241 compass_scan_310 mafft mk_compass_db / ] => (
 	is  => 'lazy',
 	isa => Path,
 );
+
 
 =head2 _prepare_mafft_directories
 

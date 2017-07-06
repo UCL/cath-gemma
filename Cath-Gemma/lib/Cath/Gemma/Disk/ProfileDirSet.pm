@@ -26,31 +26,21 @@ use Cath::Gemma::Util;
 
 =cut
 
-has starting_cluster_dir => (
-	is  => 'ro',
-	isa => Path,
-);
-
 
 =head2 aln_dir
 
 =cut
-
-has aln_dir => (
-	is  => 'ro',
-	isa => Path,
-);
 
 
 =head2 prof_dir
 
 =cut
 
-has prof_dir => (
+
+has [ qw/ starting_cluster_dir aln_dir prof_dir / ] => (
 	is  => 'ro',
 	isa => Path,
 );
-
 
 =head2 is_set
 

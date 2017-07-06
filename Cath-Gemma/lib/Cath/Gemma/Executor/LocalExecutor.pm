@@ -19,7 +19,6 @@ use strictures 1;
 
 # Non-core (local)
 use Log::Log4perl::Tiny qw/ :easy                    /;
-# use Thread::Pool::Simple;
 use Types::Path::Tiny   qw/ Path                     /;
 use Types::Standard     qw/ Int                      /;
 
@@ -59,8 +58,8 @@ The parameters are checked in Cath::Gemma::Executor
 sub execute {
 	my ( $self, $build_tasks, $scan_tasks ) = @ARG;
 
-	my @split_build_tasks = map { @{ $ARG->split() } } @$build_tasks;
-	my @split_scan_tasks  = map { @{ $ARG->split() } } @$scan_tasks;
+	my @split_build_tasks = map { @{ $ARG->split_into_singles() } } @$build_tasks;
+	my @split_scan_tasks  = map { @{ $ARG->split_into_singles() } } @$scan_tasks;
 
 	$self->exes()->prepare_all();
 

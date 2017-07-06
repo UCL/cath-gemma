@@ -10,18 +10,20 @@ use strict;
 use warnings;
 
 # Core
-use Carp              qw/ confess                                             /;
-use Digest::MD5       qw/ md5_hex                                             /;
-use English           qw/ -no_match_vars                                      /;
-use Exporter          qw/ import                                              /;
-use POSIX             qw/ ceil floor log10                                    /;
-use Time::HiRes       qw/ gettimeofday tv_interval                            /;
+use Carp           qw/ confess                  /;
+use Digest::MD5    qw/ md5_hex                  /;
+use English        qw/ -no_match_vars           /;
+use Exporter       qw/ import                   /;
+use List::Util     qw/ min                      /;
+use POSIX          qw/ ceil floor log10         /;
+use Time::HiRes    qw/ gettimeofday tv_interval /;
 use Time::Seconds;
 use v5.10;
 
 our @EXPORT = qw/
 	alignment_filebasename_of_starting_clusters
 	alignment_profile_suffix
+	batch_into_n
 	cluster_name_spaceship
 	compass_profile_suffix
 	compass_scan_suffix
@@ -31,8 +33,12 @@ our @EXPORT = qw/
 	evalue_window_floor
 	generic_id_of_clusters
 	get_starting_clusters_of_starting_cluster_dir
+	guess_if_running_on_sge
+	has_seg_exes
+	has_sge_enviroment_variables
 	id_of_starting_clusters
 	mergee_is_starting_cluster
+	min_time_seconds
 	ordered_cluster_name_pair
 	prof_file_of_prof_dir_and_aln_file
 	prof_file_of_prof_dir_and_cluster_id
@@ -44,6 +50,8 @@ our @EXPORT = qw/
 	/;
 
 # Non-core (local)
+use File::Which       qw/ which                                               /;
+use List::MoreUtils   qw/ all natatime                                        /;
 use Path::Tiny;
 use Type::Params      qw/ compile                                             /;
 use Types::Path::Tiny qw/ Path                                                /;
@@ -143,6 +151,37 @@ sub mergee_is_starting_cluster {
 	return ! ref( $mergee );
 }
 
+=head2 min_time_seconds
+
+=cut
+
+sub min_time_seconds {
+	return Time::Seconds->new( min(
+		map { $ARG->seconds(); } @ARG
+	) );
+}
+
+=head2 batch_into_n
+
+A convenience wrapper for List::MoreUtils' natatime that returns back an
+array of array(ref)s rather than an iterator
+(so it can be used in directly in map, grep etc)
+
+=cut
+
+sub batch_into_n {
+	my $n        = shift;
+	my @the_list = @ARG;
+
+	my @result;
+	my $it = natatime $n, @the_list;
+	while ( my @batch = $it->() ) {
+		push @result, \@batch;
+	}
+
+	return @result;
+}
+
 =head2 cluster_name_spaceship
 
 =cut
@@ -209,6 +248,41 @@ sub get_starting_clusters_of_starting_cluster_dir {
 	my ( $dir ) = $check->( @ARG );
 
 	return [ map { $ARG->basename( '.faa' ); } $dir->children ];
+}
+
+=head2 guess_if_running_on_sge
+
+=cut
+
+sub guess_if_running_on_sge {
+	my $has_sge_enviroment_variables = has_sge_enviroment_variables();
+	my $has_seg_exes                 = has_seg_exes();
+
+	if ( $has_sge_enviroment_variables != $has_seg_exes ) {
+		confess
+			'Contradictory data about whether running on SGE : has_sge_enviroment_variables is '
+			. ( $has_sge_enviroment_variables // 'undef' )
+			. ' but has_seg_exes is '
+			. ( $has_seg_exes // 'undef' )
+			. ' ';
+	}
+	return ( $has_seg_exes )
+}
+
+=head2 has_seg_exes
+
+=cut
+
+sub has_seg_exes {
+	return all { which( $ARG ) } ( qw/ qalter qconf qdel qrsh qstat qsub / );
+}
+
+=head2 has_sge_enviroment_variables
+
+=cut
+
+sub has_sge_enviroment_variables {
+	return all { defined( $ENV{ $ARG } ); } ( qw/ SGE_ROOT SGE_ARCH SGE_CELL SGE_QMASTER_PORT SGE_EXECD_PORT / );
 }
 
 =head2 id_of_starting_clusters
