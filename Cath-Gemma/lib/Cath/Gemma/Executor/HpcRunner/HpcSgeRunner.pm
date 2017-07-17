@@ -30,7 +30,7 @@ with ( 'Cath::Gemma::Executor::HpcRunner' );
 =cut
 
 sub run_job_array {
-	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches ) = @ARG;
+	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps ) = @ARG;
 
 	if ( $num_batches <= 0 ) {
 		confess 'Cannot perform a job with zero/negative number of batches : ' . $num_batches;
@@ -52,6 +52,11 @@ sub run_job_array {
 		'-S', '/bin/bash',
 		'-t', '1-'.$num_batches,
 		"$submit_script",
+		(
+			scalar( @$deps )
+			? ( '-hold_jid', join( ',', @$deps ) )
+			: (                                  )
+		),
 		# -hold_jid
 		# -hold_jid_ad
 	);

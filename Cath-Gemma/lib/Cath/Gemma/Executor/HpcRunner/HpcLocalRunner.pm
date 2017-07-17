@@ -48,7 +48,7 @@ sub _patch_job_id_and_task_id_into_file_pattern {
 =cut
 
 sub run_job_array {
-	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches ) = @ARG;
+	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps ) = @ARG;
 
 	if ( $num_batches < 0 ) {
 		confess 'Cannot perform a job with negative number of batches : ' . $num_batches;

@@ -109,12 +109,12 @@ sub execute {
 
 	$batches = $self->_work_batcher()->rebatch( $batches );
 
-	use Carp qw/ confess /;
-	use Data::Dumper;
-	confess Dumper([
-		$batches->num_batches(),
-		$batches->dependencies(),
-	]);
+	# use Carp qw/ confess /;
+	# use Data::Dumper;
+	# confess Dumper([
+	# 	$batches->num_batches(),
+	# 	$batches->dependencies(),
+	# ]);
 
 	my $job_dir = $self->submission_dir()->realpath();
 
@@ -123,25 +123,37 @@ sub execute {
 			or confess "Unable to make compute cluster submit directory \"$job_dir\" : $OS_ERROR";
 	}
 
-	my $id = $batches->id();
+	my @job_dependencies;
 
-	my @batch_files;
-	foreach my $batch ( @{ $batches->batches() } ) {
-		my $batch_freeze_file = $job_dir->child( $id . '.' . 'batch_' . $batch->id() . '.freeze' );
-		$batch->write_to_file( $batch_freeze_file );
-		push @batch_files, "$batch_freeze_file";
-	}
+	my $grouped_dependencies = $batches->get_grouped_dependencies();
+	foreach my $dependencies_group ( @$grouped_dependencies ) {
+		my ( $batch_indices, $dependencies ) = @$dependencies_group;
 
-	my $batch_files_file = $job_dir->child( $id . '.' . 'job_batch_files' );
-	$batch_files_file->spew( join( "\n", @batch_files ) . "\n" );
+		my $group_batches = [ @{ $batches->batches() }[ @$batch_indices ] ];
 
-	# TODO: Move this hard-coded script name elsewhere
-	my $execute_batch_script = path( "$FindBin::Bin" )->child( 'execute_work_batch.pl' ) . "";
+		use Carp qw/ confess /;
+		use Data::Dumper;
+		warn Dumper( [ $batch_indices ] );
 
-	my $num_batches = scalar( @{ $batches->batches() } );
+		my $id      = $batches->id_of_batch_indices( $batch_indices );
 
-	my $submit_script = $job_dir->child( $id . '.' . 'job_script.bash' );
-	$submit_script->spew( <<"EOF" );
+		my @batch_files;
+		foreach my $batch ( @$group_batches ) {
+			my $batch_freeze_file = $job_dir->child( $id . '.' . 'batch_' . $batch->id() . '.freeze' );
+			$batch->write_to_file( $batch_freeze_file );
+			push @batch_files, "$batch_freeze_file";
+		}
+
+		my $batch_files_file = $job_dir->child( $id . '.' . 'job_batch_files' );
+		$batch_files_file->spew( join( "\n", @batch_files ) . "\n" );
+
+		# TODO: Move this hard-coded script name elsewhere
+		my $execute_batch_script = path( "$FindBin::Bin" )->child( 'execute_work_batch.pl' ) . "";
+
+		my $num_batches = scalar( @$group_batches );
+
+		my $submit_script = $job_dir->child( $id . '.' . 'job_script.bash' );
+		$submit_script->spew( <<"EOF" );
 #!/bin/bash -l
 
 # Where a compute-cluster provides a more recent perl through the module system, this will pick it up
@@ -158,24 +170,26 @@ $execute_batch_script \$BATCH_FILE
 
 EOF
 
-	$submit_script->chmod( 'a+x' )
-		or confess "Unable to chmod submit script \"$submit_script\" to be executable : $OS_ERROR";
+		$submit_script->chmod( 'a+x' )
+			or confess "Unable to chmod submit script \"$submit_script\" to be executable : $OS_ERROR";
 
-	my $job_name            = 'CathGemma.'.$id;
-	my $stderr_file_stem    = $job_dir->child( $id );
-	my $stdout_file_stem    = $job_dir->child( $id );
-	my $stderr_file_suffix  = '.stderr';
-	my $stdout_file_suffix  = '.stdout';
-	my $stderr_file_pattern = $stderr_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stderr_file_suffix;
-	my $stdout_file_pattern = $stdout_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stdout_file_suffix;
+		my $job_name            = 'CathGemma.'.$id;
+		my $stderr_file_stem    = $job_dir->child( $id );
+		my $stdout_file_stem    = $job_dir->child( $id );
+		my $stderr_file_suffix  = '.stderr';
+		my $stdout_file_suffix  = '.stdout';
+		my $stderr_file_pattern = $stderr_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stderr_file_suffix;
+		my $stdout_file_pattern = $stdout_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stdout_file_suffix;
 
-	return $self->_runner()->run_job_array(
-		$submit_script,
-		$job_name,
-		$stderr_file_pattern,
-		$stdout_file_pattern,
-		$num_batches
-	);
+		push @job_dependencies, $self->_runner()->run_job_array(
+			$submit_script,
+			$job_name,
+			$stderr_file_pattern,
+			$stdout_file_pattern,
+			$num_batches,
+			[ @job_dependencies[ @$dependencies ] ],
+		);
+	}
 }
 
 

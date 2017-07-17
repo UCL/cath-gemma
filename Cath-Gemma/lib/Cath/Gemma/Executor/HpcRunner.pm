@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 # Core
-use English           qw/ -no_match_vars /;
+use English           qw/ -no_match_vars                /;
 use v5.10;
 
 # Moo
@@ -18,9 +18,9 @@ use Moo::Role;
 use strictures 1;
 
 # Non-core (local)
-use Type::Params      qw/ compile        /;
-use Types::Path::Tiny qw/ Path           /;
-use Types::Standard   qw/ Int Object Str /;
+use Type::Params      qw/ compile                       /;
+use Types::Path::Tiny qw/ Path                          /;
+use Types::Standard   qw/ ArrayRef Int Maybe Object Str /;
 
 requires 'run_job_array';
 
@@ -29,7 +29,7 @@ requires 'run_job_array';
 =cut
 
 before run_job_array => sub {
-	state $check = compile( Object, Path, Str, Path, Path, Int );
+	state $check = compile( Object, Path, Str, Path, Path, Int, ArrayRef[Maybe[Int]] );
 	$check->( @ARG );
 };
 

@@ -145,7 +145,7 @@ my $executor =
 				DIR      => $submission_dir_pattern->parent(),
 				CLEANUP  => 0,
 			),
-			hpc_mode => 'hpc_sge',
+			# hpc_mode => 'hpc_sge',
 		);
 
 $executor->execute( $work_batch_list );

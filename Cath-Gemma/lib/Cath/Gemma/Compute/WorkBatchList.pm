@@ -101,6 +101,33 @@ sub id {
 	return generic_id_of_clusters( [ map { $ARG->id() } @{ $self->batches() } ] );
 }
 
+=head2 id_of_batch_indices
+
+=cut
+
+sub id_of_batch_indices {
+	state $check = compile( Object, ArrayRef[Int] );
+	my ( $self, $indices ) = $check->( @ARG );
+
+	my $batches = $self->batches();
+
+	return generic_id_of_clusters( [ map { $ARG->id() } @$batches[ @$indices ] ] );
+}
+
+=head2 get_grouped_dependencies
+
+=cut
+
+sub get_grouped_dependencies {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return __PACKAGE__->_tidy_and_group_dependencies(
+		$self->dependencies(),
+		$self->num_batches(),
+	);
+}
+
 =head2 _init_tidy_dependencies
 
 =cut
@@ -111,7 +138,7 @@ sub _init_tidy_dependencies {
 
 	$data = dclone( $data );
 
-	foreach my $ctr ( 0 .. $#$data ) {
+	foreach my $ctr ( 0 .. ( $count - 1 ) ) {
 		if ( ! defined( $data->[ $ctr ] ) ) {
 			$data->[ $ctr ] = [];
 		}
@@ -121,7 +148,6 @@ sub _init_tidy_dependencies {
 		@{ $data->[ $ctr ] } = sort { $a <=> $b } @{ $data->[ $ctr ] };
 	}
 
-
 	foreach my $ctr ( 0 .. $#$data ) {
 		foreach my $value ( @{ $data->[ $ctr ] } ) {
 			if ( $value < 0 ) {
@@ -129,6 +155,7 @@ sub _init_tidy_dependencies {
 			}
 		}
 	}
+
 	return $data;
 }
 
@@ -140,49 +167,56 @@ sub _group_tidy_dependencies {
 	state $check = compile( Invocant, ArrayRef[ArrayRef[Int]] );
 	my ( $proto, $data ) = $check->( @ARG );
 
-	my %always_withs;
-	foreach my $datum ( @$data ) {
-		foreach my $value ( @$datum ) {
-			my %others = ( map { ( $ARG, 1 ) } grep { $ARG != $value } sort { $a <=> $b } @$datum );
-			if ( ! defined( $always_withs{ $value } ) ) {
-				foreach my $other_value ( sort { $a <=> $b } keys ( %others ) ) {
-					if ( ! defined( $always_withs{ $other_value } ) || defined( $always_withs{ $other_value }->{ $value } ) ) {
-						$always_withs{ $value }->{ $other_value } = 1;
-					}
-				}
-			}
-			else {
-				my @links_to_break = grep { ! $others{ $ARG } } sort { $a <=> $b } keys( %{ $always_withs{ $value } } );
-				foreach my $link_to_break ( @links_to_break ) {
-					delete $always_withs{ $value         }->{ $link_to_break };
-					delete $always_withs{ $link_to_break }->{ $value         };
-				}
-			}
+	my %reverse_dependencies;
+	foreach my $ctr ( 0 .. $#$data ) {
+		foreach my $value ( @{ $data->[ $ctr ] } ) {
+			push @{ $reverse_dependencies{ $value } }, $ctr;
 		}
 	}
 
-	my @frees_group = (
-		grep
-		{ ( scalar( @{ $data->[ $ARG ] } ) == 0 ) && ! defined( $always_withs{ $ARG } ) }
-		( 0 .. $#$data )
+	my %members_of_dep_pattern;
+	foreach my $ctr ( 0 .. $#$data ) {
+		my $deps_str     = join( ',', sort { $a <=> $b } @{ $data->              [ $ctr ]       } );
+		my $rev_deps_str = join( ',', sort { $a <=> $b } @{ $reverse_dependencies{ $ctr } // [] } );
+		push @{ $members_of_dep_pattern{ $rev_deps_str . ' -> x; x -> ' . $deps_str } }, $ctr;
+	}
+
+	my @new_groups = sort { $a->[ 0 ] <=> $b->[ 0 ] } values( %members_of_dep_pattern );
+
+	my %group_num_of_member = map {
+		my $new_group_ctr = $ARG;
+		( map { ( $ARG, $new_group_ctr ); } @{ $new_groups[ $new_group_ctr ] } );
+	} ( 0 .. $#new_groups );
+
+	my @group_deps_by_group = map {
+		my $new_group = $ARG;
+		[ sort { $a <=> $b } unique_by_hashing(
+			map { $group_num_of_member{ $ARG }; } @{ $data->[ $new_group->[ 0 ] ] }
+		) ];
+	} @new_groups;
+
+	my @results = map {
+		[
+			$new_groups         [ $ARG ],
+			$group_deps_by_group[ $ARG ],
+		];
+	} ( 0 .. $#new_groups );
+
+	return \@results;
+}
+
+
+=head2 _tidy_and_group_dependencies
+
+=cut
+
+sub _tidy_and_group_dependencies {
+	state $check = compile( Invocant, ArrayRef[ArrayRef[Int]], Int );
+	my ( $proto, $data, $count ) = $check->( @ARG );
+
+	return __PACKAGE__->_group_tidy_dependencies(
+		__PACKAGE__->_init_tidy_dependencies( $data, $count )
 	);
-
-	my @depped_on_groups
-
-	my @groups = (
-		\@frees_group,
-		map
-			{ [ sort { $a <=> $b } ( $ARG, map { $ARG + 0; } keys( %{ $always_withs{ $ARG } } ) ) ]; }
-		grep
-			{ $ARG < min( keys( %{ $always_withs{ $ARG } } ) ) }
-			sort { $a <=> $b } keys( %always_withs )
-	);
-	@groups = sort { $a->[ 0 ] <=> $b->[ 0 ] } @groups;
-
-	use Carp qw/ confess /;
-	use Data::Dumper;
-
-	confess Dumper( [ \%always_withs, \@groups ] );
 }
 
 # =head2 id
