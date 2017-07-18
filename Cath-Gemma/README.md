@@ -52,11 +52,13 @@ rsync           -av --delete ~/cath-gemma/Cath-Gemma/ `whoami`@bchuckle.cs.ucl.a
 
 ### Run
 
-Login and test:
+First, ensure that you set up your PATH correctly in your shell rc file (eg on bchuckle, include `export PATH=/share/apps/perl/bin:$PATH` in ~/.bashrc).
+
+Then login and test:
 
 ~~~
 ssh legion.rc.ucl.ac.uk
-qrsh -verbose -l h_rt=1:0:0,h_vmem=2G
+qrsh -verbose -l h_rt=2:0:0,h_vmem=2G
 # <set data environment variables, as above>
 cd ~/Scratch/Cath-Gemma
 module load perl
@@ -65,10 +67,10 @@ script/prepare_research_data.pl --starting-cluster-root-dir ${LEGION_DATA_ROOT}/
 # ...or...
 
 ssh bchuckle.cs.ucl.ac.uk
-qrsh -verbose -l h_rt=1:0:0,h_vmem=2G,tmem=2G
+qrsh -verbose -l h_rt=4:0:0,h_vmem=2G,tmem=2G
 # <set data environment variables, as above>
 cd ~/Cath-Gemma
-export PATH=/share/apps/perl/bin:$PATH
+
 script/prepare_research_data.pl --starting-cluster-root-dir ${CHUCKLE_DATA_ROOT}/starting_clusters --projects-list-file ${CHUCKLE_DATA_ROOT}/projects.txt --output-root-dir ${CHUCKLE_DATA_ROOT}
 ~~~
 
