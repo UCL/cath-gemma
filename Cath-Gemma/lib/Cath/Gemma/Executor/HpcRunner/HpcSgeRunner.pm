@@ -40,25 +40,49 @@ sub run_job_array {
 	                  ? 'legion.rc.ucl.ac.uk'
 	                  : 'bchuckle.cs.ucl.ac.uk';
 
+	my $memy_req                   = '1G';
+	my $time_req                   = '00:30:00';
+	my $default_resources          = [
+		'vf='     . $memy_req,
+		'h_vmem=' . $memy_req,
+		'h_rt='   . $time_req,
+	];
+	my %cluster_resources          = (
+		'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req, 'hostname=abbott*' ],
+		'legion.rc.ucl.ac.uk'   => [                                         ],
+	);
+	my %cluster_extras             = (
+		'bchuckle.cs.ucl.ac.uk' => [ '-P', 'cath' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
+		'legion.rc.ucl.ac.uk'   => [              ],
+	);
+
+	my $cluster_specific_resources = $cluster_resources{ $submit_host }
+		or confess 'Submit host ' . $submit_host . ' unrecognised';
+
+	my $cluster_specific_extras    = $cluster_extras{ $submit_host }
+		or confess 'Submit host ' . $submit_host . ' unrecognised';
+
+	# TODO: Consider adding a parameter that allows users to specify the location of the
+	#       Perl to run the jobs with and then prepend it to the PATH here
+
 	my @qsub_command = (
 		'ssh', $submit_host,
 		'qsub',
-		'-l', 'vf=1G,h_vmem=1G,h_rt=00:30:00',
+		'-l', join( ',', @$default_resources, @$cluster_specific_resources ),
 		'-N', $job_name,
 		'-e', $stderr_file_pattern,
 		'-o', $stdout_file_pattern,
-		'-v', 'PATH', # Ensure that the PATH is passed through to the job (so that, in particular, it picks up the right Perl)
-		#'-v', 'PATH=/share/apps/perl/bin:$PATH', # Ensure that the shared Perl is used on the CS cluster (with login node "bchuckle")
+		'-v', 'PATH=' . $ENV{ PATH }, # Ensure that the job will pick up the same Perl that's being used to run this (relevant on the CS cluster)
+		                              # Can't just use -v PATH because the qsub is being run through ssh so may be run with a significantly different PATH
 		'-S', '/bin/bash',
-		'-t', '1-'.$num_batches,
+		'-t', '1-' . $num_batches,
 		"$submit_script",
 		(
 			scalar( @$deps )
 			? ( '-hold_jid', join( ',', @$deps ) )
 			: (                                  )
 		),
-		# -hold_jid
-		# -hold_jid_ad
+		@$cluster_specific_extras,
 	);
 
 	my ( $qsub_stdout, $qsub_stderr, $qsub_exit ) = capture {

@@ -165,6 +165,36 @@ sub execute_task {
 	];
 }
 
+=head2 to_string
+
+=cut
+
+sub to_string {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return 'WorkBatch['
+		. $self->num_profile_tasks()
+		. ' profile tasks'
+		. (
+			( $self->num_profile_tasks() > 0 )
+			? ' (with nums of steps: '
+				. join( ', ', map { $ARG->num_steps(); } @{ $self->profile_tasks() } )
+				. ')'
+			: ''
+		)
+		. '; '
+		. $self->num_scan_tasks()
+		. ' scan tasks'
+		. (
+			( $self->num_scan_tasks() > 0 )
+			? ' (with nums of steps: '
+				. join( ', ', map { $ARG->num_steps(); } @{ $self->scan_tasks() } )
+				. ')'
+			: ''
+		)
+		. ']';
+}
+
 =head2 write_to_file
 
 =cut

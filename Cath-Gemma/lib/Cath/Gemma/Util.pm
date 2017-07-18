@@ -283,7 +283,7 @@ sub has_seg_exes {
 =cut
 
 sub has_sge_enviroment_variables {
-	return all { defined( $ENV{ $ARG } ); } ( qw/ SGE_ROOT SGE_ARCH SGE_CELL SGE_QMASTER_PORT SGE_EXECD_PORT / );
+	return all { defined( $ENV{ $ARG } ); } ( qw/ SGE_ROOT SGE_ARCH SGE_CELL / );
 }
 
 =head2 id_of_starting_clusters

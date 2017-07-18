@@ -142,9 +142,13 @@ sub batch_up {
 
 	my $prev_appendee;
 	if ( $prev_batch_opt ) {
+		my $capped_prev_batch_time = min_time_seconds(
+			$prev_batch_opt->estimate_time_to_execute(),
+			$estimate_duration_per_batch
+		);
 		my $start_and_num_steps = $do_one->(
 			$self,
-			min_time_seconds( $prev_batch_opt->estimate_time_to_execute(), $estimate_duration_per_batch ),
+			$estimate_duration_per_batch - $capped_prev_batch_time,
 			'permit_empty__forbid_overflow'
 		);
 		if ( $start_and_num_steps->[ 1 ] ) {

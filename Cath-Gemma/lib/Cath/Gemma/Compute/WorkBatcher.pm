@@ -64,7 +64,7 @@ sub rebatch {
 			$self->est_time_per_batch()
 		);
 	}
-	
+
 	return $batcher_state->get_new_batch_list();
 
 

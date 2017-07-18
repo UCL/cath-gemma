@@ -128,6 +128,23 @@ sub get_grouped_dependencies {
 	);
 }
 
+=head2 to_string
+
+=cut
+
+sub to_string {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return
+		'WorkBatchList['
+		. $self->num_batches()
+		. ' batches: { '
+		. join( ', ', map { $ARG->to_string(); } @{ $self->batches() } )
+		. ' }; dependencies: { '
+		. join( ', ', map { '[' . join( ',', @$ARG ) . ']' } @{ $self->dependencies() } )
+		. ' } ]';
+}
+
 =head2 _init_tidy_dependencies
 
 =cut

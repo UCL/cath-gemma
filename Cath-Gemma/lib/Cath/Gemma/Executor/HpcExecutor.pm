@@ -107,6 +107,7 @@ sub _build__runner {
 sub execute {
 	my ( $self, $batches ) = @ARG;
 
+
 	$batches = $self->_work_batcher()->rebatch( $batches );
 
 	# use Carp qw/ confess /;
@@ -131,9 +132,9 @@ sub execute {
 
 		my $group_batches = [ @{ $batches->batches() }[ @$batch_indices ] ];
 
-		use Carp qw/ confess /;
-		use Data::Dumper;
-		warn Dumper( [ $batch_indices ] );
+		# use Carp qw/ confess /;
+		# use Data::Dumper;
+		# warn Dumper( [ $batch_indices ] );
 
 		my $id      = $batches->id_of_batch_indices( $batch_indices );
 
@@ -160,6 +161,7 @@ sub execute {
 ( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl
 
 BATCH_FILES_FILE=$batch_files_file
+echo HOSTNAME         : \$HOSTNAME
 echo BATCH_FILES_FILE : \$BATCH_FILES_FILE
 echo SGE_TASK_ID      : \$SGE_TASK_ID
 

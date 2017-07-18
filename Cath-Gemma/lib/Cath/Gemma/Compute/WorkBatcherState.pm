@@ -178,7 +178,7 @@ sub set_indices {
 	foreach my $scan_batch_index ( @$scan_batch_indices ) {
 		my @indices = sort { $a <=> $b } unique_by_hashing(
 			@{ $self->indices_of_build_batches_needed_by_scan_batches()->[ $scan_batch_index ] // [] },
-			@$scan_batch_indices
+			@$build_batch_indices
 		);
 		$self->indices_of_build_batches_needed_by_scan_batches()->[ $scan_batch_index ] = \@indices;
 	}
@@ -200,7 +200,7 @@ sub _add_in_tasks {
 	) ];
 }
 
-=head2 _add_in_tasks
+=head2 _add_in_task
 
 =cut
 
