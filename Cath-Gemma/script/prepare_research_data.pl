@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp                qw/ confess        /;
-use English             qw/ -no_match_vars /;
-use feature             qw/ say            /;
+use Carp                qw/ confess                 /;
+use English             qw/ -no_match_vars          /;
+use feature             qw/ say                     /;
 use FindBin;
 use Getopt::Long;
 use Pod::Usage;
@@ -15,10 +15,10 @@ use v5.10;
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core (local)
-use Log::Log4perl::Tiny qw/ :easy          /;
+use Log::Log4perl::Tiny qw/ :easy                   /;
 use Path::Tiny;
-use Type::Params        qw/ compile        /;
-use Types::Standard    qw/ ArrayRef Int Object Str /; # ***** TEMPORARY *****
+use Type::Params        qw/ compile                 /;
+use Types::Standard     qw/ ArrayRef Int Object Str /; # ***** TEMPORARY *****
 
 use lib "$FindBin::Bin/../lib";
 
