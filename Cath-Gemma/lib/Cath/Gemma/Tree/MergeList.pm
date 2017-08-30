@@ -394,17 +394,17 @@ sub ensure_all_alignments {
 
 sub archive_in_dir {
 	state $check = compile( Object, Str, CathGemmaNodeOrdering, Path, Path );
-	my ( $self, $project_name, $clusts_ordering, $aln_dir, $output_dir ) = $check->( @ARG );
+	my ( $self, $basename, $clusts_ordering, $aln_dir, $output_dir ) = $check->( @ARG );
 
-	DEBUG "Archiving $project_name [$clusts_ordering] to $output_dir (with alignments from $aln_dir)";
+	DEBUG "Archiving $basename [$clusts_ordering] to $output_dir (with alignments from $aln_dir)";
 
 	if ( ! -d $output_dir ) {
 		$output_dir->mkpath()
 			or confess "Unable to make results archive directory \"$output_dir\" : $OS_ERROR";
 	}
 
-	$self->write_to_newick_file( $output_dir->child( $project_name . '.newick' ) );
-	$self->write_to_tracefile  ( $output_dir->child( $project_name . '.trace'  ) );
+	$self->write_to_newick_file( $output_dir->child( $basename . '.newick' ) );
+	$self->write_to_tracefile  ( $output_dir->child( $basename . '.trace'  ) );
 
 	my @src_dest_aln_file_pairs = map {
 		my $starting_cluster  = $ARG;
@@ -432,7 +432,7 @@ sub archive_in_dir {
 		}
 
 		$source_aln_file->copy( $dest_aln_file )
-			or confess "Unable to copy alignment file \"$source_aln_file\" to \"$dest_aln_file\" whilst archiving $project_name : $OS_ERROR";
+			or confess "Unable to copy alignment file \"$source_aln_file\" to \"$dest_aln_file\" whilst archiving MergeList : $OS_ERROR";
 	}
 }
 

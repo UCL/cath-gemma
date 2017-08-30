@@ -23,22 +23,31 @@ use Types::Standard     qw/ ArrayRef Int Object Str /; # ***** TEMPORARY *****
 use lib "$FindBin::Bin/../lib";
 
 # Cath
+use Cath::Gemma::Compute::Task::BuildTreeTask;
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;
 use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Compute::WorkBatchList;
 use Cath::Gemma::Disk::GemmaDirSet;
+use Cath::Gemma::Disk::TreeDirSet;
 use Cath::Gemma::Executor::HpcExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Executor::LocalExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Tool::Aligner;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Tool::CompassScanner;
 use Cath::Gemma::Tree::MergeList;
+use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
+use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
+use Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder;
+use Cath::Gemma::TreeBuilder::PureTreeBuilder;
+use Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
 use Cath::Gemma::Types  qw/
 	CathGemmaDiskGemmaDirSet
+	CathGemmaDiskTreeDirSet
 	CathGemmaTreeMergeList
 /;
+use Cath::Gemma::Util;
 
 use Type::Tiny;
 $Error::TypeTiny::StackTrace = 1;
@@ -51,15 +60,15 @@ my $help            = 0;
 my $local           = 0;
 my $max_num_threads = 6;
 
-my $starting_clusters_rootdir ;
+# my $starting_clusters_rootdir;
 my $projects_list_file;
 
 my $submission_dir_pattern = 'submit_dir.XXXXXXXXXXX';
 
 my $output_rootdir;
-my $output_aln_rootdir;
-my $output_prof_rootdir;
-my $output_scan_rootdir;
+# my $output_aln_rootdir;
+# my $output_prof_rootdir;
+# my $output_scan_rootdir;
 # my $trace_files_rootdir;
 
 my $src_trace_files_rootdir;
@@ -70,7 +79,7 @@ GetOptions(
 	'local'                       => \$local,
 	'submit-dir-pattern=s'        => \$submission_dir_pattern,
 
-	'starting-cluster-root-dir=s' => \$starting_clusters_rootdir,
+	# 'starting-cluster-root-dir=s' => \$starting_clusters_rootdir,
 	'projects-list-file=s'        => \$projects_list_file,
 
 	'output-root-dir=s'           => \$output_rootdir,
@@ -81,9 +90,9 @@ if ( $help ) {
 	pod2usage( 1 );
 }
 
-if ( ! defined( $starting_clusters_rootdir ) ) {
-	confess "Must specify a starting-cluster-root-dir";
-}
+# if ( ! defined( $starting_clusters_rootdir ) ) {
+# 	confess "Must specify a starting-cluster-root-dir";
+# }
 if ( ! defined( $projects_list_file ) ) {
 	confess "Must specify a projects-list-file";
 }
@@ -93,11 +102,11 @@ if ( ! defined( $output_rootdir ) ) {
 
 $output_rootdir              = path( $output_rootdir             )->realpath();
 $projects_list_file          = path( $projects_list_file         )->realpath();
-$starting_clusters_rootdir   = path( $starting_clusters_rootdir  )->realpath();
+# $starting_clusters_rootdir   = path( $starting_clusters_rootdir  )->realpath();
 $submission_dir_pattern      = path( $submission_dir_pattern     )->realpath();
-$output_aln_rootdir        //= $output_rootdir->child( 'alignments'      );
-$output_prof_rootdir       //= $output_rootdir->child( 'profiles'        );
-$output_scan_rootdir       //= $output_rootdir->child( 'scans'           );
+# $output_aln_rootdir        //= $output_rootdir->child( 'alignments'      );
+# $output_prof_rootdir       //= $output_rootdir->child( 'profiles'        );
+# $output_scan_rootdir       //= $output_rootdir->child( 'scans'           );
 $src_trace_files_rootdir   //= $output_rootdir->child( 'dave_tracefiles' );
 
 
@@ -119,17 +128,13 @@ my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 			return;
 		}
 
-		# Build a GemmaDirSet for the project
-		my $gemma_dir_set = Cath::Gemma::Disk::GemmaDirSet->new(
-			profile_dir_set => Cath::Gemma::Disk::ProfileDirSet->new(
-				starting_cluster_dir => $starting_clusters_rootdir->child( $project ),
-				aln_dir              => $output_aln_rootdir       ->child( $project ),
-				prof_dir             => $output_prof_rootdir      ->child( $project ),
+		@{ work_batches_for_mergelist(
+			Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir_and_project(
+				$output_rootdir,
+				$project
 			),
-			scan_dir => $output_scan_rootdir->child( $project ),
-		);
-
-		@{ work_batches_for_mergelist( $gemma_dir_set, $mergelist ) };
+			$mergelist
+		) };
 	} @projects ],
 );
 
@@ -148,7 +153,40 @@ my $executor =
 			# hpc_mode => 'hpc_sge',
 		);
 
-$executor->execute( $work_batch_list );
+if ( $work_batch_list->num_batches() == 0 ) {
+	INFO "No build/scan work to do";
+}
+else {
+	my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $work_batch_list );
+	INFO "".( $rebatched->num_batches() . " build/scan batches to process" );
+	$executor->execute( $work_batch_list );
+}
+
+my $treebuild_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
+	batches => [ map {
+		my $project = $ARG;
+
+		@{ treebuild_batches(
+			Cath::Gemma::Disk::TreeDirSet->make_tree_dir_set_of_base_dir_and_project(
+				$output_rootdir,
+				$project
+			)
+		) };
+	} @projects ],
+);
+
+# use Data::Dumper;
+# warn Dumper( $treebuild_batch_list->batches() );
+
+if ( $treebuild_batch_list->num_batches() == 0 ) {
+	INFO "No treebuild work to do";
+}
+else {
+	# INFO "Rebatching " . ( $treebuild_batch_list->num_batches() ) . " batches";
+	# my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $treebuild_batch_list );
+	# INFO "".( $rebatched->num_batches() . " treebuild batches to process" );
+	$executor->execute( $treebuild_batch_list );
+}
 
 }
 
@@ -160,7 +198,7 @@ sub work_batches_for_mergelist {
 		map {
 			my $compass_profile_build_type = $ARG;
 
-			Cath::Gemma::Compute::WorkBatch->new(
+			my $work_batch = Cath::Gemma::Compute::WorkBatch->new(
 				# Build alignments and profiles for...
 				profile_tasks => Cath::Gemma::Compute::Task::ProfileBuildTask->remove_duplicate_build_tasks( [
 					# ...all starting_clusters
@@ -208,9 +246,53 @@ sub work_batches_for_mergelist {
 						compass_profile_build_type  => $compass_profile_build_type,
 					)->remove_already_present(),
 				] ),
-			);
+			)->remove_empty_tasks();
+			$work_batch->is_empty() ? (             )
+			                        : ( $work_batch );
 		}
 		( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / )
+		# ( qw/ compass_wp_dummy_1st                                    / )
+		# ( qw/                      compass_wp_dummy_2nd               / )
+		# ( qw/                                           mk_compass_db / )
+	];
+}
+
+sub treebuild_batches {
+	state $check = compile( CathGemmaDiskTreeDirSet );
+	my ( $tree_dir_set ) = $check->( @ARG );
+
+	return [
+		map {
+			my $tree_builder = $ARG;
+			map {
+				my $compass_profile_build_type = $ARG;
+				map {
+					my $clusts_ordering = $ARG;
+
+					Cath::Gemma::Compute::WorkBatch->new(
+						treebuild_tasks => [
+							Cath::Gemma::Compute::Task::BuildTreeTask->new(
+								clusts_ordering            => $clusts_ordering,
+								compass_profile_build_type => $compass_profile_build_type,
+								dir_set                    => $tree_dir_set,
+								starting_cluster_lists     => [
+									get_starting_clusters_of_starting_cluster_dir( $tree_dir_set->starting_cluster_dir() )
+								],
+								tree_builder               => $tree_builder,
+							)
+						]
+					);
+
+				} ( 'simple_ordering', 'tree_df_ordering' );
+			} ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / )
+		}
+		(
+			Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder->new(),
+			Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder ->new(),
+			Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder   ->new(),
+			Cath::Gemma::TreeBuilder::PureTreeBuilder        ->new(),
+			Cath::Gemma::TreeBuilder::WindowedTreeBuilder    ->new(),
+		)
 	];
 }
 

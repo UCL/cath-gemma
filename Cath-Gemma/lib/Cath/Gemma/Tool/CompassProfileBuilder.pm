@@ -16,6 +16,7 @@ use Capture::Tiny       qw/ capture                  /;
 use Cwd::Guard          qw/ cwd_guard                /;
 use Log::Log4perl::Tiny qw/ :easy                    /;
 use Path::Tiny;
+use Try::Tiny;
 use Type::Params        qw/ compile                  /;
 use Types::Path::Tiny   qw/ Path                     /;
 use Types::Standard     qw/ ArrayRef ClassName Str   /;
@@ -225,7 +226,21 @@ sub build_alignment_and_compass_profile {
 		move( $built_aln_file, $atom_tmp_aln_file )
 			or confess "Cannot move built alignment file \"$built_aln_file\" to atomic temporary \"$atom_tmp_aln_file\" : $OS_ERROR";
 
-		$aln_atomic_file->commit();
+		try {
+			$aln_atomic_file->commit();
+		}
+		catch {
+			my $error = $ARG;
+			while ( chomp( $error ) ) {}
+			confess
+				   'Caught error when trying to atomically commit write of temporary file "'
+				 . $aln_atomic_file->filename()
+				 . '" to "'
+				 . $aln_file
+				 . '", original error message: "'
+				 . $error
+				 . '".';
+		};
 	}
 
 	return {

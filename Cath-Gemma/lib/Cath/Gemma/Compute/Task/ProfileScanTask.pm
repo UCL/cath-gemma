@@ -4,7 +4,9 @@ use strict;
 use warnings;
 
 # Core
+use Carp               qw/ confess                   /;
 use English            qw/ -no_match_vars            /;
+use List::Util         qw/ any min                   /;
 use v5.10;
 
 # Moo
@@ -26,7 +28,7 @@ use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Tool::CompassScanner;
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
-	CathGemmaComputeProfileScanTask
+	CathGemmaComputeTaskProfileScanTask
 	CathGemmaDiskExecutables
 	CathGemmaDiskGemmaDirSet
 /;
@@ -79,7 +81,7 @@ has compass_profile_build_type => (
 has dir_set => (
 	is      => 'ro',
 	isa     => CathGemmaDiskGemmaDirSet,
-	default => sub { CathGemmaDiskGemmaDirSet->new(); },
+	default => sub { Cath::Gemma::Disk::GemmaDirSet->new(); },
 	handles => {
 		aln_dir              => 'aln_dir',
 		prof_dir             => 'prof_dir',
@@ -120,16 +122,15 @@ has dir_set => (
 =cut
 
 sub id {
-	state $check = compile( Object );
-	my ( $self ) = $check->( @ARG );
+	my $self = shift;
 	return generic_id_of_clusters( [
 		$self->compass_profile_build_type(),
 		map {
 			(
 				id_of_starting_clusters( $ARG->[ 0 ] ),
-				id_of_starting_clusters( $ARG->[ 1 ] )
+				id_of_starting_clusters( $ARG->[ 1 ] ),
 			);
-		} @{ $self->starting_cluster_lists() }
+		} @{ $self->starting_cluster_list_pairs() }
 	] );
 }
 
@@ -183,17 +184,22 @@ sub total_num_starting_clusters {
 =cut
 
 sub execute_task {
-	state $check = compile( Object, CathGemmaDiskExecutables );
-	my ( $self, $exes ) = $check->( @ARG );
-
-	if ( ! $self->dir_set()->is_set() ) {
-		warn "Cannot execute_task on a ProfileScanTask that doesn't have all its directories configured";
-	}
+	my ( $self, $exes ) = @ARG;
 
 	return [
 		map
 		{
 			my ( $query_ids, $match_ids ) = @$ARG;
+			INFO 'Scanning '
+				. scalar( @$query_ids )
+				. ' query starting cluster(s) (beginning with '
+				. join( ', ', @$query_ids[ 0 .. min( 20, $#$query_ids ) ] )
+				. ') against '
+				. scalar( @$match_ids )
+				. ' starting cluster(s) (beginning with '
+				. join( ', ', @$match_ids[ 0 .. min( 20, $#$match_ids ) ] )
+				. ')'
+				;
 			Cath::Gemma::Tool::CompassScanner->compass_scan_to_file(
 				$exes,
 				$query_ids,
@@ -226,10 +232,37 @@ sub split_into_singles {
 =cut
 
 sub remove_duplicate_scan_tasks {
-	state $check = compile( Invocant, ArrayRef[CathGemmaComputeProfileScanTask] );
+	state $check = compile( Invocant, ArrayRef[CathGemmaComputeTaskProfileScanTask] );
 	my ( $proto, $scan_tasks ) = $check->( @ARG );
 
-	WARN "Not yet implemented remove_duplicate_scan_tasks()";
+	if ( scalar( @$scan_tasks ) ) {
+		my $compass_profile_build_type = $scan_tasks->[ 0 ]->compass_profile_build_type();
+		my $dir_set                    = $scan_tasks->[ 0 ]->dir_set();
+
+		if ( any { $ARG->compass_profile_build_type() ne $compass_profile_build_type } @$scan_tasks ) {
+			confess "Cannot remove_duplicate_scan_tasks() for ProfileScanTasks with inconsistent compass_profile_build_type()s";
+		}
+		if ( any { ! $ARG->dir_set()->is_equal_to( $dir_set ) } @$scan_tasks ) {
+			confess "Cannot remove_duplicate_scan_tasks() for ProfileScanTasks with inconsistent dir_set()s";
+		}
+
+		my %prev_seen_ids;
+		foreach my $scan_task ( @$scan_tasks ) {
+
+			my $starting_cluster_list_pairs = $scan_task->starting_cluster_list_pairs();
+			my @del_indices = grep {
+				my $pair              = $starting_cluster_list_pairs->[ $ARG ];
+				my $id                = id_of_starting_clusters( $pair->[ 0 ] ) . '/' . id_of_starting_clusters( $pair->[ 1 ] );
+				my $prev_seen         = $prev_seen_ids{ $id };
+				$prev_seen_ids{ $id } = 1;
+				$prev_seen;
+			} ( 0 .. $#$starting_cluster_list_pairs );
+
+			foreach my $reverse_index ( reverse( @del_indices ) ) {
+				splice( @$starting_cluster_list_pairs, $reverse_index, 1 );
+			}
+		}
+	}
 
 	return $scan_tasks;
 }

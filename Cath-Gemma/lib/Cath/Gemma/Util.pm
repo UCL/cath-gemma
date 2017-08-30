@@ -51,9 +51,11 @@ our @EXPORT = qw/
 	/;
 
 # Non-core (local)
+use File::AtomicWrite;
 use File::Which       qw/ which                                               /;
 use List::MoreUtils   qw/ all natatime                                        /;
 use Path::Tiny;
+use Try::Tiny;
 use Type::Params      qw/ compile                                             /;
 use Types::Path::Tiny qw/ Path                                                /;
 use Types::Standard   qw/ ArrayRef Bool CodeRef Maybe Num Optional slurpy Str /;
@@ -125,15 +127,31 @@ sub run_and_time_filemaking_cmd {
 			}
 
 			if ( defined( $atomic_file ) ) {
-				$atomic_file->commit();
+				try {
+					$atomic_file->commit();
+				}
+				catch {
+					my $error = $ARG;
+					while ( chomp( $error ) ) {}
+					confess
+						   'Caught error when trying to atomically commit write of temporary file "'
+						 . $atomic_file->filename()
+						 . '" (which now has -s of '
+						 . ( ( -s $atomic_file->filename() ) // 'undef' )
+						 . ') to "'
+						 . $out_file
+						 . '" (the parent of which now has -s of '
+						 . ( ( -s $out_file->parent() ) // 'undef' )
+						 . '), original error message: "'
+						 . $error
+						 . '".';
+				};
 			}
 
 			$result->{ result }->{ duration     } = $result->{ duration };
 			$result->{ result }->{ out_filename } = $out_file;
 
 			return $result->{ result };
-
-
 		}
 	);
 
@@ -292,6 +310,11 @@ sub has_sge_enviroment_variables {
 
 sub id_of_starting_clusters {
 	my $starting_clusters = shift;
+
+	if ( ref( $starting_clusters ) ne 'ARRAY' ) {
+		confess "Argh";
+	}
+
 	if ( scalar( @$starting_clusters ) == 0 ) {
 		confess "Cannot calculate an ID for an empty list of starting clusters";
 	}
@@ -458,7 +481,6 @@ sub scan_filename_of_dir_and_cluster_ids {
 =cut
 
 sub unique_by_hashing {
-	my $cmp = shift;
 	sort( keys( %{ { map { ( $ARG, 1 ) } @ARG } } ) );
 }
 

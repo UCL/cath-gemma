@@ -4,8 +4,8 @@ use strict;
 use warnings;
 
 # Core
-use Carp              qw/ confess             /;
-use English           qw/ -no_match_vars      /;
+use Carp              qw/ confess                   /;
+use English           qw/ -no_match_vars            /;
 use v5.10;
 
 # Moo
@@ -14,13 +14,27 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Type::Params      qw/ compile             /;
-use Types::Path::Tiny qw/ Path                /;
-use Types::Standard   qw/ ArrayRef Object Str /;
+use Type::Params      qw/ compile Invocant          /;
+use Types::Path::Tiny qw/ Path                      /;
+use Types::Standard   qw/ ArrayRef Maybe Object Str /;
 
 # Cath
-use Cath::Gemma::Types qw/ CathGemmaCompassProfileType /;
+use Cath::Gemma::Disk::BaseDirAndProject;
+use Cath::Gemma::Types qw/
+	CathGemmaCompassProfileType
+	CathGemmaDiskBaseDirAndProject
+	CathGemmaDiskProfileDirSet
+/;
 use Cath::Gemma::Util;
+
+=head2 base_dir_and_project
+
+=cut
+
+has base_dir_and_project => (
+	is  => 'ro',
+	isa => Maybe[CathGemmaDiskBaseDirAndProject],
+);
 
 =head2 starting_cluster_dir
 
@@ -36,11 +50,69 @@ use Cath::Gemma::Util;
 
 =cut
 
-
 has [ qw/ starting_cluster_dir aln_dir prof_dir / ] => (
-	is  => 'ro',
-	isa => Path,
+	is      => 'lazy',
+	isa     => Path,
 );
+
+sub _insist_base_dir_and_project {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $base_dir_and_project = $self->base_dir_and_project()
+		or confess "Must specify base_dir_and_project in ProfileDirSet if not specifying starting_cluster_dir, aln_dir and prof_dir";
+	return $base_dir_and_project;
+}
+
+=head2 _build_starting_cluster_dir
+
+=cut
+
+sub _build_starting_cluster_dir {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return $self->_insist_base_dir_and_project()->get_project_subdir_of_subdir( 'starting_clusters' );
+}
+
+=head2 _build_aln_dir
+
+=cut
+
+sub _build_aln_dir {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return $self->_insist_base_dir_and_project()->get_project_subdir_of_subdir( 'alignments' );
+}
+
+=head2 _build_prof_dir
+
+=cut
+
+sub _build_prof_dir {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return $self->_insist_base_dir_and_project()->get_project_subdir_of_subdir( 'profiles' );
+}
+
+=head2 is_equal_to
+
+=cut
+
+sub is_equal_to {
+	state $check = compile( Object, CathGemmaDiskProfileDirSet );
+	my ( $self, $rhs ) = $check->( @ARG );
+
+	return (
+		$self->starting_cluster_dir()->stringify() eq $rhs->starting_cluster_dir()->stringify()
+		&&
+		$self->aln_dir()->stringify()              eq $rhs->aln_dir()->stringify()
+		&&
+		$self->prof_dir()->stringify()             eq $rhs->prof_dir()->stringify()
+	);
+}
 
 =head2 is_set
 
@@ -98,6 +170,21 @@ sub compass_file_of_starting_clusters {
 	return $self->prof_file_of_aln_file(
 		$self->alignment_filename_of_starting_clusters( $starting_clusters ),
 		$compass_profile_build_type,
+	);
+}
+
+=head2 make_profile_dir_set_of_base_dir_and_project
+
+=cut
+
+sub make_profile_dir_set_of_base_dir_and_project {
+	state $check = compile( Invocant, Path, Str );
+	my ( $proto, $base_dir, $project ) = $check->( @ARG );
+	return Cath::Gemma::Disk::ProfileDirSet->new(
+		base_dir_and_project => Cath::Gemma::Disk::BaseDirAndProject->new(
+			base_dir => $base_dir,
+			project  => $project,
+		),
 	);
 }
 

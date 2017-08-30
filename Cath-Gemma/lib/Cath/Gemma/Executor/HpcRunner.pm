@@ -29,7 +29,7 @@ requires 'run_job_array';
 =cut
 
 before run_job_array => sub {
-	state $check = compile( Object, Path, Str, Path, Path, Int, ArrayRef[Maybe[Int]] );
+	state $check = compile( Object, Path, Str, Path, Path, Int, ArrayRef[Maybe[Int]], ArrayRef[Str] );
 	$check->( @ARG );
 };
 

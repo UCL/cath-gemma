@@ -39,7 +39,15 @@ sub read_from_file {
 	state $check = compile( Invocant, Path );
 	my ( $proto, $scan_data_file ) = $check->( @ARG );
 
-	my $scan_data_data = $scan_data_file->slurp();
+	if ( ! -e $scan_data_file ) {
+		confess "No such ScanData file $scan_data_file exists";
+	}
+	if ( ! -s $scan_data_file ) {
+		confess "ScanData file $scan_data_file is empty";
+	}
+
+	my $scan_data_data = $scan_data_file->slurp()
+		or confess "Unable to read non-empty ScanData file $scan_data_file";
 	my @scan_data_lines = split( /\n/, $scan_data_data );
 	foreach my $scan_data_line ( @scan_data_lines ) {
 		$scan_data_line = [ split( /\s+/, $scan_data_line ) ];

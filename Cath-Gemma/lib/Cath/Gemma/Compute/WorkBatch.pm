@@ -25,17 +25,20 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy                    /;
 use Path::Tiny;
 use Type::Params       qw/ compile Invocant /;
 use Types::Path::Tiny  qw/ Path             /;
 use Types::Standard    qw/ ArrayRef Object  /;
 
 # Cath
+use Cath::Gemma::Compute::Task::BuildTreeTask;
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;
 use Cath::Gemma::Types qw/
-	CathGemmaComputeProfileBuildTask
-	CathGemmaComputeProfileScanTask
+	CathGemmaComputeTaskBuildTreeTask
+	CathGemmaComputeTaskProfileBuildTask
+	CathGemmaComputeTaskProfileScanTask
 	CathGemmaComputeWorkBatch
 	CathGemmaDiskExecutables
 	/;
@@ -47,7 +50,7 @@ use Cath::Gemma::Util;
 
 has profile_tasks => (
 	is          => 'rwp',
-	isa         => ArrayRef[CathGemmaComputeProfileBuildTask],
+	isa         => ArrayRef[CathGemmaComputeTaskProfileBuildTask],
 	default     => sub { []; },
 	handles_via => 'Array',
 	handles     => {
@@ -64,7 +67,7 @@ has profile_tasks => (
 
 has scan_tasks => (
 	is          => 'rwp',
-	isa         => ArrayRef[CathGemmaComputeProfileScanTask],
+	isa         => ArrayRef[CathGemmaComputeTaskProfileScanTask],
 	default     => sub { []; },
 	handles_via => 'Array',
 	handles     => {
@@ -75,6 +78,41 @@ has scan_tasks => (
 	}
 );
 
+=head2 treebuild_tasks
+
+=cut
+
+has treebuild_tasks => (
+	is          => 'rwp',
+	isa         => ArrayRef[CathGemmaComputeTaskBuildTreeTask],
+	default     => sub { []; },
+	handles_via => 'Array',
+	handles     => {
+		_push_treebuild_tasks    => 'push',
+		num_treebuild_tasks      => 'count',
+		treebuild_task_of_index  => 'get',
+		treebuild_tasks_is_empty => 'is_empty',
+	}
+);
+
+=head2 is_empty
+
+=cut
+
+sub is_empty {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return (
+		$self->profile_tasks_is_empty()
+		&&
+		$self->scan_tasks_is_empty()
+		&&
+		$self->treebuild_tasks_is_empty()
+	);
+}
+
+
 =head2 append
 
 =cut
@@ -83,8 +121,9 @@ sub append {
 	state $check = compile( Object, CathGemmaComputeWorkBatch );
 	my ( $self, $rhs ) = $check->( @ARG );
 
-	$self->_push_profile_tasks( @{ $rhs->profile_tasks() } );
-	$self->_push_scan_tasks   ( @{ $rhs->scan_tasks   () } );
+	$self->_push_profile_tasks   ( @{ $rhs->profile_tasks  () } );
+	$self->_push_scan_tasks      ( @{ $rhs->scan_tasks     () } );
+	$self->_push_treebuild_tasks ( @{ $rhs->treebuild_tasks() } );
 }
 
 =head2 id
@@ -95,7 +134,9 @@ sub id {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	return generic_id_of_clusters( [ map { $ARG->id() } @{ $self->profile_tasks() } ] );
+	return generic_id_of_clusters( [ map { $ARG->id() } ( @{ $self->profile_tasks  () },
+	                                                      @{ $self->scan_tasks     () },
+	                                                      @{ $self->treebuild_tasks() } ) ] );
 }
 
 =head2 num_profile_steps
@@ -118,15 +159,86 @@ sub num_scan_steps {
 	return sum0( map { $ARG->num_steps(); } @{ $self->scan_tasks() } );
 }
 
-=head2 total_num_starting_clusters_in_profiles
+=head2 num_treebuild_steps
 
 =cut
 
-sub total_num_starting_clusters_in_profiles {
+sub num_treebuild_steps {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
-	return sum0( map { $ARG->total_num_starting_clusters(); } @{ $self->profile_tasks() } );
+	return sum0( map { $ARG->num_steps(); } @{ $self->treebuild_tasks() } );
 }
+
+=head2 remove_empty_profile_tasks
+
+=cut
+
+sub remove_empty_profile_tasks {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $tasks = $self->profile_tasks();
+	my @del_indices = grep { $tasks->[ $ARG ]->is_empty(); } ( 0 .. $#$tasks );
+	foreach my $reverse_index ( reverse( @del_indices ) ) {
+		splice( @$tasks, $reverse_index, 1 );
+	}
+	return $self;
+}
+
+=head2 remove_empty_scan_tasks
+
+=cut
+
+sub remove_empty_scan_tasks {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $tasks = $self->scan_tasks();
+	my @del_indices = grep { $tasks->[ $ARG ]->is_empty(); } ( 0 .. $#$tasks );
+	foreach my $reverse_index ( reverse( @del_indices ) ) {
+		splice( @$tasks, $reverse_index, 1 );
+	}
+	return $self;
+}
+
+=head2 remove_empty_treebuild_tasks
+
+=cut
+
+sub remove_empty_treebuild_tasks {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $tasks = $self->treebuild_tasks();
+	my @del_indices = grep { $tasks->[ $ARG ]->is_empty(); } ( 0 .. $#$tasks );
+	foreach my $reverse_index ( reverse( @del_indices ) ) {
+		splice( @$tasks, $reverse_index, 1 );
+	}
+	return $self;
+}
+
+=head2 remove_empty_tasks
+
+=cut
+
+sub remove_empty_tasks {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	$self->remove_empty_profile_tasks();
+	$self->remove_empty_scan_tasks();
+	$self->remove_empty_treebuild_tasks();
+	return $self;
+}
+
+# =head2 total_num_starting_clusters_in_profiles
+
+# =cut
+
+# sub total_num_starting_clusters_in_profiles {
+# 	state $check = compile( Object );
+# 	my ( $self ) = $check->( @ARG );
+# 	return sum0( map { $ARG->total_num_starting_clusters(); } @{ $self->profile_tasks() } );
+# }
 
 =head2 estimate_time_to_execute
 
@@ -140,8 +252,9 @@ sub estimate_time_to_execute {
 		map
 			{ $ARG->estimate_time_to_execute(); }
 			(
-				@{ $self->profile_tasks() },
-				@{ $self->scan_tasks   () },
+				@{ $self->profile_tasks  () },
+				@{ $self->scan_tasks     () },
+				@{ $self->treebuild_tasks() },
 			)
 	);
 
@@ -155,12 +268,18 @@ sub execute_task {
 	state $check = compile( Object, CathGemmaDiskExecutables );
 	my ( $self, $exes ) = $check->( @ARG );
 
+	INFO 'About to execute ' . scalar( @{ $self->profile_tasks  () } )
+	   . ' profile tasks, '  . scalar( @{ $self->scan_tasks     () } )
+	   . ' scan tasks and '  . scalar( @{ $self->treebuild_tasks() } )
+	   . ' tree-build tasks';
+
 	return [
 		map
 			{ $ARG->execute_task( $exes ); }
 			(
-				@{ $self->profile_tasks() },
-				@{ $self->scan_tasks() },
+				@{ $self->profile_tasks  () },
+				@{ $self->scan_tasks     () },
+				@{ $self->treebuild_tasks() },
 			)
 	];
 }
@@ -172,6 +291,7 @@ sub execute_task {
 sub to_string {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
+
 	return 'WorkBatch['
 		. $self->num_profile_tasks()
 		. ' profile tasks'
@@ -189,6 +309,16 @@ sub to_string {
 			( $self->num_scan_tasks() > 0 )
 			? ' (with nums of steps: '
 				. join( ', ', map { $ARG->num_steps(); } @{ $self->scan_tasks() } )
+				. ')'
+			: ''
+		)
+		. '; '
+		. $self->num_treebuild_tasks()
+		. ' treebuild tasks'
+		. (
+			( $self->num_treebuild_tasks() > 0 )
+			? ' (with nums of steps: '
+				. join( ', ', map { $ARG->num_steps(); } @{ $self->treebuild_tasks() } )
 				. ')'
 			: ''
 		)

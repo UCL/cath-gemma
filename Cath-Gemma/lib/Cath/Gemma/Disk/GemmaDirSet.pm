@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 # Core
+use Carp               qw/ confess                    /;
 use English            qw/ -no_match_vars             /;
 use v5.10;
 
@@ -13,13 +14,14 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Type::Params       qw/ compile                    /;
+use Type::Params       qw/ compile Invocant           /;
 use Types::Path::Tiny  qw/ Path                       /;
 use Types::Standard    qw/ ArrayRef Object Str        /;
 
 # Cath
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
+	CathGemmaDiskGemmaDirSet
 	CathGemmaDiskProfileDirSet
 /;
 use Cath::Gemma::Util;
@@ -33,9 +35,10 @@ has profile_dir_set => (
 	isa     => CathGemmaDiskProfileDirSet,
 	default => sub { Cath::Gemma::Disk::ProfileDirSet->new(); },
 	handles => {
-		starting_cluster_dir => 'starting_cluster_dir',
 		aln_dir              => 'aln_dir',
+		base_dir_and_project => 'base_dir_and_project',
 		prof_dir             => 'prof_dir',
+		starting_cluster_dir => 'starting_cluster_dir',
 	},
 );
 
@@ -44,9 +47,49 @@ has profile_dir_set => (
 =cut
 
 has scan_dir => (
-	is  => 'ro',
+	is  => 'lazy',
 	isa => Path,
 );
+
+
+sub _insist_base_dir_and_project {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $base_dir_and_project = $self->base_dir_and_project()
+		or confess "Must specify base_dir_and_project in ProfileDirSet if not specifying starting_cluster_dir, aln_dir and prof_dir";
+	return $base_dir_and_project;
+}
+
+=head2 _build_scan_dir
+
+=cut
+
+sub _build_scan_dir {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $base_dir_and_project = $self->profile_dir_set()->base_dir_and_project()
+		or confess "Must specify base_dir_and_project in member ProfileDirSet if not specifying scan_dir in GemmaDirSet";
+
+	return $self->_insist_base_dir_and_project()->get_project_subdir_of_subdir( 'scans' );
+}
+
+
+=head2 is_equal_to
+
+=cut
+
+sub is_equal_to {
+	state $check = compile( Object, CathGemmaDiskGemmaDirSet );
+	my ( $self, $rhs ) = $check->( @ARG );
+
+	return (
+		$self->profile_dir_set()->is_equal_to( $rhs->profile_dir_set())
+		&&
+		$self->scan_dir()->stringify() eq $rhs->scan_dir()->stringify()
+	);
+}
 
 =head2 is_set
 
@@ -78,5 +121,21 @@ sub scan_filename_of_cluster_ids {
 		$compass_profile_build_type,
 	);
 }
+
+=head2 make_gemma_dir_set_of_base_dir_and_project
+
+=cut
+
+sub make_gemma_dir_set_of_base_dir_and_project {
+	state $check = compile( Invocant, Path, Str );
+	my ( $proto, $base_dir, $project ) = $check->( @ARG );
+	return Cath::Gemma::Disk::GemmaDirSet->new(
+		profile_dir_set => Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir_and_project(
+			$base_dir,
+			$project
+		)
+	);
+}
+
 
 1;

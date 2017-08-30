@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 # Core
-use English            qw/ -no_match_vars      /;
+use English             qw/ -no_match_vars      /;
 use v5.10;
 
 # Moo
@@ -20,13 +20,14 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Type::Params       qw/ compile             /;
-use Types::Standard    qw/ ArrayRef Int Object /;
+use Log::Log4perl::Tiny qw/ :easy               /;
+use Type::Params        qw/ compile             /;
+use Types::Standard     qw/ ArrayRef Int Object /;
 
 # Cath
-use Cath::Gemma::Types qw/
-	CathGemmaComputeProfileBuildTask
-	CathGemmaComputeProfileScanTask
+use Cath::Gemma::Types  qw/
+	CathGemmaComputeTaskProfileBuildTask
+	CathGemmaComputeTaskProfileScanTask
 	CathGemmaComputeTask
 	CathGemmaComputeWorkBatch
 	TimeSeconds
@@ -84,7 +85,14 @@ sub add_batch {
 	my $build_tasks = $work_batch->profile_tasks();
 	my $scan_tasks  = $work_batch->scan_tasks();
 
+	if ( scalar( @$build_tasks ) > 0 ) {
+		INFO 'Rebatching: adding ' . scalar( @$build_tasks ) . ' build tasks';
+	}
 	my $new_build_batches = $self->_add_build_tasks( $build_tasks, $estimate_duration_per_batch );
+	if ( scalar( @$scan_tasks ) > 0 ) {
+		use Data::Dumper;
+		INFO 'Rebatching: adding ' . scalar( @$scan_tasks ) . ' scan tasks with dependencies ' . Dumper( $new_build_batches );
+	}
 	$self->_add_scan_tasks( $scan_tasks, $new_build_batches, $estimate_duration_per_batch );
 }
 
@@ -148,7 +156,7 @@ sub _get_final_dependency_offsets {
 =cut
 
 sub _add_build_tasks {
-	state $check = compile( Object, ArrayRef[CathGemmaComputeProfileBuildTask], TimeSeconds );
+	state $check = compile( Object, ArrayRef[CathGemmaComputeTaskProfileBuildTask], TimeSeconds );
 	my ( $self, $build_tasks, $estimate_duration_per_batch ) = $check->( @ARG );
 
 	return $self->_add_in_tasks( $self->build_batches(), $build_tasks, $estimate_duration_per_batch );
@@ -159,7 +167,7 @@ sub _add_build_tasks {
 =cut
 
 sub _add_scan_tasks {
-	state $check = compile( Object, ArrayRef[CathGemmaComputeProfileScanTask], ArrayRef[Int], TimeSeconds );
+	state $check = compile( Object, ArrayRef[CathGemmaComputeTaskProfileScanTask], ArrayRef[Int], TimeSeconds );
 	my ( $self, $scan_tasks, $build_batch_indices, $estimate_duration_per_batch ) = $check->( @ARG );
 
 	my $scan_batch_indices = $self->_add_in_tasks( $self->scan_batches(), $scan_tasks, $estimate_duration_per_batch );
@@ -180,6 +188,10 @@ sub set_indices {
 			@{ $self->indices_of_build_batches_needed_by_scan_batches()->[ $scan_batch_index ] // [] },
 			@$build_batch_indices
 		);
+
+		use Data::Dumper;
+		# warn "dep indices : " . Dumper( [ $build_batch_indices, \@indices ] );
+
 		$self->indices_of_build_batches_needed_by_scan_batches()->[ $scan_batch_index ] = \@indices;
 	}
 }

@@ -25,12 +25,31 @@ use Type::Params        qw/ compile          /;
 use Types::Standard     qw/ Int Object Maybe /;
 
 # Cath
+use Cath::Gemma::Disk::TreeDirSet;
 use Cath::Gemma::Types  qw/
 	CathGemmaComputeBatchingPolicy
 	CathGemmaComputeWorkBatch
+	CathGemmaDiskExecutables
 	TimeSeconds
 /;
 use Cath::Gemma::Util;
+
+
+=head2 requires id
+
+=cut
+
+requires 'id';
+
+
+=head2 before id
+
+=cut
+
+before id => sub {
+# 	state $check = compile( Object );
+# 	my ( $self ) = $check->( @ARG );
+};
 
 =head2 requires num_steps
 
@@ -44,7 +63,6 @@ requires 'num_steps';
 =cut
 
 requires 'estimate_time_to_execute_step_of_index';
-
 
 =head2 estimate_time_to_execute_step_of_index
 
@@ -115,6 +133,29 @@ before make_batch_of_indices => sub {
 		WARN 'make_batch_of_indices() has been requested to generate a batch of 0 steps';
 	}
 };
+
+
+
+=head2 requires execute_task
+
+=cut
+
+requires 'execute_task';
+
+
+=head2 before execute_task
+
+=cut
+
+before execute_task => sub {
+	state $check = compile( Object, CathGemmaDiskExecutables );
+	my ( $self, $exes ) = $check->( @ARG );
+
+	if ( ! $self->dir_set()->is_set() ) {
+		warn "Cannot execute_task() without all directories configured";
+	}
+};
+
 
 =head2 batch_up
 

@@ -47,3 +47,5 @@ my $result = Cath::Gemma::Compute::WorkBatch->execute_from_file(
 # use JSON::MaybeXS;
 # my $json = JSON::MaybeXS->new( convert_blessed => 1 );
 # say $json->encode( $result );
+
+INFO "Completed processing batch file $batch_file";

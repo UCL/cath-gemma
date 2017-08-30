@@ -3,7 +3,8 @@
 ## Running locally:
 
 ~~~
-script/prepare_research_data.pl --starting-cluster-root-dir ~/gemma_data_dump/starting_clusters --projects-list-file ~/gemma_data_dump/projects.txt --output-root-dir ~/gemma_data_dump/outputs
+#script/prepare_research_data.pl --starting-cluster-root-dir ~/gemma_data_dump/starting_clusters --projects-list-file ~/gemma_data_dump/projects.txt --output-root-dir ~/gemma_data_dump/outputs
+script/prepare_research_data.pl --projects-list-file ~/gemma_data_dump/projects.txt --output-root-dir ~/gemma_data_dump
 ~~~~
 
 ## Usage
@@ -58,19 +59,26 @@ Then login and test:
 
 ~~~
 ssh legion.rc.ucl.ac.uk
-qrsh -verbose -l h_rt=2:0:0,h_vmem=2G
+qrsh -verbose -l h_rt=2:0:0,h_vmem=7G
 # <set data environment variables, as above>
+export LOCAL_DATA_ROOT=/cath/people2/ucbctnl/GeMMA/v4_0_0
+export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
+export CHUCKLE_DATA_ROOT=/cluster/project6/cathrelease/work/2017_05_10.gemma_recode
 cd ~/Scratch/Cath-Gemma
 module load perl
+script/prepare_research_data.pl --projects-list-file ${LEGION_DATA_ROOT}/projects.txt --output-root-dir ${LEGION_DATA_ROOT}
 script/prepare_research_data.pl --starting-cluster-root-dir ${LEGION_DATA_ROOT}/starting_clusters  --projects-list-file ${LEGION_DATA_ROOT}/projects.txt --output-root-dir ${LEGION_DATA_ROOT}
 
 # ...or...
 
 ssh bchuckle.cs.ucl.ac.uk
-qrsh -verbose -l h_rt=4:0:0,h_vmem=2G,tmem=2G
+qrsh -verbose -l h_rt=4:0:0,h_vmem=7G,tmem=7G
 # <set data environment variables, as above>
+export LOCAL_DATA_ROOT=/cath/people2/ucbctnl/GeMMA/v4_0_0
+export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
+export CHUCKLE_DATA_ROOT=/cluster/project6/cathrelease/work/2017_05_10.gemma_recode
 cd ~/Cath-Gemma
-
+script/prepare_research_data.pl --projects-list-file ${CHUCKLE_DATA_ROOT}/projects.txt --output-root-dir ${CHUCKLE_DATA_ROOT}
 script/prepare_research_data.pl --starting-cluster-root-dir ${CHUCKLE_DATA_ROOT}/starting_clusters --projects-list-file ${CHUCKLE_DATA_ROOT}/projects.txt --output-root-dir ${CHUCKLE_DATA_ROOT}
 ~~~
 

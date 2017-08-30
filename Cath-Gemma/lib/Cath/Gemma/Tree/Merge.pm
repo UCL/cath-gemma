@@ -120,6 +120,8 @@ sub starting_clusters_a {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
+	no warnings 'recursion';
+
 	$clusts_ordering //= 'simple_ordering';
 
 	return $self->mergee_a_is_starting_cluster()
@@ -134,6 +136,8 @@ sub starting_clusters_a {
 sub starting_clusters_b {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
+
+	no warnings 'recursion';
 
 	$clusts_ordering //= 'simple_ordering';
 

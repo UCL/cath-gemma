@@ -48,7 +48,7 @@ sub _patch_job_id_and_task_id_into_file_pattern {
 =cut
 
 sub run_job_array {
-	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps ) = @ARG;
+	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps, $job_args ) = @ARG;
 
 	if ( $num_batches < 0 ) {
 		confess 'Cannot perform a job with negative number of batches : ' . $num_batches;
@@ -61,7 +61,7 @@ sub run_job_array {
 		my $job_stderr_file = _patch_job_id_and_task_id_into_file_pattern( $stderr_file_pattern, $fake_job_id, $task_num );
 		my $job_stdout_file = _patch_job_id_and_task_id_into_file_pattern( $stdout_file_pattern, $fake_job_id, $task_num );
 
-		my @run_command = ( "$submit_script" );
+		my @run_command = ( "$submit_script", @$job_args );
 
 		$ENV{ SGE_TASK_ID } = ( $task_num );
 
@@ -79,6 +79,7 @@ sub run_job_array {
 			WARN 'HpcLocalRunner job finished with non-zero return code ' . $run_exit . ' - see ' . join( ', ', $job_stderr_file, $job_stdout_file );
 		}
 	}
+	return; # To ensure this returns undef (otherwise returns '' - perhaps due to Moo wrappers?)
 }
 
 1;

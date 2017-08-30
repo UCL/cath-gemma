@@ -79,15 +79,8 @@ my @project_list        = grep( ! /^#/, split( /\n+/, $project_list_data ) );
 
 foreach my $project ( @project_list ) {
 	warn "Project : $project\n";
-	my $gemma_dir_set = Cath::Gemma::Disk::GemmaDirSet->new(
-		scan_dir        => $basedir->child( 'output' )->child( $project ),
-		profile_dir_set => Cath::Gemma::Disk::ProfileDirSet->new(
-			starting_cluster_dir => $basedir->child( 'starting_clusters' )->child( $project ),
-			aln_dir              => $basedir->child( 'output'            )->child( $project ),
-			prof_dir             => $basedir->child( 'output'            )->child( $project ),
-		),
-	);
 
+	my $gemma_dir_set = make_gemma_dir_set_of_base_dir_and_project( $basedir, $project );
 	my $project_out_dir = $output_dir->child( $project );
 
 	# foreach my $clusts_ordering ( 'simple_ordering' ) {

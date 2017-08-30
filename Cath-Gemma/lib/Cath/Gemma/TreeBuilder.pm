@@ -25,8 +25,11 @@ use Types::Standard   qw/ ArrayRef Object Optional Str /;
 # Cath
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;
+use Cath::Gemma::Compute::WorkBatch;
+use Cath::Gemma::Compute::WorkBatchList;
 use Cath::Gemma::Executor;
 use Cath::Gemma::Scan::ScansDataFactory;
+use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
 	CathGemmaDiskGemmaDirSet
@@ -59,26 +62,29 @@ around build_tree => sub {
 	$clusts_ordering //= 'simple_ordering';
 
 	$executor->execute(
+		Cath::Gemma::Compute::WorkBatchList->new(
+			batches => [ Cath::Gemma::Compute::WorkBatch->new(
+				# Build alignments and profiles for...
+				profile_tasks => [
+					# ...all starting_clusters
+					Cath::Gemma::Compute::Task::ProfileBuildTask->new(
+						starting_cluster_lists     => [ map { [ $ARG ] } @$starting_clusters ],
+						dir_set                    => $gemma_dir_set->profile_dir_set(),
+						compass_profile_build_type => $compass_profile_build_type,
+					)->remove_already_present(),
+				],
 
-		# Build alignments and profiles for...
-		[
-			# ...all starting_clusters
-			Cath::Gemma::Compute::Task::ProfileBuildTask->new(
-				starting_cluster_lists     => [ map { [ $ARG ] } @$starting_clusters ],
-				dir_set                    => $gemma_dir_set->profile_dir_set(),
-				compass_profile_build_type => $compass_profile_build_type,
-			)->remove_already_present(),
-		],
-
-		# Perform scans for...
-		[
-			# ...all initial nodes (ie starting cluster vs other starting clusters)
-			Cath::Gemma::Compute::Task::ProfileScanTask->new(
-				starting_cluster_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
-				dir_set                     => $gemma_dir_set,
-				compass_profile_build_type  => $compass_profile_build_type,
-			),
-		]
+				# Perform scans for...
+				scan_tasks => [
+					# ...all initial nodes (ie starting cluster vs other starting clusters)
+					Cath::Gemma::Compute::Task::ProfileScanTask->new(
+						starting_cluster_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
+						dir_set                     => $gemma_dir_set,
+						compass_profile_build_type  => $compass_profile_build_type,
+					)->remove_already_present(),
+				]
+			) ]
+		)
 	);
 
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_starting_clusters_and_gemma_dir_set(

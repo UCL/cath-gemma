@@ -12,6 +12,7 @@ use warnings;
 # Core
 use Carp                qw/ confess        /;
 use English             qw/ -no_match_vars /;
+use FindBin;
 use Switch;
 use v5.10;
 
@@ -107,8 +108,10 @@ sub _build__runner {
 sub execute {
 	my ( $self, $batches ) = @ARG;
 
+	my $submit_script = path( "$FindBin::Bin/../script/sge_submit_script.bash" )->realpath;
 
-	$batches = $self->_work_batcher()->rebatch( $batches );
+	warn "WARNING: TEMPORARILY NOT REBATCHING";
+	# $batches = $self->_work_batcher()->rebatch( $batches );
 
 	# use Carp qw/ confess /;
 	# use Data::Dumper;
@@ -132,10 +135,6 @@ sub execute {
 
 		my $group_batches = [ @{ $batches->batches() }[ @$batch_indices ] ];
 
-		# use Carp qw/ confess /;
-		# use Data::Dumper;
-		# warn Dumper( [ $batch_indices ] );
-
 		my $id      = $batches->id_of_batch_indices( $batch_indices );
 
 		my @batch_files;
@@ -153,28 +152,6 @@ sub execute {
 
 		my $num_batches = scalar( @$group_batches );
 
-		my $submit_script = $job_dir->child( $id . '.' . 'job_script.bash' );
-		$submit_script->spew( <<"EOF" );
-#!/bin/bash -l
-
-# Where a compute-cluster provides a more recent perl through the module system, this will pick it up
-( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl
-
-BATCH_FILES_FILE=$batch_files_file
-echo HOSTNAME         : \$HOSTNAME
-echo BATCH_FILES_FILE : \$BATCH_FILES_FILE
-echo SGE_TASK_ID      : \$SGE_TASK_ID
-
-BATCH_FILE=\$(awk "NR==\$SGE_TASK_ID" \$BATCH_FILES_FILE)
-echo BATCH_FILE       : \$BATCH_FILE
-
-$execute_batch_script \$BATCH_FILE
-
-EOF
-
-		$submit_script->chmod( 'a+x' )
-			or confess "Unable to chmod submit script \"$submit_script\" to be executable : $OS_ERROR";
-
 		my $job_name            = 'CathGemma.'.$id;
 		my $stderr_file_stem    = $job_dir->child( $id );
 		my $stdout_file_stem    = $job_dir->child( $id );
@@ -184,12 +161,13 @@ EOF
 		my $stdout_file_pattern = $stdout_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stdout_file_suffix;
 
 		push @job_dependencies, $self->_runner()->run_job_array(
-			$submit_script,
+			path( "$FindBin::Bin/../script/sge_submit_script.bash" )->realpath(),
 			$job_name,
 			$stderr_file_pattern,
 			$stdout_file_pattern,
 			$num_batches,
 			[ @job_dependencies[ @$dependencies ] ],
+			[ "$execute_batch_script", "$batch_files_file" ],
 		);
 	}
 }

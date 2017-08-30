@@ -28,6 +28,26 @@ use Cath::Gemma::Types  qw/
 /;
 use Cath::Gemma::Util;
 
+=head2 _check_all_profile_files_exist
+
+=cut
+
+sub _check_all_profile_files_exist {
+	state $check = compile( ClassName, Path, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
+	my ( $class, $profile_dir, $query_cluster_ids, $match_cluster_ids, $compass_profile_build_type ) = $check->( @ARG );
+
+	foreach my $cluster_id ( @$query_cluster_ids, @$match_cluster_ids ) {
+		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $compass_profile_build_type );
+		if ( ! -s $profile_file ) {
+			confess "Unable to find non-empty profile file $profile_file for cluster $cluster_id when scanning queries ("
+			        . join( ', ', @$query_cluster_ids )
+			        . ') against matches ('
+			        . join( ', ', @$match_cluster_ids )
+			        . ')';
+		}
+	}
+}
+
 =head2 _compass_scan_impl
 
 =cut
@@ -38,6 +58,13 @@ sub _compass_scan_impl {
 
 	my $num_query_ids = scalar( @$query_cluster_ids );
 	my $num_match_ids = scalar( @$match_cluster_ids );
+
+	$class->_check_all_profile_files_exist(
+		$profile_dir,
+		$query_cluster_ids,
+		$match_cluster_ids,
+		$compass_profile_build_type
+	);
 
 	my $query_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
 	my $match_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );

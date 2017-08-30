@@ -6,6 +6,7 @@ use warnings;
 # Core
 use Carp               qw/ confess                 /;
 use English            qw/ -no_match_vars          /;
+use List::Util         qw/ any min                 /;
 use v5.10;
 
 # Moo
@@ -15,19 +16,19 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Log::Log4perl::Tiny qw/ :easy /; # ***** TEMPORARY ******
+use Log::Log4perl::Tiny qw/ :easy                   /;
 use Object::Util;
 use Path::Tiny;
-use Type::Params       qw/ compile Invocant        /;
-use Types::Path::Tiny  qw/ Path                    /;
-use Types::Standard    qw/ ArrayRef Int Object Str /;
+use Type::Params        qw/ compile Invocant        /;
+use Types::Path::Tiny   qw/ Path                    /;
+use Types::Standard     qw/ ArrayRef Int Object Str /;
 
 # Cath
 use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
-	CathGemmaComputeProfileBuildTask
+	CathGemmaComputeTaskProfileBuildTask
 	CathGemmaDiskExecutables
 	CathGemmaDiskProfileDirSet
 /;
@@ -80,7 +81,7 @@ has compass_profile_build_type => (
 has dir_set  => (
 	is       => 'ro',
 	isa      => CathGemmaDiskProfileDirSet,
-	default  => sub { CathGemmaDiskProfileDirSet->new(); },
+	default  => sub { Cath::Gemma::Disk::ProfileDirSet->new(); },
 	handles  => {
 		aln_dir              => 'aln_dir',
 		prof_dir             => 'prof_dir',
@@ -94,8 +95,7 @@ has dir_set  => (
 =cut
 
 sub id {
-	state $check = compile( Object );
-	my ( $self ) = $check->( @ARG );
+	my $self = shift;
 	return generic_id_of_clusters( [
 		$self->compass_profile_build_type(),
 		map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
@@ -157,17 +157,17 @@ sub total_num_starting_clusters {
 =cut
 
 sub execute_task {
-	state $check = compile( Object, CathGemmaDiskExecutables );
-	my ( $self, $exes ) = $check->( @ARG );
-
-	if ( ! $self->dir_set()->is_set() ) {
-		warn "Cannot execute_task on a ProfileBuildTask that doesn't have all its directories configured";
-	}
+	my ( $self, $exes ) = @ARG;
 
 	return [
 		map
 		{
 			my $starting_clusters = $ARG;
+			INFO 'Building profile for '
+				. scalar( @$starting_clusters )
+				. ' starting cluster(s) (beginning with '
+				. join( ', ', @$starting_clusters[ 0 .. min( 20, $#$starting_clusters ) ] )
+				. ')';
 			Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
 				$exes,
 				$starting_clusters,
@@ -185,7 +185,7 @@ sub execute_task {
 
 sub split_into_singles {
 	state $check = compile( Object );
-	my ( $self  ) = $check->( @ARG );
+	my ( $self ) = $check->( @ARG );
 
 	return [
 		map
@@ -199,10 +199,37 @@ sub split_into_singles {
 =cut
 
 sub remove_duplicate_build_tasks {
-	state $check = compile( Invocant, ArrayRef[CathGemmaComputeProfileBuildTask] );
+	state $check = compile( Invocant, ArrayRef[CathGemmaComputeTaskProfileBuildTask] );
 	my ( $proto, $build_tasks ) = $check->( @ARG );
 
-	WARN "Not yet implemented remove_duplicate_build_tasks()";
+	if ( scalar( @$build_tasks ) ) {
+		my $compass_profile_build_type = $build_tasks->[ 0 ]->compass_profile_build_type();
+		my $dir_set                    = $build_tasks->[ 0 ]->dir_set();
+
+		if ( any { $ARG->compass_profile_build_type() ne $compass_profile_build_type } @$build_tasks ) {
+			confess "Cannot remove_duplicate_build_tasks() for ProfileBuildTasks with inconsistent compass_profile_build_type()s";
+		}
+		if ( any { ! $ARG->dir_set()->is_equal_to( $dir_set ) } @$build_tasks ) {
+			confess "Cannot remove_duplicate_build_tasks() for ProfileBuildTasks with inconsistent dir_set()s";
+		}
+
+		my %prev_seen_ids;
+		foreach my $build_task ( @$build_tasks ) {
+
+			my $starting_cluster_lists = $build_task->starting_cluster_lists();
+			my @del_indices = grep {
+
+				my $id                = id_of_starting_clusters( $starting_cluster_lists->[ $ARG ] );
+				my $prev_seen         = $prev_seen_ids{ $id };
+				$prev_seen_ids{ $id } = 1;
+				$prev_seen;
+			} ( 0 .. $#$starting_cluster_lists );
+
+			foreach my $reverse_index ( reverse( @del_indices ) ) {
+				splice( @$starting_cluster_lists, $reverse_index, 1 );
+			}
+		}
+	}
 
 	return $build_tasks;
 }
