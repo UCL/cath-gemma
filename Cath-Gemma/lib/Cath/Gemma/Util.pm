@@ -10,13 +10,15 @@ use strict;
 use warnings;
 
 # Core
-use Carp           qw/ confess                  /;
-use Digest::MD5    qw/ md5_hex                  /;
-use English        qw/ -no_match_vars           /;
-use Exporter       qw/ import                   /;
-use List::Util     qw/ min                      /;
-use POSIX          qw/ ceil floor log10         /;
-use Time::HiRes    qw/ gettimeofday tv_interval /;
+use Carp           qw/ confess                                                        /;
+use Digest::MD5    qw/ md5_hex                                                        /;
+use English        qw/ -no_match_vars                                                 /;
+use Exporter       qw/ import                                                         /;
+use List::Util     qw/ min                                                            /;
+use POSIX          qw/ ceil floor log10                                               /;
+use Storable       qw/ dclone                                                         /;
+use Sys::Hostname;
+use Time::HiRes    qw/ gettimeofday tv_interval                                       /;
 use Time::Seconds;
 use v5.10;
 
@@ -37,6 +39,7 @@ our @EXPORT = qw/
 	has_seg_exes
 	has_sge_enviroment_variables
 	id_of_starting_clusters
+	make_atomic_write_file
 	mergee_is_starting_cluster
 	min_time_seconds
 	ordered_cluster_name_pair
@@ -52,13 +55,13 @@ our @EXPORT = qw/
 
 # Non-core (local)
 use File::AtomicWrite;
-use File::Which       qw/ which                                               /;
-use List::MoreUtils   qw/ all natatime                                        /;
+use File::Which       qw/ which                                                       /;
+use List::MoreUtils   qw/ all natatime                                                /;
 use Path::Tiny;
 use Try::Tiny;
-use Type::Params      qw/ compile                                             /;
-use Types::Path::Tiny qw/ Path                                                /;
-use Types::Standard   qw/ ArrayRef Bool CodeRef Maybe Num Optional slurpy Str /;
+use Type::Params      qw/ compile                                                     /;
+use Types::Path::Tiny qw/ Path                                                        /;
+use Types::Standard   qw/ ArrayRef Bool CodeRef HashRef Maybe Num Optional slurpy Str /;
 
 # Cath
 use Cath::Gemma::Types qw/
@@ -117,7 +120,7 @@ sub run_and_time_filemaking_cmd {
 			}
 
 			my $atomic_file = defined( $out_file )
-			                  ? File::AtomicWrite->new( { file => "$out_file" } )
+			                  ? make_atomic_write_file( { file => "$out_file" } )
 			                  : undef;
 
 			my $result = time_fn( $operation, defined( $atomic_file ) ? ( $atomic_file ) : ( ) );
@@ -302,6 +305,35 @@ sub has_seg_exes {
 
 sub has_sge_enviroment_variables {
 	return all { defined( $ENV{ $ARG } ); } ( qw/ SGE_ROOT SGE_ARCH SGE_CELL / );
+}
+
+=head2 make_atomic_write_file
+
+=cut
+
+sub make_atomic_write_file {
+	state $check = compile( HashRef );
+	my ( $params ) = $check->( @ARG );
+
+	# If a template hasn't been specified, add one that includes the host name and process ID to further reduce the chance of clashes
+	if ( ! defined( $params->{ template } ) ) {
+		$params->{ template } =   '.atmc_write.host_'
+		                        . ( hostname() =~ s/[^\w\-\.]//rg ) # / Remove everything except sensible characters (keep this comment, which is a workaround glitch in Sublime's syntax highlighting)
+		                        . '.pid_'
+		                        . $PID
+		                        . '.XXXXXXXXXX';
+	}
+
+	# Create a File::AtomicWrite
+	my $atomic_file = File::AtomicWrite->new( $params );
+
+	# Check it isn't using a temporary file that already has non-zero size
+	if ( -s $atomic_file->filename() ) {
+		confess 'AtomicFile for ' . $params->{ file } . ' has been assigned a temporary file ("' . $atomic_file->filename() . '") that already exists and has non-zero size';
+	}
+
+	# Return the result
+	return $atomic_file;
 }
 
 =head2 id_of_starting_clusters
