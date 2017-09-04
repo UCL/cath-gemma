@@ -33,6 +33,8 @@ my $prof_type                 = 'compass_wp_dummy_1st';
 
 =head2 cmp_compass_profile_file
 
+TODOCUMENT
+
 =cut
 
 sub cmp_compass_profile_type_against_file {

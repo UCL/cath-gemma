@@ -19,6 +19,8 @@ with ( 'Cath::Gemma::TreeBuilder' );
 
 =head2 name
 
+TODOCUMENT
+
 =cut
 
 sub name {
@@ -26,6 +28,8 @@ sub name {
 }
 
 =head2 build_tree
+
+TODOCUMENT
 
 Params checked in Cath::Gemma::TreeBuilder
 

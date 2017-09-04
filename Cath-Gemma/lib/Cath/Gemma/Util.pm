@@ -70,6 +70,8 @@ use Cath::Gemma::Types qw/
 
 =head2 time_fn
 
+TODOCUMENT
+
 =cut
 
 sub time_fn {
@@ -86,6 +88,8 @@ sub time_fn {
 }
 
 =head2 run_and_time_filemaking_cmd
+
+TODOCUMENT
 
 =cut
 
@@ -166,6 +170,8 @@ sub run_and_time_filemaking_cmd {
 
 =head2 mergee_is_starting_cluster
 
+TODOCUMENT
+
 =cut
 
 sub mergee_is_starting_cluster {
@@ -174,6 +180,8 @@ sub mergee_is_starting_cluster {
 }
 
 =head2 min_time_seconds
+
+TODOCUMENT
 
 =cut
 
@@ -184,6 +192,8 @@ sub min_time_seconds {
 }
 
 =head2 batch_into_n
+
+TODOCUMENT
 
 A convenience wrapper for List::MoreUtils' natatime that returns back an
 array of array(ref)s rather than an iterator
@@ -205,6 +215,8 @@ sub batch_into_n {
 }
 
 =head2 cluster_name_spaceship
+
+TODOCUMENT
 
 =cut
 
@@ -234,6 +246,8 @@ sub cluster_name_spaceship {
 
 =head2 ordered_cluster_name_pair
 
+TODOCUMENT
+
 =cut
 
 sub ordered_cluster_name_pair {
@@ -247,6 +261,8 @@ sub ordered_cluster_name_pair {
 }
 
 =head2 generic_id_of_clusters
+
+TODOCUMENT
 
 =cut
 
@@ -263,6 +279,8 @@ sub generic_id_of_clusters {
 
 =head2 get_starting_clusters_of_starting_cluster_dir
 
+TODOCUMENT
+
 =cut
 
 sub get_starting_clusters_of_starting_cluster_dir {
@@ -273,6 +291,8 @@ sub get_starting_clusters_of_starting_cluster_dir {
 }
 
 =head2 guess_if_running_on_sge
+
+TODOCUMENT
 
 =cut
 
@@ -293,6 +313,8 @@ sub guess_if_running_on_sge {
 
 =head2 has_seg_exes
 
+TODOCUMENT
+
 =cut
 
 sub has_seg_exes {
@@ -301,6 +323,8 @@ sub has_seg_exes {
 
 =head2 has_sge_enviroment_variables
 
+TODOCUMENT
+
 =cut
 
 sub has_sge_enviroment_variables {
@@ -308,6 +332,8 @@ sub has_sge_enviroment_variables {
 }
 
 =head2 make_atomic_write_file
+
+TODOCUMENT
 
 =cut
 
@@ -338,6 +364,8 @@ sub make_atomic_write_file {
 
 =head2 id_of_starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub id_of_starting_clusters {
@@ -359,6 +387,8 @@ sub id_of_starting_clusters {
 
 =head2 id_of_nodelist
 
+TODOCUMENT
+
 =cut
 
 sub id_of_nodelist {
@@ -375,6 +405,8 @@ sub id_of_nodelist {
 
 =head2 compass_profile_suffix
 
+TODOCUMENT
+
 =cut
 
 sub compass_profile_suffix {
@@ -382,6 +414,8 @@ sub compass_profile_suffix {
 }
 
 =head2 default_compass_profile_build_type
+
+TODOCUMENT
 
 =cut
 
@@ -392,6 +426,8 @@ sub default_compass_profile_build_type {
 
 =head2 default_temp_dir
 
+TODOCUMENT
+
 =cut
 
 sub default_temp_dir {
@@ -399,6 +435,8 @@ sub default_temp_dir {
 }
 
 =head2 evalue_window_ceiling
+
+TODOCUMENT
 
 =cut
 
@@ -411,6 +449,8 @@ sub evalue_window_ceiling {
 
 =head2 evalue_window_floor
 
+TODOCUMENT
+
 =cut
 
 sub evalue_window_floor {
@@ -422,6 +462,8 @@ sub evalue_window_floor {
 
 =head2 compass_scan_suffix
 
+TODOCUMENT
+
 =cut
 
 sub compass_scan_suffix {
@@ -429,6 +471,8 @@ sub compass_scan_suffix {
 }
 
 =head2 alignment_profile_suffix
+
+TODOCUMENT
 
 =cut
 
@@ -438,6 +482,8 @@ sub alignment_profile_suffix {
 
 =head2 alignment_filebasename_of_starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub alignment_filebasename_of_starting_clusters {
@@ -446,6 +492,8 @@ sub alignment_filebasename_of_starting_clusters {
 }
 
 =head2 prof_file_of_prof_dir_and_aln_file
+
+TODOCUMENT
 
 =cut
 
@@ -462,6 +510,8 @@ sub prof_file_of_prof_dir_and_aln_file {
 
 =head2 prof_file_of_prof_dir_and_cluster_id
 
+TODOCUMENT
+
 =cut
 
 sub prof_file_of_prof_dir_and_cluster_id {
@@ -473,6 +523,8 @@ sub prof_file_of_prof_dir_and_cluster_id {
 
 =head2 raw_sequences_filename_of_starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub raw_sequences_filename_of_starting_clusters {
@@ -481,6 +533,8 @@ sub raw_sequences_filename_of_starting_clusters {
 }
 
 =head2 scan_filebasename_of_cluster_ids
+
+TODOCUMENT
 
 =cut
 
@@ -499,6 +553,8 @@ sub scan_filebasename_of_cluster_ids {
 
 =head2 scan_filename_of_dir_and_cluster_ids
 
+TODOCUMENT
+
 =cut
 
 sub scan_filename_of_dir_and_cluster_ids {
@@ -509,6 +565,8 @@ sub scan_filename_of_dir_and_cluster_ids {
 }
 
 =head2 unique_by_hashing
+
+TODOCUMENT
 
 =cut
 

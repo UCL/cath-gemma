@@ -27,10 +27,14 @@ use Cath::Gemma::Util;
 
 =head2 mergee_a
 
+TODOCUMENT
+
 =cut
 
 
 =head2 mergee_b
+
+TODOCUMENT
 
 =cut
 
@@ -42,6 +46,8 @@ has [ qw/ mergee_a mergee_b / ] => (
 
 =head2 score
 
+TODOCUMENT
+
 =cut
 
 has score => (
@@ -50,6 +56,8 @@ has score => (
 );
 
 =head2 score_with_lower_bound
+
+TODOCUMENT
 
 =cut
 
@@ -62,6 +70,8 @@ sub score_with_lower_bound {
 
 =head2 mergee_a_is_starting_cluster
 
+TODOCUMENT
+
 =cut
 
 sub mergee_a_is_starting_cluster {
@@ -72,6 +82,8 @@ sub mergee_a_is_starting_cluster {
 }
 
 =head2 mergee_a_id
+
+TODOCUMENT
 
 =cut
 
@@ -88,6 +100,8 @@ sub mergee_a_id {
 
 =head2 mergee_b_is_starting_cluster
 
+TODOCUMENT
+
 =cut
 
 sub mergee_b_is_starting_cluster {
@@ -98,6 +112,8 @@ sub mergee_b_is_starting_cluster {
 }
 
 =head2 mergee_b_id
+
+TODOCUMENT
 
 =cut
 
@@ -113,6 +129,8 @@ sub mergee_b_id {
 }
 
 =head2 starting_clusters_a
+
+TODOCUMENT
 
 =cut
 
@@ -131,6 +149,8 @@ sub starting_clusters_a {
 
 =head2 starting_clusters_b
 
+TODOCUMENT
+
 =cut
 
 sub starting_clusters_b {
@@ -147,6 +167,8 @@ sub starting_clusters_b {
 }
 
 =head2 starting_nodes
+
+TODOCUMENT
 
 =cut
 
@@ -171,6 +193,8 @@ sub starting_nodes {
 }
 
 =head2 id
+
+TODOCUMENT
 
 =cut
 

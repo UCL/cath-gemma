@@ -38,6 +38,8 @@ use Cath::Gemma::Test::TestImpl;
 
 =head2 bootstrap_is_on
 
+TODOCUMENT
+
 =cut
 
 sub bootstrap_is_on {
@@ -45,6 +47,8 @@ sub bootstrap_is_on {
 }
 
 =head2 cath_test_tempdir
+
+TODOCUMENT
 
 =cut
 
@@ -59,6 +63,8 @@ sub cath_test_tempdir {
 }
 
 =head2 file_matches
+
+TODOCUMENT
 
 =cut
 

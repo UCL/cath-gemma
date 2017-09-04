@@ -29,6 +29,8 @@ use Cath::Gemma::Types qw/ CathGemmaCompassProfileType /;
 
 =head2 cmp_compass_profile_type_against_file
 
+TODOCUMENT
+
 =cut
 
 sub cmp_compass_profile_type_against_file {

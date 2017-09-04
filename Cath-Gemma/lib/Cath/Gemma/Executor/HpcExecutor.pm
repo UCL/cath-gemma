@@ -40,6 +40,8 @@ with ( 'Cath::Gemma::Executor' );
 
 =head2 submission_dir
 
+TODOCUMENT
+
 =cut
 
 has submission_dir => (
@@ -49,6 +51,8 @@ has submission_dir => (
 );
 
 =head2 hpc_mode
+
+TODOCUMENT
 
 =cut
 
@@ -70,6 +74,8 @@ has hpc_mode => (
 
 =head2 _runner
 
+TODOCUMENT
+
 =cut
 
 has _runner => (
@@ -78,6 +84,8 @@ has _runner => (
 );
 
 =head2 _work_batcher
+
+TODOCUMENT
 
 =cut
 
@@ -88,6 +96,8 @@ has _work_batcher => (
 );
 
 =head2
+
+TODOCUMENT
 
 =cut
 
@@ -102,6 +112,8 @@ sub _build__runner {
 }
 
 =head2 execute
+
+TODOCUMENT
 
 =cut
 

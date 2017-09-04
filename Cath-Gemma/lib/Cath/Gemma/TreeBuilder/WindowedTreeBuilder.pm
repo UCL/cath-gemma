@@ -19,6 +19,8 @@ with ( 'Cath::Gemma::TreeBuilder' );
 
 =head2 id_flip
 
+TODOCUMENT
+
 =cut
 
 sub id_flip {
@@ -39,6 +41,8 @@ sub id_flip {
 
 =head2 name
 
+TODOCUMENT
+
 =cut
 
 sub name {
@@ -46,6 +50,8 @@ sub name {
 }
 
 =head2 build_tree
+
+TODOCUMENT
 
 Params checked in Cath::Gemma::TreeBuilder
 

@@ -37,12 +37,16 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head2 function1
 
+TODOCUMENT
+
 =cut
 
 sub function1 {
 }
 
 =head2 function2
+
+TODOCUMENT
 
 =cut
 

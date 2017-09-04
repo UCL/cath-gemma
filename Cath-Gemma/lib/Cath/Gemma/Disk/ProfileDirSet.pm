@@ -29,6 +29,8 @@ use Cath::Gemma::Util;
 
 =head2 base_dir_and_project
 
+TODOCUMENT
+
 =cut
 
 has base_dir_and_project => (
@@ -38,15 +40,21 @@ has base_dir_and_project => (
 
 =head2 starting_cluster_dir
 
+TODOCUMENT
+
 =cut
 
 
 =head2 aln_dir
 
+TODOCUMENT
+
 =cut
 
 
 =head2 prof_dir
+
+TODOCUMENT
 
 =cut
 
@@ -66,6 +74,8 @@ sub _insist_base_dir_and_project {
 
 =head2 _build_starting_cluster_dir
 
+TODOCUMENT
+
 =cut
 
 sub _build_starting_cluster_dir {
@@ -76,6 +86,8 @@ sub _build_starting_cluster_dir {
 }
 
 =head2 _build_aln_dir
+
+TODOCUMENT
 
 =cut
 
@@ -88,6 +100,8 @@ sub _build_aln_dir {
 
 =head2 _build_prof_dir
 
+TODOCUMENT
+
 =cut
 
 sub _build_prof_dir {
@@ -98,6 +112,8 @@ sub _build_prof_dir {
 }
 
 =head2 is_equal_to
+
+TODOCUMENT
 
 =cut
 
@@ -116,6 +132,8 @@ sub is_equal_to {
 
 =head2 is_set
 
+TODOCUMENT
+
 =cut
 
 sub is_set {
@@ -133,6 +151,8 @@ sub is_set {
 
 =head2 alignment_filename_of_starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub alignment_filename_of_starting_clusters {
@@ -148,6 +168,8 @@ sub alignment_filename_of_starting_clusters {
 
 =head2 prof_file_of_aln_file
 
+TODOCUMENT
+
 =cut
 
 sub prof_file_of_aln_file {
@@ -162,6 +184,8 @@ sub prof_file_of_aln_file {
 
 =head2 compass_file_of_starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub compass_file_of_starting_clusters {
@@ -174,6 +198,8 @@ sub compass_file_of_starting_clusters {
 }
 
 =head2 make_profile_dir_set_of_base_dir_and_project
+
+TODOCUMENT
 
 =cut
 

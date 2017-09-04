@@ -19,6 +19,8 @@ use Types::Standard   qw/ Object Str     /;
 
 =head2 base_dir
 
+TODOCUMENT
+
 =cut
 
 has base_dir => (
@@ -29,6 +31,8 @@ has base_dir => (
 
 =head2 project
 
+TODOCUMENT
+
 =cut
 
 has project => (
@@ -38,6 +42,8 @@ has project => (
 );
 
 =head2 get_project_subdir_of_subdir
+
+TODOCUMENT
 
 =cut
 

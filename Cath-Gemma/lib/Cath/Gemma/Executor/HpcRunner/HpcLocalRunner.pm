@@ -29,6 +29,8 @@ with ( 'Cath::Gemma::Executor::HpcRunner' );
 
 =head2 _patch_job_id_and_task_id_into_file_pattern
 
+TODOCUMENT
+
 =cut
 
 sub _patch_job_id_and_task_id_into_file_pattern {
@@ -44,6 +46,8 @@ sub _patch_job_id_and_task_id_into_file_pattern {
 }
 
 =head2 run_job_array
+
+TODOCUMENT
 
 =cut
 

@@ -30,6 +30,8 @@ use Cath::Gemma::Util;
 
 =head2 _check_all_profile_files_exist
 
+TODOCUMENT
+
 =cut
 
 sub _check_all_profile_files_exist {
@@ -49,6 +51,8 @@ sub _check_all_profile_files_exist {
 }
 
 =head2 _compass_scan_impl
+
+TODOCUMENT
 
 =cut
 
@@ -106,6 +110,8 @@ sub _compass_scan_impl {
 
 =head2 build_temp_profile_lib_file
 
+TODOCUMENT
+
 =cut
 
 sub build_temp_profile_lib_file {
@@ -133,6 +139,8 @@ sub build_temp_profile_lib_file {
 
 =head2 compass_scan
 
+TODOCUMENT
+
 =cut
 
 sub compass_scan {
@@ -155,6 +163,8 @@ sub compass_scan {
 }
 
 =head2 compass_scan_to_file
+
+TODOCUMENT
 
 =cut
 
@@ -193,6 +203,8 @@ sub compass_scan_to_file {
 
 =head2 build_and_scan_merge_cluster_against_others
 
+TODOCUMENT
+
 =cut
 
 sub build_and_scan_merge_cluster_against_others {
@@ -216,6 +228,8 @@ sub build_and_scan_merge_cluster_against_others {
 }
 
 =head2 get_pair_scan_score
+
+TODOCUMENT
 
 =cut
 

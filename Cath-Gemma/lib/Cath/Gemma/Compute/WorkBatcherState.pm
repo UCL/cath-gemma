@@ -36,6 +36,8 @@ use Cath::Gemma::Util;
 
 =head2 build_batches
 
+TODOCUMENT
+
 =cut
 
 has build_batches => (
@@ -50,6 +52,8 @@ has build_batches => (
 );
 
 =head2 scan_batches
+
+TODOCUMENT
 
 =cut
 
@@ -66,6 +70,8 @@ has scan_batches => (
 
 =head2 indices_of_build_batches_needed_by_scan_batches
 
+TODOCUMENT
+
 =cut
 
 has indices_of_build_batches_needed_by_scan_batches => (
@@ -75,6 +81,8 @@ has indices_of_build_batches_needed_by_scan_batches => (
 );
 
 =head2 add_batch
+
+TODOCUMENT
 
 =cut
 
@@ -97,6 +105,8 @@ sub add_batch {
 }
 
 =head2 get_new_batch_list
+
+TODOCUMENT
 
 =cut
 
@@ -131,6 +141,8 @@ sub get_new_batch_list {
 
 =head2 _get_final_dependency_offsets
 
+TODOCUMENT
+
 =cut
 
 # TODO: Add tests:
@@ -153,6 +165,8 @@ sub _get_final_dependency_offsets {
 
 =head2 _add_build_tasks
 
+TODOCUMENT
+
 =cut
 
 sub _add_build_tasks {
@@ -163,6 +177,8 @@ sub _add_build_tasks {
 }
 
 =head2 _add_scan_tasks
+
+TODOCUMENT
 
 =cut
 
@@ -176,6 +192,8 @@ sub _add_scan_tasks {
 }
 
 =head2 set_indices
+
+TODOCUMENT
 
 =cut
 
@@ -198,6 +216,8 @@ sub set_indices {
 
 =head2 _add_in_tasks
 
+TODOCUMENT
+
 =cut
 
 sub _add_in_tasks {
@@ -213,6 +233,8 @@ sub _add_in_tasks {
 }
 
 =head2 _add_in_task
+
+TODOCUMENT
 
 =cut
 
@@ -244,6 +266,8 @@ sub _add_in_task {
 }
 
 # =head2 rebatch
+
+# TODOCUMENT
 
 # =cut
 

@@ -24,6 +24,8 @@ use Cath::Gemma::Util;
 
 =head2 scan_data
 
+TODOCUMENT
+
 =cut
 
 has scan_data => (
@@ -32,6 +34,8 @@ has scan_data => (
 );
 
 =head2 read_from_file
+
+TODOCUMENT
 
 =cut
 
@@ -60,6 +64,8 @@ sub read_from_file {
 
 =head2 write_to_file
 
+TODOCUMENT
+
 =cut
 
 sub write_to_file {
@@ -77,6 +83,8 @@ sub write_to_file {
 }
 
 =head2 parse_from_raw_compass_scan_output_lines
+
+TODOCUMENT
 
 =cut
 

@@ -24,6 +24,8 @@ use Cath::Gemma::Util;
 
 =head2 load_scans_data_of_starting_clusters_and_dir
 
+TODOCUMENT
+
 =cut
 
 sub load_scans_data_of_starting_clusters_and_dir {
@@ -43,6 +45,8 @@ sub load_scans_data_of_starting_clusters_and_dir {
 }
 
 =head2 load_scans_data_of_starting_clusters_and_gemma_dir_set
+
+TODOCUMENT
 
 =cut
 

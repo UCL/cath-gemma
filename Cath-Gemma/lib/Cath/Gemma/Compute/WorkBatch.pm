@@ -46,6 +46,8 @@ use Cath::Gemma::Util;
 
 =head2 profile_tasks
 
+TODOCUMENT
+
 =cut
 
 has profile_tasks => (
@@ -62,6 +64,8 @@ has profile_tasks => (
 );
 
 =head2 scan_tasks
+
+TODOCUMENT
 
 =cut
 
@@ -80,6 +84,8 @@ has scan_tasks => (
 
 =head2 treebuild_tasks
 
+TODOCUMENT
+
 =cut
 
 has treebuild_tasks => (
@@ -96,6 +102,8 @@ has treebuild_tasks => (
 );
 
 =head2 is_empty
+
+TODOCUMENT
 
 =cut
 
@@ -115,6 +123,8 @@ sub is_empty {
 
 =head2 append
 
+TODOCUMENT
+
 =cut
 
 sub append {
@@ -127,6 +137,8 @@ sub append {
 }
 
 =head2 id
+
+TODOCUMENT
 
 =cut
 
@@ -141,6 +153,8 @@ sub id {
 
 =head2 num_profile_steps
 
+TODOCUMENT
+
 =cut
 
 sub num_profile_steps {
@@ -150,6 +164,8 @@ sub num_profile_steps {
 }
 
 =head2 num_scan_steps
+
+TODOCUMENT
 
 =cut
 
@@ -161,6 +177,8 @@ sub num_scan_steps {
 
 =head2 num_treebuild_steps
 
+TODOCUMENT
+
 =cut
 
 sub num_treebuild_steps {
@@ -170,6 +188,8 @@ sub num_treebuild_steps {
 }
 
 =head2 remove_empty_profile_tasks
+
+TODOCUMENT
 
 =cut
 
@@ -187,6 +207,8 @@ sub remove_empty_profile_tasks {
 
 =head2 remove_empty_scan_tasks
 
+TODOCUMENT
+
 =cut
 
 sub remove_empty_scan_tasks {
@@ -202,6 +224,8 @@ sub remove_empty_scan_tasks {
 }
 
 =head2 remove_empty_treebuild_tasks
+
+TODOCUMENT
 
 =cut
 
@@ -219,6 +243,8 @@ sub remove_empty_treebuild_tasks {
 
 =head2 remove_empty_tasks
 
+TODOCUMENT
+
 =cut
 
 sub remove_empty_tasks {
@@ -232,6 +258,8 @@ sub remove_empty_tasks {
 
 # =head2 total_num_starting_clusters_in_profiles
 
+# TODOCUMENT
+
 # =cut
 
 # sub total_num_starting_clusters_in_profiles {
@@ -241,6 +269,8 @@ sub remove_empty_tasks {
 # }
 
 =head2 estimate_time_to_execute
+
+TODOCUMENT
 
 =cut
 
@@ -261,6 +291,8 @@ sub estimate_time_to_execute {
 }
 
 =head2 execute_task
+
+TODOCUMENT
 
 =cut
 
@@ -285,6 +317,8 @@ sub execute_task {
 }
 
 =head2 to_string
+
+TODOCUMENT
 
 =cut
 
@@ -327,6 +361,8 @@ sub to_string {
 
 =head2 write_to_file
 
+TODOCUMENT
+
 =cut
 
 sub write_to_file {
@@ -336,6 +372,8 @@ sub write_to_file {
 }
 
 =head2 read_from_file
+
+TODOCUMENT
 
 =cut
 
@@ -347,6 +385,8 @@ sub read_from_file {
 }
 
 =head2 execute_from_file
+
+TODOCUMENT
 
 =cut
 

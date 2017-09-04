@@ -35,6 +35,8 @@ use Cath::Gemma::Util;
 
 =head2 batches
 
+TODOCUMENT
+
 =cut
 
 has batches => (
@@ -51,6 +53,8 @@ has batches => (
 );
 
 =head2 dependencies
+
+TODOCUMENT
 
 This may be shorter than batches so prefer accessing through get_dependency_of_index()
 
@@ -76,6 +80,8 @@ has dependencies => (
 
 =head2 get_dependency_of_index
 
+TODOCUMENT
+
 =cut
 
 sub get_dependency_of_index {
@@ -92,6 +98,8 @@ sub get_dependency_of_index {
 
 =head2 id
 
+TODOCUMENT
+
 =cut
 
 sub id {
@@ -102,6 +110,8 @@ sub id {
 }
 
 =head2 id_of_batch_indices
+
+TODOCUMENT
 
 =cut
 
@@ -116,6 +126,8 @@ sub id_of_batch_indices {
 
 =head2 get_grouped_dependencies
 
+TODOCUMENT
+
 =cut
 
 sub get_grouped_dependencies {
@@ -129,6 +141,8 @@ sub get_grouped_dependencies {
 }
 
 =head2 to_string
+
+TODOCUMENT
 
 =cut
 
@@ -146,6 +160,8 @@ sub to_string {
 }
 
 =head2 _init_tidy_dependencies
+
+TODOCUMENT
 
 =cut
 
@@ -177,6 +193,8 @@ sub _init_tidy_dependencies {
 }
 
 =head2 _group_tidy_dependencies
+
+TODOCUMENT
 
 =cut
 
@@ -225,6 +243,8 @@ sub _group_tidy_dependencies {
 
 =head2 _tidy_and_group_dependencies
 
+TODOCUMENT
+
 =cut
 
 sub _tidy_and_group_dependencies {
@@ -238,6 +258,8 @@ sub _tidy_and_group_dependencies {
 
 # =head2 id
 
+# TODOCUMENT
+
 # =cut
 
 # sub id {
@@ -249,6 +271,8 @@ sub _tidy_and_group_dependencies {
 
 # =head2 num_profiles
 
+# TODOCUMENT
+
 # =cut
 
 # sub num_profiles {
@@ -259,6 +283,8 @@ sub _tidy_and_group_dependencies {
 
 # =head2 total_num_starting_clusters_in_profiles
 
+# TODOCUMENT
+
 # =cut
 
 # sub total_num_starting_clusters_in_profiles {
@@ -268,6 +294,8 @@ sub _tidy_and_group_dependencies {
 # }
 
 # =head2 execute_task
+
+# TODOCUMENT
 
 # =cut
 
@@ -284,6 +312,8 @@ sub _tidy_and_group_dependencies {
 
 # =head2 write_to_file
 
+# TODOCUMENT
+
 # =cut
 
 # sub write_to_file {
@@ -293,6 +323,8 @@ sub _tidy_and_group_dependencies {
 # }
 
 # =head2 read_from_file
+
+# TODOCUMENT
 
 # =cut
 
@@ -304,6 +336,8 @@ sub _tidy_and_group_dependencies {
 # }
 
 # =head2 execute_from_file
+
+# TODOCUMENT
 
 # =cut
 

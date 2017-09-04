@@ -23,6 +23,8 @@ use Types::Standard qw/ Bool /;
 
 =head2 bootstrap_tests_is_on
 
+TODOCUMENT
+
 =cut
 
 has bootstrap_tests_is_on => (
@@ -31,6 +33,8 @@ has bootstrap_tests_is_on => (
 );
 
 =head2 _build_bootstrap_tests_is_on
+
+TODOCUMENT
 
 =cut
 

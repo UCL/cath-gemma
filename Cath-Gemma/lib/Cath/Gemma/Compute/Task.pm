@@ -37,12 +37,16 @@ use Cath::Gemma::Util;
 
 =head2 requires id
 
+TODOCUMENT
+
 =cut
 
 requires 'id';
 
 
 =head2 before id
+
+TODOCUMENT
 
 =cut
 
@@ -53,6 +57,8 @@ before id => sub {
 
 =head2 requires num_steps
 
+TODOCUMENT
+
 =cut
 
 requires 'num_steps';
@@ -60,11 +66,15 @@ requires 'num_steps';
 
 =head2 requires estimate_time_to_execute_step_of_index
 
+TODOCUMENT
+
 =cut
 
 requires 'estimate_time_to_execute_step_of_index';
 
 =head2 estimate_time_to_execute_step_of_index
+
+TODOCUMENT
 
 This is slightly dodgy and wouldn't pass in C++
 (because it gets different return types from different derived classes' step_of_index() methods
@@ -85,6 +95,8 @@ before estimate_time_to_execute_step_of_index => sub {
 };
 
 =head2 estimate_num_steps_to_fill_time_from_index
+
+TODOCUMENT
 
 =cut
 
@@ -110,11 +122,15 @@ sub estimate_num_steps_to_fill_time_from_index {
 
 =head2 requires make_batch_of_indices
 
+TODOCUMENT
+
 =cut
 
 requires 'make_batch_of_indices';
 
 =head2 before make_batch_of_indices
+
+TODOCUMENT
 
 =cut
 
@@ -138,12 +154,16 @@ before make_batch_of_indices => sub {
 
 =head2 requires execute_task
 
+TODOCUMENT
+
 =cut
 
 requires 'execute_task';
 
 
 =head2 before execute_task
+
+TODOCUMENT
 
 =cut
 
@@ -158,6 +178,8 @@ before execute_task => sub {
 
 
 =head2 batch_up
+
+TODOCUMENT
 
 =cut
 
@@ -242,6 +264,8 @@ sub batch_up {
 
 =head2 before estimate_time_to_execute
 
+TODOCUMENT
+
 =cut
 
 sub estimate_time_to_execute {
@@ -253,6 +277,8 @@ sub estimate_time_to_execute {
 
 
 =head2 estimate_time_to_execute_batch
+
+TODOCUMENT
 
 =cut
 

@@ -33,6 +33,8 @@ use Cath::Gemma::Types qw/
 
 =head2 est_time_per_batch
 
+TODOCUMENT
+
 =cut
 
 has est_time_per_batch => (
@@ -42,6 +44,8 @@ has est_time_per_batch => (
 );
 
 =head2 rebatch
+
+TODOCUMENT
 
 =cut
 

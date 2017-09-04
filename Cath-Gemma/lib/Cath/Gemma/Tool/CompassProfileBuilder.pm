@@ -32,6 +32,8 @@ use Cath::Gemma::Util;
 
 =head2 _run_compass
 
+TODOCUMENT
+
 =cut
 
 sub _run_compass_build {
@@ -56,6 +58,8 @@ sub _run_compass_build {
 }
 
 =head2 build_compass_profile_in_dir
+
+TODOCUMENT
 
 =cut
 
@@ -176,6 +180,8 @@ sub build_compass_profile_in_dir {
 
 =head2 build_compass_profile
 
+TODOCUMENT
+
 =cut
 
 sub build_compass_profile {
@@ -191,6 +197,8 @@ sub build_compass_profile {
 }
 
 =head2 build_alignment_and_compass_profile
+
+TODOCUMENT
 
 =cut
 

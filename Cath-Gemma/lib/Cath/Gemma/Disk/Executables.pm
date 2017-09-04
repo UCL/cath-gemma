@@ -39,6 +39,8 @@ my $mafft_src_exe        = path( "$FindBin::Bin/../tools/mafft-6.864-without-ext
 
 =head2 tmp_dir
 
+TODOCUMENT
+
 =cut
 
 has tmp_dir => (
@@ -49,30 +51,42 @@ has tmp_dir => (
 
 =head2 _exes_dir
 
+TODOCUMENT
+
 =cut
 
 
 =head2 compass_build
+
+TODOCUMENT
 
 =cut
 
 
 =head2 compass_scan_241
 
+TODOCUMENT
+
 =cut
 
 
 =head2 compass_scan_310
+
+TODOCUMENT
 
 =cut
 
 
 =head2 mafft
 
+TODOCUMENT
+
 =cut
 
 
 =head2 mk_compass_db
+
+TODOCUMENT
 
 =cut
 
@@ -85,6 +99,8 @@ has [ qw/ _exes_dir compass_build compass_scan_241 compass_scan_310 mafft mk_com
 
 
 =head2 _prepare_mafft_directories
+
+TODOCUMENT
 
 =cut
 
@@ -106,6 +122,8 @@ sub _prepare_mafft_directories {
 
 =head2 _prepare_exe
 
+TODOCUMENT
+
 =cut
 
 sub _prepare_exe {
@@ -125,6 +143,8 @@ sub _prepare_exe {
 
 =head2 _build__exes_dir
 
+TODOCUMENT
+
 =cut
 
 sub _build__exes_dir {
@@ -139,6 +159,8 @@ sub _build__exes_dir {
 
 =head2 _build_compass_build
 
+TODOCUMENT
+
 =cut
 
 sub _build_compass_build {
@@ -148,6 +170,8 @@ sub _build_compass_build {
 }
 
 =head2 _build_compass_scan_241
+
+TODOCUMENT
 
 =cut
 
@@ -159,6 +183,8 @@ sub _build_compass_scan_241 {
 
 =head2 _build_compass_scan_310
 
+TODOCUMENT
+
 =cut
 
 sub _build_compass_scan_310 {
@@ -168,6 +194,8 @@ sub _build_compass_scan_310 {
 }
 
 =head2 _build_mafft
+
+TODOCUMENT
 
 =cut
 
@@ -180,6 +208,8 @@ sub _build_mafft {
 
 =head2 _build_mk_compass_db
 
+TODOCUMENT
+
 =cut
 
 sub _build_mk_compass_db {
@@ -189,6 +219,8 @@ sub _build_mk_compass_db {
 }
 
 =head2 prepare_all
+
+TODOCUMENT
 
 =cut
 

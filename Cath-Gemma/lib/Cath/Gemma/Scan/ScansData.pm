@@ -31,6 +31,8 @@ use Cath::Gemma::Util;
 
 =head2 starting_clusters_of_ids
 
+TODOCUMENT
+
 =cut
 
 has starting_clusters_of_ids => (
@@ -47,6 +49,8 @@ has starting_clusters_of_ids => (
 
 =head2 scans
 
+TODOCUMENT
+
 =cut
 
 has scans => (
@@ -61,6 +65,8 @@ has scans => (
 
 =head2 sorted_ids
 
+TODOCUMENT
+
 =cut
 
 sub sorted_ids {
@@ -71,6 +77,8 @@ sub sorted_ids {
 }
 
 =head2 add_starting_clusters
+
+TODOCUMENT
 
 =cut
 
@@ -84,6 +92,8 @@ sub add_starting_clusters {
 }
 
 =head2 add_scan_entry
+
+TODOCUMENT
 
 =cut
 
@@ -106,6 +116,8 @@ sub add_scan_entry {
 
 =head2 add_scan_data
 
+TODOCUMENT
+
 =cut
 
 sub add_scan_data {
@@ -119,6 +131,8 @@ sub add_scan_data {
 
 
 =head2 get_id_and_score_of_lowest_score_of_id
+
+TODOCUMENT
 
 =cut
 
@@ -157,6 +171,8 @@ sub get_id_and_score_of_lowest_score_of_id {
 
 =head2 ids_and_score_of_lowest_score
 
+TODOCUMENT
+
 =cut
 
 sub ids_and_score_of_lowest_score {
@@ -194,6 +210,8 @@ sub ids_and_score_of_lowest_score {
 
 =head2 ids_and_score_of_lowest_score_window
 
+TODOCUMENT
+
 =cut
 
 sub ids_and_score_of_lowest_score_window {
@@ -219,6 +237,8 @@ sub ids_and_score_of_lowest_score_window {
 
 =head2 remove
 
+TODOCUMENT
+
 =cut
 
 sub remove {
@@ -243,6 +263,8 @@ sub remove {
 
 =head2 add_node_of_starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub add_node_of_starting_clusters {
@@ -255,6 +277,8 @@ sub add_node_of_starting_clusters {
 }
 
 =head2 merge_remove
+
+TODOCUMENT
 
 =cut
 
@@ -274,6 +298,8 @@ sub merge_remove {
 }
 
 =head2 merge_add_with_score_of_lowest
+
+TODOCUMENT
 
 =cut
 
@@ -315,6 +341,8 @@ sub merge_add_with_score_of_lowest {
 
 =head2 merge_add_with_score_of_highest
 
+TODOCUMENT
+
 =cut
 
 sub merge_add_with_score_of_highest {
@@ -354,6 +382,8 @@ sub merge_add_with_score_of_highest {
 }
 
 =head2 merge_add_with_unweighted_geometric_mean_score
+
+TODOCUMENT
 
 =cut
 
@@ -412,6 +442,8 @@ sub merge_add_with_unweighted_geometric_mean_score {
 }
 
 =head2 new_from_starting_clusters
+
+TODOCUMENT
 
 =cut
 

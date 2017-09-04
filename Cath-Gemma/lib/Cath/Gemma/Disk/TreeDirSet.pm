@@ -28,6 +28,8 @@ use Cath::Gemma::Util;
 
 =head2 gemma_dir_set
 
+TODOCUMENT
+
 =cut
 
 has gemma_dir_set => (
@@ -45,6 +47,8 @@ has gemma_dir_set => (
 );
 
 =head2 tree_dir
+
+TODOCUMENT
 
 =cut
 
@@ -65,6 +69,8 @@ sub _insist_base_dir_and_project {
 
 =head2 _build_tree_dir
 
+TODOCUMENT
+
 =cut
 
 sub _build_tree_dir {
@@ -79,6 +85,8 @@ sub _build_tree_dir {
 
 
 =head2 is_equal_to
+
+TODOCUMENT
 
 =cut
 
@@ -95,6 +103,8 @@ sub is_equal_to {
 
 =head2 is_set
 
+TODOCUMENT
+
 =cut
 
 sub is_set {
@@ -109,6 +119,8 @@ sub is_set {
 }
 
 # =head2 scan_filename_of_cluster_ids
+
+# TODOCUMENT
 
 # =cut
 
@@ -125,6 +137,8 @@ sub is_set {
 # }
 
 =head2 make_tree_dir_set_of_base_dir_and_project
+
+TODOCUMENT
 
 =cut
 

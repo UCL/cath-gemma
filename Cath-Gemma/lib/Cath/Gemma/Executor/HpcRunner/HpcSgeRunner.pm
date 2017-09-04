@@ -27,6 +27,8 @@ with ( 'Cath::Gemma::Executor::HpcRunner' );
 
 =head2 run_job_array
 
+TODOCUMENT
+
 =cut
 
 sub run_job_array {

@@ -31,6 +31,8 @@ use Cath::Gemma::Util;
 
 =head2 build_raw_seqs_file
 
+TODOCUMENT
+
 =cut
 
 sub build_raw_seqs_file {
@@ -76,6 +78,8 @@ sub build_raw_seqs_file {
 }
 
 =head2 make_alignment_file
+
+TODOCUMENT
 
 =cut
 

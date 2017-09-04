@@ -38,6 +38,8 @@ with ( 'Cath::Gemma::Compute::Task' );
 
 =head2 starting_cluster_lists
 
+TODOCUMENT
+
 =cut
 
 has starting_cluster_lists => (
@@ -54,6 +56,8 @@ has starting_cluster_lists => (
 
 =head2 num_steps
 
+TODOCUMENT
+
 This pass-through is to satisfy the corresponding 'requires' in Task,
 which isn't satisfied by the 'handles' above
 
@@ -66,6 +70,8 @@ sub num_steps {
 
 =head2 compass_profile_build_type
 
+TODOCUMENT
+
 =cut
 
 has compass_profile_build_type => (
@@ -75,6 +81,8 @@ has compass_profile_build_type => (
 );
 
 =head2 dir_set
+
+TODOCUMENT
 
 =cut
 
@@ -92,6 +100,8 @@ has dir_set  => (
 
 =head2 id
 
+TODOCUMENT
+
 =cut
 
 sub id {
@@ -103,6 +113,8 @@ sub id {
 }
 
 =head2 remove_already_present
+
+TODOCUMENT
 
 =cut
 
@@ -127,6 +139,8 @@ sub remove_already_present {
 
 # =head2 get_sub_task
 
+# TODOCUMENT
+
 # =cut
 
 # sub get_sub_task {
@@ -143,6 +157,8 @@ sub remove_already_present {
 
 =head2 total_num_starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub total_num_starting_clusters {
@@ -153,6 +169,8 @@ sub total_num_starting_clusters {
 }
 
 =head2 execute_task
+
+TODOCUMENT
 
 =cut
 
@@ -181,6 +199,8 @@ sub execute_task {
 
 =head2 split_into_singles
 
+TODOCUMENT
+
 =cut
 
 sub split_into_singles {
@@ -195,6 +215,8 @@ sub split_into_singles {
 }
 
 =head2 remove_duplicate_build_tasks
+
+TODOCUMENT
 
 =cut
 
@@ -236,6 +258,8 @@ sub remove_duplicate_build_tasks {
 
 =head2 estimate_time_to_execute_step_of_index
 
+TODOCUMENT
+
 # TODO: Make this estimate time more sensibly than assuming 1 second per profile step
 
 =cut
@@ -247,6 +271,8 @@ sub estimate_time_to_execute_step_of_index {
 }
 
 =head2 make_batch_of_indices
+
+TODOCUMENT
 
 =cut
 

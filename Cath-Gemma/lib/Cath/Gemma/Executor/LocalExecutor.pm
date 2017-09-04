@@ -31,6 +31,8 @@ with ( 'Cath::Gemma::Executor' );
 
 =head2 exes
 
+TODOCUMENT
+
 =cut
 
 has exes => (
@@ -41,6 +43,8 @@ has exes => (
 
 =head2 max_num_threads
 
+TODOCUMENT
+
 =cut
 
 has max_num_threads => (
@@ -50,6 +54,8 @@ has max_num_threads => (
 );
 
 =head2 execute
+
+TODOCUMENT
 
 The parameters are checked in Cath::Gemma::Executor
 

@@ -35,6 +35,8 @@ use Cath::Gemma::Util;
 
 =head2 merges
 
+TODOCUMENT
+
 =cut
 
 has merges => (
@@ -52,6 +54,8 @@ has merges => (
 );
 
 =head2 _perform_action_on_trace_style_list
+
+TODOCUMENT
 
 TODO: If efficiency not vital, *might* be simpler to
       have this generate the list of prepped elements
@@ -78,6 +82,8 @@ sub _perform_action_on_trace_style_list {
 }
 
 =head2 to_tracefile_string
+
+TODOCUMENT
 
 TODO: Make this work for IDs like working_1, working_234 etc
 TODO: Test this works for IDs like working_1, working_234 etc
@@ -109,6 +115,8 @@ sub to_tracefile_string {
 
 =head2 write_to_tracefile
 
+TODOCUMENT
+
 TODO: Make this work for IDs like working_1, working_234 etc
 TODO: Test this works for IDs like working_1, working_234 etc
 
@@ -122,6 +130,8 @@ sub write_to_tracefile {
 }
 
 =head2 to_newick_string
+
+TODOCUMENT
 
 =cut
 
@@ -143,6 +153,8 @@ sub to_newick_string {
 
 =head2 write_to_newick_file
 
+TODOCUMENT
+
 =cut
 
 sub write_to_newick_file {
@@ -154,6 +166,8 @@ sub write_to_newick_file {
 
 
 =head2 build_from_nodenames_and_merges
+
+TODOCUMENT
 
 =cut
 
@@ -185,6 +199,8 @@ sub build_from_nodenames_and_merges {
 }
 
 =head2 read_from_tracefile
+
+TODOCUMENT
 
 =cut
 
@@ -218,6 +234,8 @@ sub read_from_tracefile {
 
 =head2 starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub starting_clusters {
@@ -238,6 +256,8 @@ sub starting_clusters {
 
 =head2 starting_cluster_lists
 
+TODOCUMENT
+
 =cut
 
 sub starting_cluster_lists {
@@ -248,6 +268,8 @@ sub starting_cluster_lists {
 }
 
 =head2 merge_cluster_lists
+
+TODOCUMENT
 
 =cut
 
@@ -263,6 +285,8 @@ sub merge_cluster_lists {
 }
 
 =head2 inital_scans_of_starting_clusters
+
+TODOCUMENT
 
 =cut
 
@@ -284,6 +308,8 @@ sub inital_scans_of_starting_clusters {
 
 =head2 inital_scan_lists_of_starting_clusters
 
+TODOCUMENT
+
 =cut
 
 sub inital_scan_lists_of_starting_clusters {
@@ -299,6 +325,8 @@ sub inital_scan_lists_of_starting_clusters {
 
 =head2 initial_scans
 
+TODOCUMENT
+
 =cut
 
 sub initial_scans {
@@ -310,6 +338,8 @@ sub initial_scans {
 }
 
 =head2 initial_scan_lists
+
+TODOCUMENT
 
 =cut
 
@@ -325,6 +355,8 @@ sub initial_scan_lists {
 }
 
 =head2 later_scans
+
+TODOCUMENT
 
 =cut
 
@@ -358,6 +390,8 @@ sub later_scans {
 
 =head2 later_scan_lists
 
+TODOCUMENT
+
 =cut
 
 sub later_scan_lists {
@@ -372,6 +406,8 @@ sub later_scan_lists {
 }
 
 =head2 ensure_all_alignments
+
+TODOCUMENT
 
 =cut
 
@@ -389,6 +425,8 @@ sub ensure_all_alignments {
 }
 
 =head2 archive_in_dir
+
+TODOCUMENT
 
 =cut
 
@@ -438,6 +476,8 @@ sub archive_in_dir {
 
 =head2 geometric_mean_score
 
+TODOCUMENT
+
 =cut
 
 sub geometric_mean_score {
@@ -450,6 +490,8 @@ sub geometric_mean_score {
 }
 
 # =head2 rescore
+
+# TODOCUMENT
 
 # =cut
 
@@ -470,6 +512,8 @@ sub geometric_mean_score {
 # }
 
 =head2 rescore_copy
+
+TODOCUMENT
 
 =cut
 
