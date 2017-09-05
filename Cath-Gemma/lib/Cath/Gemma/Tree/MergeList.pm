@@ -6,7 +6,7 @@ use warnings;
 # Core
 use Carp                qw/ confess                                                      /;
 use English             qw/ -no_match_vars                                               /;
-use List::Util          qw/ max sum                                                      /;
+use List::Util          qw/ max min sum                                                  /;
 use v5.10;
 
 # Moo
@@ -16,6 +16,7 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
+use List::MoreUtils     qw/ first_index                                                  /;
 use Log::Log4perl::Tiny qw/ :easy                                                        /;
 use Path::Tiny;
 use Type::Params        qw/ compile Invocant                                             /;
@@ -52,6 +53,189 @@ has merges => (
 	},
 	default => sub { []; },
 );
+
+=head2 _get_index_based_tree
+
+TODOCUMENT
+
+Extracts a data structure of the form:
+
+ [
+ 	'working_19',
+ 	'working_93',
+ 	'working_184',
+ 	'working_185',
+ 	'working_244',
+ 	'working_520',
+ 	'working_1049',
+ 	'working_1121',
+ 	'working_1248',
+ 	'working_1318',
+ 	[  2,   4 ],
+ 	[  3,  10 ],
+ 	[  5,  11 ],
+ 	[  1,  12 ],
+ 	[  0,  13 ],
+ 	[  7,   8 ],
+ 	[  9,  15 ],
+ 	[  6,  16 ],
+ 	[ 14,  17 ],
+ ];
+
+....from $self->merges(), which is of the form:
+
+ [
+ 	bless( { 'mergee_a' => 'working_184',        'mergee_b' => 'working_244',         'score' => '1.18e-31' }, 'Cath::Gemma::Tree::Merge' ),
+ 	bless( { 'mergee_a' => 'working_185',        'mergee_b' => $VAR1->{'merges'}[0],  'score' => '6.68e-24' }, 'Cath::Gemma::Tree::Merge' ),
+ 	bless( { 'mergee_a' => 'working_520',        'mergee_b' => $VAR1->{'merges'}[1],  'score' => '1.15e-23' }, 'Cath::Gemma::Tree::Merge' ),
+ 	bless( { 'mergee_a' => 'working_93',         'mergee_b' => $VAR1->{'merges'}[2],  'score' => '1.88e-21' }, 'Cath::Gemma::Tree::Merge' ),
+ 	bless( { 'mergee_a' => 'working_19',         'mergee_b' => $VAR1->{'merges'}[3],  'score' => '2.50e-22' }, 'Cath::Gemma::Tree::Merge' ),
+ 	bless( { 'mergee_a' => 'working_1121',       'mergee_b' => 'working_1248',        'score' => '7.42e-20' }, 'Cath::Gemma::Tree::Merge' ),
+ 	bless( { 'mergee_a' => 'working_1318',       'mergee_b' => $VAR1->{'merges'}[5],  'score' => '6.87e-18' }, 'Cath::Gemma::Tree::Merge' ),
+ 	bless( { 'mergee_a' => 'working_1049',       'mergee_b' => $VAR1->{'merges'}[6],  'score' => '1.22e-11' }, 'Cath::Gemma::Tree::Merge' ),
+ 	bless( { 'mergee_a' => $VAR1->{'merges'}[4], 'mergee_b' => $VAR1->{'merges'}[7],  'score' => '9.76e-05' }, 'Cath::Gemma::Tree::Merge' )
+ ]
+
+Try to avoid doing this sort of work elsewhere - it's a bit messy and is best encapsulated here.
+
+=cut
+
+sub _get_index_based_tree {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	# Grab the starting nodes
+	my $nodes                     = $self->starting_clusters();
+	my %index_of_starting_cluster = map { ( $nodes->[ $ARG ], $ARG ); } ( 0 .. $#$nodes );
+
+	# Prepare a data structure to store the merge nodes' indices (in the new data structure)
+	# under the key of a reference to the merge object. This data structure is a bit ugly
+	# but is encapsulated within this short function.
+	my %index_of_node_ref;
+
+	# Loop over the merges
+	my $merges = $self->merges();
+	foreach my $merge ( @{ $self->merges() } ) {
+		my $mergee_a = $merge->mergee_a();
+		my $mergee_b = $merge->mergee_b();
+		my $score    = $merge->score();
+
+		my $get_mergee_index = sub {
+			my $mergee = shift;
+			my $is_a_merge = ( eval { $mergee->isa( 'Cath::Gemma::Tree::Merge' ) } );
+			return $is_a_merge ? $index_of_node_ref        { $mergee }
+			                   : $index_of_starting_cluster{ $mergee }
+		};
+		my $mergee_index_a = $get_mergee_index->( $mergee_a );
+		my $mergee_index_b = $get_mergee_index->( $mergee_b );
+
+		push @$nodes, [ $mergee_index_a, $mergee_index_b ];
+		$index_of_node_ref{ $merge } = $#$nodes;
+	}
+
+	#
+	return $nodes;
+}
+
+=head2 calc_depths
+
+Calculate the depths of each of the merge nodes, where the depth
+is the number of edges between the node in question and the root node.
+
+Returns a reference to an array of (positive integer) depths, one for
+each merge node.
+
+=cut
+
+sub calc_depths {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $stuff = $self->_get_index_based_tree();
+
+	my $first_merge_idx = first_index { ref( $ARG ) eq 'ARRAY' } @$stuff;
+	my $num_merges = scalar( @$stuff ) - $first_merge_idx;
+	my @depths = ( 0 ) x $num_merges;
+
+	foreach my $depth_idx ( reverse( 0 .. $#depths ) ) {
+		my $merge = $stuff->[ $depth_idx + $first_merge_idx];
+		my $depth = $depths[ $depth_idx  ];
+		foreach my $child ( @$merge ) {
+			if ( $child >= $first_merge_idx ) {
+				@depths[ $child - $first_merge_idx ] = $depth + 1;
+			}
+		}
+	}
+
+	return \@depths;
+}
+
+
+=head2 _calc_heights_impl
+
+Implement the calculations of node heights using a the specified
+function to determine how to combine the heights of the child nodes.
+
+Returns a reference to an array of (positive integer) heights, one for
+each merge node.
+
+=cut
+
+sub _calc_heights_impl {
+	state $check = compile( Object, CodeRef );
+	my ( $self, $fn ) = $check->( @ARG );
+
+	my $stuff = $self->_get_index_based_tree();
+	my @heights;
+
+	my $first_merge_idx = first_index { ref( $ARG ) eq 'ARRAY' } @$stuff;
+
+	foreach my $merge_idx ( $first_merge_idx .. $#$stuff ) {
+		my $merge = $stuff->[ $merge_idx ];
+		my ( $a, $b ) = @$merge;
+		my $height_of_a = ( $a >= $first_merge_idx ) ? $heights[ $a - $first_merge_idx ] : 0;
+		my $height_of_b = ( $b >= $first_merge_idx ) ? $heights[ $b - $first_merge_idx ] : 0;
+		push @heights, 1 + $fn->( $height_of_a, $height_of_b );
+	}
+
+	return \@heights;
+}
+
+=head2 calc_heights
+
+Calculate the heights of each of the merge nodes, where the height
+is the maximum number of edges between the node in question and any
+of the leaf nodes (ie starting clusters).
+
+Returns a reference to an array of (positive integer) heights, one for
+each merge node.
+
+=cut
+
+sub calc_heights {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return $self->_calc_heights_impl( sub { max( @ARG ); } );
+}
+
+=head2 calc_min_heights
+
+Calculate the min-heights of each of the merge nodes, where the min-height
+is the minimum number of edges between the node in question and any
+of the leaf nodes (ie starting clusters).
+
+Returns a reference to an array of (positive integer) heights, one for
+each merge node.
+
+=cut
+
+sub calc_min_heights {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return $self->_calc_heights_impl( sub { min( @ARG ); } );
+}
 
 =head2 _perform_action_on_trace_style_list
 
