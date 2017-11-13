@@ -2,44 +2,51 @@
 
 =usage
 
-perl -I extlib/lib/perl5 ./make_clusters.pl
+perl ./make_clusters.pl
 
 =cut
 
+# Strict/warnings
 use strict;
 use warnings;
 
+# Core
 use Carp                qw/ confess        /;
 use English             qw/ -no_match_vars /;
 use feature             qw/ say            /;
+use FindBin;
 use Getopt::Long;
 use List::Util          qw/ max min none   /;
-# use Digest::SHA1        qw/ sha1 sha1_hex sha1_base64 /; # ***** TEMPORARY *****
 
+use lib "$FindBin::Bin/../extlib/lib/perl5";
+
+# Non-core
 use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
 
+
 my $help = undef;
 
-my $CLUSTER_INFILE      = path( 'nr90.out.clstr'                   );
-my $IDS_GO_TERMS_INFILE = path( 'ids_go_terms.out'                 );
-my $SEQUENCES_INFILE    = path( 'sequences.fa'                     );
+my $CLUSTER_INFILE        = path( 'nr90.out.clstr'    );
+my $IDS_GO_TERMS_INFILE   = path( 'ids_go_terms.out'  );
+my $SEQUENCES_INFILE      = path( 'sequences.fa'      );
 
-my $EXCLUDED_GO_TERMS   = 'IEA:UniProtKB-KW,IEA:UniProtKB-EC';
+my $INCLUDED_GO_IEA_TERMS = '';
 
-my $MEMBERSHIP_OUTDIR   = path( 'starting_clusters'                );
+my $MEMBERSHIP_OUTDIR     = path( 'starting_clusters' );
+
 
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
-	'h|help'                  => \$help,
+	'h|help'                    => \$help,
 
-	'c|cluster-infile=s'      => \$CLUSTER_INFILE,
-	'i|ids-go-terms-infile=s' => \$IDS_GO_TERMS_INFILE,
-	's|sequences-infile=s'    => \$SEQUENCES_INFILE,
+	'c|cluster-infile=s'        => \$CLUSTER_INFILE,
+	'i|ids-go-terms-infile=s'   => \$IDS_GO_TERMS_INFILE,
+	's|sequences-infile=s'      => \$SEQUENCES_INFILE,
 
-	'o|membership-outdir=s'   => \$MEMBERSHIP_OUTDIR,
+	'o|membership-outdir=s'     => \$MEMBERSHIP_OUTDIR,
 
-	'g|excluded-go-terms=s'   => \$EXCLUDED_GO_TERMS,
+	'g|included-go-iea-terms=s' => \$INCLUDED_GO_IEA_TERMS,
 ) or pod2usage( 2 );
 if ( $help ) {
 	pod2usage( 1 );
@@ -50,10 +57,7 @@ $IDS_GO_TERMS_INFILE = path( $IDS_GO_TERMS_INFILE );
 $MEMBERSHIP_OUTDIR   = path( $MEMBERSHIP_OUTDIR   );
 $SEQUENCES_INFILE    = path( $SEQUENCES_INFILE    );
 
-my %EXCLUDED_GO_TERMS = map { ( $ARG, 1 ); } split( /,/, $EXCLUDED_GO_TERMS );
-use DDP colored => 1;
-p %EXCLUDED_GO_TERMS;
-
+my %INCLUDED_GO_IEA_TERMS = map { ( $ARG, 1 ); } split( /,/, $INCLUDED_GO_IEA_TERMS );
 
 # Read the GO terms file
 INFO "Reading GO terms file $IDS_GO_TERMS_INFILE";
@@ -67,7 +71,7 @@ foreach my $ids_go_terms_line ( @ids_go_terms_contents ) {
 	my @ids_go_terms_lineparts = split( /\s+/, $ids_go_terms_line );
 
 	my ( $id, $go_code, $go_term ) = @ids_go_terms_lineparts;
-	if ( ! $EXCLUDED_GO_TERMS{ $go_term } ) {
+	if ( $go_term !~ /^N/ && ( $go_term !~ /^IEA:/ || ( $INCLUDED_GO_IEA_TERMS{ $go_term } ) ) ) {
 		$id_with_go{ $id } = 1;
 	}
 }
@@ -99,8 +103,6 @@ foreach my $cluster_line ( @cluster_lines ) {
 undef @cluster_lines;
 undef $cluster_contents;
 
-
-
 # Remove clusters without GO annotations
 INFO "Removing clusters without suitable GO annotations";
 my @del_indices = grep {
@@ -108,16 +110,6 @@ my @del_indices = grep {
 	none { exists( $id_with_go{ $ARG } ) } @{ $new_clusters[ $clust_idx ] };
 } ( 0 .. $#new_clusters );
 
-# path( 'sha1sums_of_deleted_clusters.txt' )->spew(
-# 	join(
-# 		'',
-# 		map {
-# 			my $new_cluster = $new_clusters[ $ARG ];
-# 			sha1_hex( join( '', map { ">$ARG\n"; } @$new_cluster ) ) . "\n";
-# 		}
-# 		@del_indices
-# 	)
-# );
 foreach my $reverse_index ( reverse( @del_indices ) ) {
 	splice( @new_clusters, $reverse_index, 1 );
 }
@@ -191,22 +183,25 @@ perl -I extlib/lib/perl5 script/make_starting_clusters.pl [options]
 
 =head1 OPTIONS
 
-    -h [ --help ]                       Output usage message
+    -h [ --help ]                         Output usage message
 
-    -c [ --cluster-infile ] <file>      Read cluster membership from file <file>
-    -i [ --ids-go-terms-infile ] <file> Read IDs and GO terms from file <file>
-    -s [ --sequences-infile ] <file>    Read sequences from file <file>
+    -c [ --cluster-infile ] <file>        Read cluster membership from file <file>
+    -i [ --ids-go-terms-infile ] <file>   Read IDs and GO terms from file <file>
+    -s [ --sequences-infile ] <file>      Read sequences from file <file>
 
-    -o [ --membership-outdir ] <dir>    Output help message
+    -o [ --membership-outdir ] <dir>      Output help message
 
-    -g [ --excluded-go-terms ] <list>   Exclude GO terms in comma-separated list <list>
-                                        Default: IEA:UniProtKB-KW,IEA:UniProtKB-EC
+    -g [ --included-go-iea-terms ] <list> Only consider GO terms beginning IEA: if they're in comma-separated list <list>
+                                          Eg: IEA:UniProtKB-KW,IEA:UniProtKB-EC
+                                          Default: ''
 =head1 DESCRIPTION
 
 Make the starting clusters for GeMMA to process as part of the FunFam protocol.
 
 This identifies the clusters that have any (non-excluded) GO annotations
 and writes out the sequence files for them.
+
+All GO terms beginning with N are excluded.
 
 To understand how to use this script, see:
 
