@@ -17,6 +17,7 @@ use feature             qw/ say            /;
 use FindBin;
 use Getopt::Long;
 use List::Util          qw/ max min none   /;
+use Pod::Usage;
 
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
@@ -194,7 +195,8 @@ perl -I extlib/lib/perl5 script/make_starting_clusters.pl [options]
     -g [ --included-go-iea-terms ] <list> Only consider GO terms beginning IEA: if they're in comma-separated list <list>
                                           Eg: IEA:UniProtKB-KW,IEA:UniProtKB-EC
                                           Default: ''
-=head1 DESCRIPTION
+
+=head2 DESCRIPTION
 
 Make the starting clusters for GeMMA to process as part of the FunFam protocol.
 
