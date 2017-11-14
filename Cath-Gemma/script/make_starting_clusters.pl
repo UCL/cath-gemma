@@ -180,7 +180,7 @@ make_starting_clusters.pl - Make sequences files for clusters with GO annotation
 
 =head1 SYNOPSIS
 
-perl -I extlib/lib/perl5 script/make_starting_clusters.pl [options]
+perl script/make_starting_clusters.pl [options]
 
 =head1 OPTIONS
 
