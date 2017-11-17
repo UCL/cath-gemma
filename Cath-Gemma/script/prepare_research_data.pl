@@ -54,6 +54,20 @@ $Error::TypeTiny::StackTrace = 1;
 
 my $trace_files_ext            = '.trace';
 
+# my @COMPASS_PROFILE_TYPES = ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / );
+# my @NODE_ORDERINGS        = ( qw/ tree_df_ordering simple_ordering                        / );
+# my @TREE_BUILDERS         = (
+# 	Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder->new(),
+# 	Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder ->new(),
+# 	Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder   ->new(),
+# 	Cath::Gemma::TreeBuilder::PureTreeBuilder        ->new(),
+# 	Cath::Gemma::TreeBuilder::WindowedTreeBuilder    ->new(),
+# );
+
+my @COMPASS_PROFILE_TYPES = ( qw/                                           mk_compass_db / );
+my @NODE_ORDERINGS        = ( qw/                  simple_ordering                        / );
+my @TREE_BUILDERS         = ( Cath::Gemma::TreeBuilder::WindowedTreeBuilder->new()          );
+
 {
 
 my $help            = 0;
@@ -70,8 +84,6 @@ my $output_rootdir;
 # my $output_prof_rootdir;
 # my $output_scan_rootdir;
 # my $trace_files_rootdir;
-
-my $src_trace_files_rootdir;
 
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
@@ -107,7 +119,6 @@ $submission_dir_pattern      = path( $submission_dir_pattern     )->realpath();
 # $output_aln_rootdir        //= $output_rootdir->child( 'alignments'      );
 # $output_prof_rootdir       //= $output_rootdir->child( 'profiles'        );
 # $output_scan_rootdir       //= $output_rootdir->child( 'scans'           );
-$src_trace_files_rootdir   //= $output_rootdir->child( 'dave_tracefiles' );
 
 
 ##########################################################################################
@@ -120,20 +131,11 @@ my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 	batches => [ map {
 		my $project = $ARG;
 
-		# Grab the source merge list
-		my $tracefile_path = $src_trace_files_rootdir->child( $project . $trace_files_ext );
-		my $mergelist = Cath::Gemma::Tree::MergeList->read_from_tracefile( $tracefile_path );
-		if ( $mergelist->is_empty() ) {
-			WARN "Cannot do any further processing for an empty merge list (read from file \"$tracefile_path\")";
-			return;
-		}
-
 		@{ work_batches_for_mergelist(
 			Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir_and_project(
 				$output_rootdir,
 				$project
-			),
-			$mergelist
+			)
 		) };
 	} @projects ],
 );
@@ -175,9 +177,6 @@ my $treebuild_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 	} @projects ],
 );
 
-# use Data::Dumper;
-# warn Dumper( $treebuild_batch_list->batches() );
-
 if ( $treebuild_batch_list->num_batches() == 0 ) {
 	INFO "No treebuild work to do";
 }
@@ -190,9 +189,12 @@ else {
 
 }
 
+
 sub work_batches_for_mergelist {
-	state $check = compile( CathGemmaDiskGemmaDirSet, CathGemmaTreeMergeList );
-	my ( $gemma_dir_set, $mergelist ) = $check->( @ARG );
+	state $check = compile( CathGemmaDiskGemmaDirSet );
+	my ( $gemma_dir_set ) = $check->( @ARG );
+
+	my $starting_clusters = get_starting_clusters_of_starting_cluster_dir( $gemma_dir_set->starting_cluster_dir() );
 
 	return [
 		map {
@@ -203,59 +205,58 @@ sub work_batches_for_mergelist {
 				profile_tasks => Cath::Gemma::Compute::Task::ProfileBuildTask->remove_duplicate_build_tasks( [
 					# ...all starting_clusters
 					Cath::Gemma::Compute::Task::ProfileBuildTask->new(
-						starting_cluster_lists     => $mergelist    ->starting_cluster_lists(),
+						starting_cluster_lists     => [ $starting_clusters ],
 						dir_set                    => $gemma_dir_set->profile_dir_set       (),
 						compass_profile_build_type => $compass_profile_build_type,
 					)->remove_already_present(),
 
-					# ...all merge nodes from the source trace file (simple_ordering)
-					Cath::Gemma::Compute::Task::ProfileBuildTask->new(
-						starting_cluster_lists     => $mergelist    ->merge_cluster_lists( 'simple_ordering'  ),
-						dir_set                    => $gemma_dir_set->profile_dir_set    (                    ),
-						compass_profile_build_type => $compass_profile_build_type,
-					)->remove_already_present(),
+					# # ...all merge nodes from the source trace file (simple_ordering)
+					# Cath::Gemma::Compute::Task::ProfileBuildTask->new(
+					# 	starting_cluster_lists     => $mergelist    ->merge_cluster_lists( 'simple_ordering'  ),
+					# 	dir_set                    => $gemma_dir_set->profile_dir_set    (                    ),
+					# 	compass_profile_build_type => $compass_profile_build_type,
+					# )->remove_already_present(),
 
-					# ...all merge nodes from the source trace file (tree_df_ordering)
-					Cath::Gemma::Compute::Task::ProfileBuildTask->new(
-						starting_cluster_lists     => $mergelist    ->merge_cluster_lists( 'tree_df_ordering' ),
-						dir_set                    => $gemma_dir_set->profile_dir_set    (                    ),
-						compass_profile_build_type => $compass_profile_build_type,
-					)->remove_already_present(),
+					# # ...all merge nodes from the source trace file (tree_df_ordering)
+					# Cath::Gemma::Compute::Task::ProfileBuildTask->new(
+					# 	starting_cluster_lists     => $mergelist    ->merge_cluster_lists( 'tree_df_ordering' ),
+					# 	dir_set                    => $gemma_dir_set->profile_dir_set    (                    ),
+					# 	compass_profile_build_type => $compass_profile_build_type,
+					# )->remove_already_present(),
 				] ),
 
 				# Perform scans for...
 				scan_tasks => Cath::Gemma::Compute::Task::ProfileScanTask->remove_duplicate_scan_tasks( [
 					# ...all initial nodes (ie starting cluster vs other starting clusters)
 					Cath::Gemma::Compute::Task::ProfileScanTask->new(
-						starting_cluster_list_pairs => $mergelist->initial_scan_lists(),
+						starting_cluster_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters(
+							$starting_clusters
+						),
 						dir_set                     => $gemma_dir_set,
 						compass_profile_build_type  => $compass_profile_build_type,
 					)->remove_already_present(),
 
-					# ...all merge nodes from the source trace file (simple_ordering)
-					Cath::Gemma::Compute::Task::ProfileScanTask->new(
-						starting_cluster_list_pairs => $mergelist->later_scan_lists( 'simple_ordering'  ),
-						dir_set                     => $gemma_dir_set,
-						compass_profile_build_type  => $compass_profile_build_type,
-					)->remove_already_present(),
+					# # ...all merge nodes from the source trace file (simple_ordering)
+					# Cath::Gemma::Compute::Task::ProfileScanTask->new(
+					# 	starting_cluster_list_pairs => $mergelist->later_scan_lists( 'simple_ordering'  ),
+					# 	dir_set                     => $gemma_dir_set,
+					# 	compass_profile_build_type  => $compass_profile_build_type,
+					# )->remove_already_present(),
 
-					# ...all merge nodes from the source trace file (tree_df_ordering)
-					Cath::Gemma::Compute::Task::ProfileScanTask->new(
-						starting_cluster_list_pairs => $mergelist->later_scan_lists( 'tree_df_ordering' ),
-						dir_set                     => $gemma_dir_set,
-						compass_profile_build_type  => $compass_profile_build_type,
-					)->remove_already_present(),
+					# # ...all merge nodes from the source trace file (tree_df_ordering)
+					# Cath::Gemma::Compute::Task::ProfileScanTask->new(
+					# 	starting_cluster_list_pairs => $mergelist->later_scan_lists( 'tree_df_ordering' ),
+					# 	dir_set                     => $gemma_dir_set,
+					# 	compass_profile_build_type  => $compass_profile_build_type,
+					# )->remove_already_present(),
 				] ),
 			)->remove_empty_tasks();
 			$work_batch->is_empty() ? (             )
 			                        : ( $work_batch );
-		}
-		( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / )
-		# ( qw/ compass_wp_dummy_1st                                    / )
-		# ( qw/                      compass_wp_dummy_2nd               / )
-		# ( qw/                                           mk_compass_db / )
+		} @COMPASS_PROFILE_TYPES
 	];
 }
+
 
 sub treebuild_batches {
 	state $check = compile( CathGemmaDiskTreeDirSet );
@@ -283,16 +284,9 @@ sub treebuild_batches {
 						]
 					);
 
-				} ( 'simple_ordering', 'tree_df_ordering' );
-			} ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / )
-		}
-		(
-			Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder->new(),
-			Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder ->new(),
-			Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder   ->new(),
-			Cath::Gemma::TreeBuilder::PureTreeBuilder        ->new(),
-			Cath::Gemma::TreeBuilder::WindowedTreeBuilder    ->new(),
-		)
+			} @NODE_ORDERINGS;
+			} @COMPASS_PROFILE_TYPES
+		} @TREE_BUILDERS
 	];
 }
 
