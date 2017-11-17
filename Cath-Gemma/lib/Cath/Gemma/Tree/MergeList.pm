@@ -162,7 +162,7 @@ sub calc_depths {
 		my $depth = $depths[ $depth_idx  ];
 		foreach my $child ( @$merge ) {
 			if ( $child >= $first_merge_idx ) {
-				@depths[ $child - $first_merge_idx ] = $depth + 1;
+				$depths[ $child - $first_merge_idx ] = $depth + 1;
 			}
 		}
 	}
