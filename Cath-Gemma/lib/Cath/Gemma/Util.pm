@@ -341,10 +341,13 @@ sub make_atomic_write_file {
 	state $check = compile( HashRef );
 	my ( $params ) = $check->( @ARG );
 
+	my $hostname = hostname();
+	$hostname =~ s/[^\w\-\.]//g;
+
 	# If a template hasn't been specified, add one that includes the host name and process ID to further reduce the chance of clashes
 	if ( ! defined( $params->{ template } ) ) {
 		$params->{ template } =   '.atmc_write.host_'
-		                        . ( hostname() =~ s/[^\w\-\.]//rg ) # / Remove everything except sensible characters (keep this comment, which is a workaround glitch in Sublime's syntax highlighting)
+		                        . $hostname
 		                        . '.pid_'
 		                        . $PID
 		                        . '.XXXXXXXXXX';
