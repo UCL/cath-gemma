@@ -287,7 +287,7 @@ sub get_starting_clusters_of_starting_cluster_dir {
 	state $check = compile( Path );
 	my ( $dir ) = $check->( @ARG );
 
-	return [ map { $ARG->basename( '.faa' ); } $dir->children ];
+	return [ sort { cluster_name_spaceship( $a, $b ) } map { $ARG->basename( '.faa' ); } $dir->children ];
 }
 
 =head2 guess_if_running_on_sge
