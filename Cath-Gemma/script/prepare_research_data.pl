@@ -140,7 +140,6 @@ my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 	} @projects ],
 );
 
-
 my $executor =
 	$local
 		? Cath::Gemma::Executor::LocalExecutor->new(
@@ -288,7 +287,7 @@ sub treebuild_batches {
 						]
 					);
 
-			} @NODE_ORDERINGS;
+				} @NODE_ORDERINGS;
 			} @COMPASS_PROFILE_TYPES
 		} @TREE_BUILDERS
 	];
