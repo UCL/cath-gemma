@@ -1,5 +1,17 @@
 # Cath::Gemma
 
+## Example of running locally on a small example group
+
+~~~
+mkdir ~/gemma_play
+cd ~/gemma_play
+echo '3.30.70.1470' > projects.txt
+mkdir -p outputs/starting_clusters
+rsync -av /from/somewhere/else/3.30.70.1470/ outputs/starting_clusters/3.30.70.1470/
+
+~/cath-gemma/Cath-Gemma/script/prepare_research_data.pl --projects-list-file $PWD/projects.txt --output-root-dir $PWD/outputs --local
+~~~
+
 ## Development
 
 To add a new module as a dependency:
