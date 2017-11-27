@@ -66,10 +66,33 @@ sub run_job_array {
 	my $cluster_specific_extras    = $cluster_extras{ $submit_host }
 		or confess 'Submit host ' . $submit_host . ' unrecognised';
 
+	# # This block, mostly written by Ian, was useful in debugging a problem with submitting jobs
+	# # It turned out the problem was that it was intermittently running out of memory
+	# if ( 0 ) {
+	#
+	# 	my ( $pretest_stdout, $pretest_stderr, $pretest_exit ) = capture {
+	# 		open( IN, "ssh -v bchuckle.cs.ucl.ac.uk echo hello |") || die "! Error: failed to open: $!";
+	# 		while( my $line = <IN> ) {
+	# 			print "LINE: $line\n";
+	# 		}
+	# 		system( 'ssh', '-v', 'bchuckle.cs.ucl.ac.uk', 'echo', 'hello' );
+	# 	};
+	#
+	# 	confess Dumper( {
+	# 		'$!'     => $!,
+	# 		exit     => $pretest_exit,
+	# 		PATH     => $ENV{PATH},
+	# 		PERL5LIB => $ENV{PERL5LIB},
+	# 		stderr   => $pretest_stderr,
+	# 		stdout   => $pretest_stdout,
+	# 	});
+	# }
+
 	# TODO: Consider adding a parameter that allows users to specify the location of the
 	#       Perl to run the jobs with and then prepend it to the PATH here
 	my @qsub_command = (
 		'ssh', $submit_host,
+		# 'ssh', '-v', $submit_host,
 		'qsub',
 		'-l', join( ',', @$default_resources, @$cluster_specific_resources ),
 		'-N', $job_name,
@@ -100,7 +123,13 @@ sub run_job_array {
 	else {
 		use Carp qw/ confess /;
 		use Data::Dumper;
-		confess Dumper( [ \@qsub_command, $qsub_stdout, $qsub_stderr, $qsub_exit ] );
+		confess Dumper( {
+			command_arr => \@qsub_command,
+			command_str => join( ' ', @qsub_command ),
+			exit        => $qsub_exit,
+			stderr      => $qsub_stderr,
+			stdout      => $qsub_stdout,
+		} );
 	}
 	INFO "Submitted compute-cluster job $job_id with $num_batches batches";
 
