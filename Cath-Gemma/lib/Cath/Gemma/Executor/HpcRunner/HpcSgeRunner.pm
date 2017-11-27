@@ -117,7 +117,7 @@ sub run_job_array {
 	};
 
 	my $job_id;
-	if ( $qsub_stdout =~ /Your job-array (\d+)\.\d+\-\d+:\d+.* has been submitted/ ) {
+	if ( $qsub_stdout =~ /Your job-array (\d+)\.\d+\-\d+:\d+.*? has been submitted/ ) {
 		$job_id = $1;
 	}
 	else {
