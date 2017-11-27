@@ -164,27 +164,31 @@ else {
 	$executor->execute( $work_batch_list );
 }
 
-my $treebuild_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
-	batches => [ map {
-		my $project = $ARG;
+if ( 0 ) {
 
-		@{ treebuild_batches(
-			Cath::Gemma::Disk::TreeDirSet->make_tree_dir_set_of_base_dir_and_project(
-				$output_rootdir,
-				$project
-			)
-		) };
-	} @projects ],
-);
+	my $treebuild_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
+		batches => [ map {
+			my $project = $ARG;
 
-if ( $treebuild_batch_list->num_batches() == 0 ) {
-	INFO "No treebuild work to do";
-}
-else {
-	# INFO "Rebatching " . ( $treebuild_batch_list->num_batches() ) . " batches";
-	# my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $treebuild_batch_list );
-	# INFO "".( $rebatched->num_batches() . " treebuild batches to process" );
-	$executor->execute( $treebuild_batch_list );
+			@{ treebuild_batches(
+				Cath::Gemma::Disk::TreeDirSet->make_tree_dir_set_of_base_dir_and_project(
+					$output_rootdir,
+					$project
+				)
+			) };
+		} @projects ],
+	);
+
+	if ( $treebuild_batch_list->num_batches() == 0 ) {
+		INFO "No treebuild work to do";
+	}
+	else {
+		# INFO "Rebatching " . ( $treebuild_batch_list->num_batches() ) . " batches";
+		# my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $treebuild_batch_list );
+		# INFO "".( $rebatched->num_batches() . " treebuild batches to process" );
+		$executor->execute( $treebuild_batch_list );
+	}
+
 }
 
 }
