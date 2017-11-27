@@ -209,7 +209,7 @@ sub work_batches_for_mergelist {
 				profile_tasks => Cath::Gemma::Compute::Task::ProfileBuildTask->remove_duplicate_build_tasks( [
 					# ...all starting_clusters
 					Cath::Gemma::Compute::Task::ProfileBuildTask->new(
-						starting_cluster_lists     => [ $starting_clusters ],
+						starting_cluster_lists     => [ map { [ $ARG ]; } @$starting_clusters ],
 						dir_set                    => $gemma_dir_set->profile_dir_set       (),
 						compass_profile_build_type => $compass_profile_build_type,
 					)->remove_already_present(),
