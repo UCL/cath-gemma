@@ -147,7 +147,7 @@ sub compass_scan {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
 	my ( $class, $exes, $profile_dir, $query_cluster_ids, $match_cluster_ids, $compass_profile_build_type ) = $check->( @ARG );
 
-	return run_and_time_filemaking_cmd(
+	my $result = run_and_time_filemaking_cmd(
 		'COMPASS scan',
 		undef,
 		sub {
@@ -160,6 +160,12 @@ sub compass_scan {
 			);
 		}
 	);
+
+	if ( defined( $result->{ duration } ) ) {
+		$result->{ scan_duration } = $result->{ duration };
+		delete $result->{ duration };
+	}
+	return $result;
 }
 
 =head2 compass_scan_to_file

@@ -44,8 +44,21 @@ my $result = Cath::Gemma::Compute::WorkBatch->execute_from_file(
 	$exes,
 );
 
-# use JSON::MaybeXS;
-# my $json = JSON::MaybeXS->new( convert_blessed => 1 );
-# say $json->encode( $result );
+# Consider using Tree::Simple::VisitorFactory (or Data::Traverse or Data::Visitor?) if this breaks
+foreach my $result_level1 ( @$result ) {
+	foreach my $result_level2 ( @$result_level1 ) {
+		if ( ref( $result_level2 ) eq 'HASH' && defined( $result_level2->{ 'result' } ) ) {
+			delete $result_level2->{ 'result' };
+		}
+	}
+}
+
+use Data::Dumper;
+warn Dumper( $result );
+
+use JSON::MaybeXS;
+my $json = JSON::MaybeXS->new( convert_blessed => 1 );
+my $results_file = $batch_file->parent()->child( $batch_file->basename() . '.results' );
+$results_file->spew( $json->encode( $result ) );
 
 INFO "Completed processing batch file $batch_file";
