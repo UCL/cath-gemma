@@ -48,11 +48,11 @@ To check all modules compile:
 find lib    -iname '*.pm' | sort | sed 's/^lib\///g' | sed 's/\.pm$//g' | sed 's/\.\///g' | sed 's/\//::/g' | xargs -I VAR perl -Ilib -Iextlib/lib/perl5    -MVAR -e ''
 ~~~
 
-or
+...or from within the lib directory:
 
 ~~~
 cd lib
-find .      -iname '*.pm' | sort | sed 's/^lib\///g' | sed 's/\.pm$//g' | sed 's/\.\///g' | sed 's/\//::/g' | xargs -I VAR perl -Ilib -I../extlib/lib/perl5 -MVAR -e ''
+find .      -iname '*.pm' | sort | sed 's/^lib\///g' | sed 's/\.pm$//g' | sed 's/\.\///g' | sed 's/\//::/g' | xargs -I VAR perl -I. -I../extlib/lib/perl5 -MVAR -e ''
 ~~~
 
 To check for errors in `package` statements:
