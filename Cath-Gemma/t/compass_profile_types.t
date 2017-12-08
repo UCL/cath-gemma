@@ -57,12 +57,21 @@ my $test_base_dir          = path( $FindBin::Bin . '/data' )->realpath();
 my $compass_prof_types_dir = $test_base_dir->child( 'compass_profile_types' );
 my $alignment_file         = $compass_prof_types_dir->child( '1.10.150.120__1767.faa' );
 
-cmp_compass_profile_type_against_file(
-	'Building a COMPASS model with type "compass_wp_dummy_1st" generates the expected file',
-	'compass_wp_dummy_1st',
-	$alignment_file,
-	$compass_prof_types_dir->child( '1.10.150.120__1767.compass_wp_dummy_1st.prof' ),
-);
+SKIP: {
+	# Skip this because compass_wp_dummy_1st can give different results when run identically on different machines. Eg:
+	#
+	#     echo '>A\nA\n' > /tmp/dummy.input
+	#     ~/cath-gemma/Cath-Gemma/tools/compass/compass_wp_245_fixed -g 0.50001 -i /tmp/dummy.input -j ~/cath-gemma/Cath-Gemma/t/data/compass_profile_types/1.10.150.120__1767.faa -p1 /tmp/dummy.prof -p2 /tmp/1.10.150.120__1767.prof
+	#
+	# can give different results (as in the numbers inside the resulting profile differ)
+	skip 'compass_wp_dummy_1st can give different results when run identically on different machines', 1;
+	cmp_compass_profile_type_against_file(
+		'Building a COMPASS model with type "compass_wp_dummy_1st" generates the expected file',
+		'compass_wp_dummy_1st',
+		$alignment_file,
+		$compass_prof_types_dir->child( '1.10.150.120__1767.compass_wp_dummy_1st.prof' ),
+	);
+}
 
 cmp_compass_profile_type_against_file(
 	'Building a COMPASS model with type "compass_wp_dummy_2nd" generates the expected file',
