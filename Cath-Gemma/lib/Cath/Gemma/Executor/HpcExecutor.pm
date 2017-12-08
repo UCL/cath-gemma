@@ -120,6 +120,9 @@ TODOCUMENT
 sub execute {
 	my ( $self, $batches ) = @ARG;
 
+	# use Carp qw/ cluck /;
+	# cluck "\n\n\n****** In HpcExecutor::execute";
+
 	my $submit_script = path( "$FindBin::Bin/../script/sge_submit_script.bash" )->realpath;
 
 	warn "WARNING: TEMPORARILY NOT REBATCHING";
@@ -141,9 +144,15 @@ sub execute {
 
 	my @job_dependencies;
 
+	# warn "****** In HpcExecutor::execute(), about to loop over deps for batches numbering " . $batches->num_batches();
 	my $grouped_dependencies = $batches->get_grouped_dependencies();
+
+	# use Data::Dumper;
+	# warn Dumper( $grouped_dependencies );
+
 	foreach my $dependencies_group ( @$grouped_dependencies ) {
 		my ( $batch_indices, $dependencies ) = @$dependencies_group;
+		# warn "****** In HpcExecutor::execute(), in loop over deps";
 
 		my $group_batches = [ @{ $batches->batches() }[ @$batch_indices ] ];
 
@@ -155,6 +164,8 @@ sub execute {
 			$batch->write_to_file( $batch_freeze_file );
 			push @batch_files, "$batch_freeze_file";
 		}
+
+		# warn "****** In HpcExecutor::execute(), considered freeze files";
 
 		my $batch_files_file = $job_dir->child( $id . '.' . 'job_batch_files' );
 		$batch_files_file->spew( join( "\n", @batch_files ) . "\n" );

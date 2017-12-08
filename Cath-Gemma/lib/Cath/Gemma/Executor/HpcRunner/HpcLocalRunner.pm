@@ -54,6 +54,9 @@ TODOCUMENT
 sub run_job_array {
 	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps, $job_args ) = @ARG;
 
+	# use Carp qw/ cluck /;
+	# cluck "\n\n\n****** In HpcLocalRunner::run_job_array";
+
 	if ( $num_batches < 0 ) {
 		confess 'Cannot perform a job with negative number of batches : ' . $num_batches;
 	}

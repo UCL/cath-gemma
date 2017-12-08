@@ -42,7 +42,11 @@ TODOCUMENT
 
 before execute => sub {
 	state $check = compile( Object, CathGemmaComputeWorkBatchList );
+
 	$check->( @ARG );
+
+	# use Carp qw/ cluck /;
+	# cluck "\n\n\n****** In Executor::execute, num_batches is : " . $ARG[ 1 ]->num_batches();
 };
 
 1;

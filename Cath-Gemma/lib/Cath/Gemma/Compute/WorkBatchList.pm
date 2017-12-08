@@ -251,6 +251,10 @@ sub _tidy_and_group_dependencies {
 	state $check = compile( Invocant, ArrayRef[ArrayRef[Int]], Int );
 	my ( $proto, $data, $count ) = $check->( @ARG );
 
+	# use Data::Dumper;
+	# warn 'Input  into __PACKAGE__->_init_tidy_dependencies( $data, $count ) : ' . Dumper( [ $data, $count ] );
+	# warn 'Result from __PACKAGE__->_init_tidy_dependencies( $data, $count ) : ' . Dumper( __PACKAGE__->_init_tidy_dependencies( $data, $count ) );
+
 	return __PACKAGE__->_group_tidy_dependencies(
 		__PACKAGE__->_init_tidy_dependencies( $data, $count )
 	);

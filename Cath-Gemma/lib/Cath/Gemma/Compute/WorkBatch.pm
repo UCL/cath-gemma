@@ -394,6 +394,18 @@ sub execute_from_file {
 	state $check = compile( Invocant, Path, CathGemmaDiskExecutables );
 	my ( $proto, $file, $exes ) = $check->( @ARG );
 
+	# use Carp qw/ confess /;
+
+	# my $stuff = $proto->read_from_file( $file )->profile_tasks();
+
+	# use DDP colored => 1;
+	# p $stuff;
+	
+	# use Data::Dumper;
+	# confess Dumper( $stuff ) . ' ';
+	
+	# confess ' ';
+
 	return $proto->read_from_file( $file )->execute_task( $exes );
 }
 
