@@ -33,7 +33,7 @@ use Cath::Gemma::Util;
 
 	is( $id_and_score->[ 0 ], '1',        'Highest score in data involves starting cluster 1' );
 	is( $id_and_score->[ 1 ], '2',        'Highest score in data involves starting cluster 2' );
-	is( $id_and_score->[ 2 ], '1.45e-14', 'Highest score in data has score 1.45e-14'          );
+	is( $id_and_score->[ 2 ], '2.47e-15', 'Highest score in data has score 2.47e-15'          );
 }
 
 {

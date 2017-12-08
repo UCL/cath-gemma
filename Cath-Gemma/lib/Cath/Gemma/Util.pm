@@ -423,7 +423,7 @@ TODOCUMENT
 =cut
 
 sub default_compass_profile_build_type {
-	return 'compass_wp_dummy_1st';
+	return 'mk_compass_db';
 }
 
 
