@@ -41,6 +41,7 @@ sub _run_compass_build {
 	my ( $cmd_parts, $output_stem, $compass_profile_build_type ) = $check->( @ARG );
 
 	INFO 'About to build    ' . $compass_profile_build_type . ' COMPASS profile for cluster ' . $output_stem;
+	DEBUG 'About to run command: ' . join( ' ', @$cmd_parts );
 
 	my ( $compass_stdout, $compass_stderr, $compass_exit ) = capture {
 		system( @$cmd_parts );

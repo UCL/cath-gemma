@@ -19,6 +19,7 @@ use Types::Path::Tiny  qw/ Path                       /;
 use Types::Standard    qw/ ArrayRef Object Str        /;
 
 # Cath
+use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
 	CathGemmaDiskGemmaDirSet
@@ -132,6 +133,19 @@ sub scan_filename_of_cluster_ids {
 		$match_ids,
 		$compass_profile_build_type,
 	);
+}
+
+=head2 get_starting_clusters
+
+TODOCUMENT
+
+=cut
+
+sub get_starting_clusters {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return get_starting_clusters_of_starting_cluster_dir( $self->starting_cluster_dir() );
 }
 
 =head2 make_gemma_dir_set_of_base_dir_and_project

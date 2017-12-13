@@ -27,6 +27,8 @@ our @EXPORT = qw/
 	alignment_profile_suffix
 	batch_into_n
 	cluster_name_spaceship
+	cluster_name_spaceship_sort
+	combine_starting_cluster_names
 	compass_profile_suffix
 	compass_scan_suffix
 	default_compass_profile_build_type
@@ -49,6 +51,7 @@ our @EXPORT = qw/
 	run_and_time_filemaking_cmd
 	scan_filebasename_of_cluster_ids
 	scan_filename_of_dir_and_cluster_ids
+	time_seconds_to_sge_string
 	time_fn
 	unique_by_hashing
 	/;
@@ -66,6 +69,8 @@ use Types::Standard   qw/ ArrayRef Bool CodeRef HashRef Maybe Num Optional slurp
 # Cath
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
+	CathGemmaNodeOrdering
+	TimeSeconds
 /;
 
 =head2 time_fn
@@ -242,6 +247,34 @@ sub cluster_name_spaceship {
 		( $b =~ /^(\D*)([\d]+)(\D*)$/ )
 		? 1
 		: ( $a cmp $b );
+}
+
+=head2 cluster_name_spaceship_sort
+
+Perform a sort (with the same syntax & semantics as sort) except using the
+cluster_name_spaceship as the sort criterion
+
+=cut
+
+sub cluster_name_spaceship_sort {
+	return sort { cluster_name_spaceship( $a, $b ) } @ARG;
+}
+
+=head2 combine_starting_cluster_names
+
+TODOCUMENT
+
+=cut
+
+sub combine_starting_cluster_names {
+	state $check = compile( ArrayRef[Str], ArrayRef[Str], Optional[CathGemmaNodeOrdering] );
+	my ( $starting_clusters_a, $starting_clusters_b, $clusts_ordering ) = $check->( @ARG );
+
+	my $result = ( $clusts_ordering && ( $clusts_ordering eq 'tree_df_ordering' ) )
+		? [                              @$starting_clusters_a, @$starting_clusters_b   ]
+		: [ cluster_name_spaceship_sort( @$starting_clusters_a, @$starting_clusters_b ) ];
+
+	return $result;
 }
 
 =head2 ordered_cluster_name_pair
@@ -565,6 +598,30 @@ sub scan_filename_of_dir_and_cluster_ids {
 	my ( $dir, $query_ids, $match_ids, $compass_profile_build_type ) = $check->( @ARG );
 
 	return $dir->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type ) );
+}
+
+
+
+=head2 time_seconds_to_sge_string
+
+TODOCUMENT
+
+=cut
+
+sub time_seconds_to_sge_string {
+	state $check = compile( TimeSeconds );
+	my ( $time_seconds ) = $check->( @ARG );
+
+	my $hours   = int( ( $time_seconds                                 )->hours()   );
+	my $minutes = int( ( $time_seconds - 3600 * $hours                 )->minutes() );
+	my $seconds = int( ( $time_seconds - 3600 * $hours - 60 * $minutes )->seconds() );
+
+	return join(
+		':',
+		sprintf( '%02d', $hours   ),
+		sprintf( '%02d', $minutes ),
+		sprintf( '%02d', $seconds ),
+	);
 }
 
 =head2 unique_by_hashing

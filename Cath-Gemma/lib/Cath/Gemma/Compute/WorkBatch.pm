@@ -12,10 +12,10 @@ use strict;
 use warnings;
 
 # Core
-use English            qw/ -no_match_vars   /;
-use List::Util         qw/ sum0             /;
-use Storable           qw/ freeze thaw      /;
-use Storable           qw/ thaw             /;
+use English             qw/ -no_match_vars                               /;
+use List::Util          qw/ sum0                                         /;
+use Storable            qw/ freeze thaw                                  /;
+use Storable            qw/ thaw                                         /;
 use v5.10;
 
 # Moo
@@ -25,22 +25,24 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Log::Log4perl::Tiny qw/ :easy                    /;
+use Log::Log4perl::Tiny qw/ :easy                                        /;
 use Path::Tiny;
-use Type::Params       qw/ compile Invocant /;
-use Types::Path::Tiny  qw/ Path             /;
-use Types::Standard    qw/ ArrayRef Object  /;
+use Type::Params        qw/ compile Invocant                             /;
+use Types::Path::Tiny   qw/ Path                                         /;
+use Types::Standard     qw/ ArrayRef ClassName Object Optional Str Tuple /;
 
 # Cath
 use Cath::Gemma::Compute::Task::BuildTreeTask;
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;
 use Cath::Gemma::Types qw/
+	CathGemmaCompassProfileType
 	CathGemmaComputeTaskBuildTreeTask
 	CathGemmaComputeTaskProfileBuildTask
 	CathGemmaComputeTaskProfileScanTask
 	CathGemmaComputeWorkBatch
 	CathGemmaDiskExecutables
+	CathGemmaDiskGemmaDirSet
 	/;
 use Cath::Gemma::Util;
 
@@ -185,6 +187,22 @@ sub num_treebuild_steps {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 	return sum0( map { $ARG->num_steps(); } @{ $self->treebuild_tasks() } );
+}
+
+=head2 num_steps
+
+TODOCUMENT
+
+=cut
+
+sub num_steps {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return (
+		  $self->num_profile_steps()
+		+ $self->num_scan_steps()
+		+ $self->num_treebuild_steps()
+	);
 }
 
 =head2 remove_empty_profile_tasks
@@ -407,6 +425,37 @@ sub execute_from_file {
 	# confess ' ';
 
 	return $proto->read_from_file( $file )->execute_task( $exes );
+}
+
+=head2  make_work_batch_of_query_scs_and_match_scs_list
+
+TODOCUMENT
+
+=cut
+
+sub make_work_batch_of_query_scs_and_match_scs_list {
+	state $check = compile( ClassName, ArrayRef[Tuple[ArrayRef[Str], ArrayRef[Str]]], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType] );
+	my ( $class, $query_scs_and_match_scs_list, $gemma_dir_set, $compass_profile_build_type ) = $check->( @ARG );
+
+	$compass_profile_build_type //= default_compass_profile_build_type();
+
+	return Cath::Gemma::Compute::WorkBatch->new(
+		profile_tasks => Cath::Gemma::Compute::Task::ProfileBuildTask->remove_duplicate_build_tasks( [
+			Cath::Gemma::Compute::Task::ProfileBuildTask->new(
+				starting_cluster_lists     => [ map { $ARG->[ 0 ]; } @$query_scs_and_match_scs_list ],
+				dir_set                    => $gemma_dir_set->profile_dir_set(),
+				compass_profile_build_type => $compass_profile_build_type,
+			)->remove_already_present(),
+		] ),
+
+		scan_tasks => Cath::Gemma::Compute::Task::ProfileScanTask->remove_duplicate_scan_tasks( [
+			Cath::Gemma::Compute::Task::ProfileScanTask->new(
+				starting_cluster_list_pairs => $query_scs_and_match_scs_list,
+				dir_set                     => $gemma_dir_set,
+				compass_profile_build_type  => $compass_profile_build_type,
+			)->remove_already_present(),
+		] ),
+	)->remove_empty_tasks();
 }
 
 1;

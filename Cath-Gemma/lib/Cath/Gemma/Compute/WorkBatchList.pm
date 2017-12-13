@@ -10,10 +10,10 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess             /;
-use English            qw/ -no_match_vars      /;
-use List::Util         qw/ min                 /;
-use Storable           qw/ dclone              /;
+use Carp               qw/ confess                                          /;
+use English            qw/ -no_match_vars                                   /;
+use List::Util         qw/ min sum0                                         /;
+use Storable           qw/ dclone                                           /;
 use v5.10;
 
 # Moo
@@ -23,13 +23,17 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Array::Utils       qw/ intersect           /;
-use Type::Params       qw/ compile Invocant    /;
-use Types::Standard    qw/ ArrayRef Int Object /;
+use Array::Utils       qw/ intersect                                        /;
+use Type::Params       qw/ compile Invocant                                 /;
+use Types::Standard    qw/ ArrayRef ClassName Int Object Optional Str Tuple /;
 
 # Cath
+use Cath::Gemma::Compute::WorkBatch;
+use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Types qw/
+	CathGemmaCompassProfileType
 	CathGemmaComputeWorkBatch
+	CathGemmaDiskGemmaDirSet
 	/;
 use Cath::Gemma::Util;
 
@@ -107,6 +111,32 @@ sub id {
 	my ( $self ) = $check->( @ARG );
 
 	return generic_id_of_clusters( [ map { $ARG->id() } @{ $self->batches() } ] );
+}
+
+
+=head2 estimate_time_to_execute
+
+TODOCUMENT
+
+=cut
+
+sub estimate_time_to_execute {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return Time::Seconds->new( sum0( map { $ARG->estimate_time_to_execute(); } @{ $self->batches() } ) );
+}
+
+=head2 num_steps
+
+TODOCUMENT
+
+=cut
+
+sub num_steps {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	return sum0( map { $ARG->num_steps(); } @{ $self->batches() } );
+
 }
 
 =head2 id_of_batch_indices
@@ -258,6 +288,39 @@ sub _tidy_and_group_dependencies {
 	return __PACKAGE__->_group_tidy_dependencies(
 		__PACKAGE__->_init_tidy_dependencies( $data, $count )
 	);
+}
+
+
+=head2 make_work_batch_list_of_query_scs_and_match_scs_list
+
+TODOCUMENT
+
+=cut
+
+sub make_work_batch_list_of_query_scs_and_match_scs_list {
+	state $check = compile( ClassName, ArrayRef[Tuple[ArrayRef[Str], ArrayRef[Str]]], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType] );
+	my ( $class, $query_scs_and_match_scs_list, $gemma_dir_set ) = $check->( @ARG );
+
+	splice( @ARG, 0, 3 );
+
+	my $rebatch = 1;
+
+	# Make a WorkBatchList with one WorkBatch that contains the ProfileBuild/ProfileScan tasks
+	my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
+		batches => [ Cath::Gemma::Compute::WorkBatch->make_work_batch_of_query_scs_and_match_scs_list(
+			$query_scs_and_match_scs_list,
+			$gemma_dir_set,
+			@ARG
+		) ],
+	);
+
+	# If there are no batches or if re-batching isn't required then just return
+	if ( $work_batch_list->num_batches() == 0 || ! $rebatch ) {
+		return $work_batch_list;
+	}
+
+	# Otherwise, return a re-batched version of the WorkBatchList
+	return Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $work_batch_list );
 }
 
 # =head2 id

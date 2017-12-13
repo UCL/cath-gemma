@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp              qw/ confess        /;
-use English           qw/ -no_match_vars /;
-use File::Copy        qw/ copy move      /;
+use Carp                qw/ confess        /;
+use English             qw/ -no_match_vars /;
+use File::Copy          qw/ copy move      /;
 use FindBin;
 use v5.10;
 
@@ -17,11 +17,12 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Capture::Tiny     qw/ capture        /;
+use Capture::Tiny       qw/ capture        /;
+use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
-use Type::Params      qw/ compile        /;
-use Types::Path::Tiny qw/ Path           /;
-use Types::Standard   qw/ Object Str     /;
+use Type::Params        qw/ compile        /;
+use Types::Path::Tiny   qw/ Path           /;
+use Types::Standard     qw/ Object Str     /;
 
 # Cath
 use Cath::Gemma::Types qw/ CathGemmaCompassProfileType /;
@@ -131,6 +132,8 @@ sub _prepare_exe {
 	my ( $self, $name, $source_file ) = $check->( @ARG );
 
 	my $dest_file = $self->_exes_dir()->child( $source_file->basename() );
+
+	DEBUG "About to copy executable $source_file to $dest_file (and then make it executable)";
 
 	copy ( $source_file, $dest_file )
 		or confess "Unable to copy $name executable from \"$source_file\" to \"$dest_file\" : $OS_ERROR";
