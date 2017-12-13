@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                 /;
-use English            qw/ -no_match_vars          /;
-use List::Util         qw/ min                     /;
+use Carp                qw/ confess                      /;
+use English             qw/ -no_match_vars               /;
+use List::Util          qw/ min                          /;
 use v5.10;
 
 # Moo
@@ -16,18 +16,12 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Log::Log4perl::Tiny qw/ :easy /;
+use Log::Log4perl::Tiny qw/ :easy                        /;
 use Object::Util;
-# use Path::Tiny;
-# use Type::Params       qw/ compile Invocant        /;
-# use Types::Path::Tiny  qw/ Path                    /;
-# use Types::Standard    qw/ ArrayRef Int Object Str /;
-use Types::Standard    qw/ ArrayRef Object Optional Str /;
+use Path::Tiny;
+use Types::Standard     qw/ ArrayRef Object Optional Str /;
 
 # Cath
-# use Cath::Gemma::Disk::ProfileDirSet;
-# use Cath::Gemma::Tool::CompassProfileBuilder;
-
 use Cath::Gemma::Executor::LocalExecutor;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
@@ -43,8 +37,7 @@ use Cath::Gemma::Types qw/
 	CathGemmaNodeOrdering
 	CathGemmaTreeBuilder
 /;
-# CathGemmaExecutor
-# use Cath::Gemma::Util;
+use Cath::Gemma::Util;
 
 with ( 'Cath::Gemma::Compute::Task' );
 
@@ -364,9 +357,27 @@ sub execute_task {
 	my $flavour_str                = join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name );
 	my $flavour_out_dir            = $self->tree_dir()->child( $flavour_str );
 
-	my $executor = Cath::Gemma::Executor::LocalExecutor->new(
-		exes => $exes,
+	# TODONOW: find a better way of getting this
+	my $running_on_sge = guess_if_running_on_sge();
+	my $sge_dir;
+	if ( $running_on_sge ) {
+		$sge_dir = $ENV{ SGE_STDERR_PATH }
+			? path( $ENV{ SGE_STDERR_PATH } )->realpath()->parent()
+			: path( cwd() );
+		INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with an HpcExecutor (running in ' . $sge_dir . ')';
+	}
+	else {
+		INFO __PACKAGE__ . ' has deduced this is not running on SGE and launch child jobs with a LocalExecutor';
+	}
+	# TODO: Sort out this directory - maybe make a child dir in the current submit dir
+	my $child_executor = (
+		$running_on_sge
+		? Cath::Gemma::Executor::HpcExecutor->new(
+			submission_dir => $sge_dir,
+		)
+		: $self # This mustn't be a dclone of LocalExecutor because then there'll be multiple CathGemmaDiskExecutables managing the lifetime of the same executables
 	);
+
 
 	return [
 		map
@@ -380,7 +391,7 @@ sub execute_task {
 				. ')';
 
 			my $tree = $tree_builder->build_tree(
-				$executor,
+				$child_executor,
 				$starting_clusters,
 				$tree_dir_set->gemma_dir_set(),
 				$compass_profile_build_type,
@@ -393,7 +404,7 @@ sub execute_task {
 			# (which may not be true if the tree was built under a naive method)
 			$tree->ensure_all_alignments(
 				$clusts_ordering,
-				$executor->exes(), # TODO: Fix this appalling violation of OO principles
+				$child_executor->exes(), # TODO: Fix this appalling violation of OO principles
 				$tree_dir_set->profile_dir_set(),
 			);
 

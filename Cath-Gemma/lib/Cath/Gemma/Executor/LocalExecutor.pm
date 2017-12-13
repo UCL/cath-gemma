@@ -19,13 +19,13 @@ use strictures 1;
 
 # Non-core (local)
 use Log::Log4perl::Tiny qw/ :easy                    /;
-use Types::Path::Tiny   qw/ Path                     /;
 use Types::Standard     qw/ Int                      /;
 
 # Cath
 use Cath::Gemma::Compute::TaskThreadPooler;
 use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Types  qw/ CathGemmaDiskExecutables /;
+use Cath::Gemma::Util;
 
 with ( 'Cath::Gemma::Executor' );
 
@@ -66,11 +66,6 @@ performs jobs synchronously anyway.
 
 sub execute {
 	my ( $self, $batches ) = @ARG;
-	# my ( $self, $build_tasks, $scan_tasks ) = @ARG;
-
-	# use Carp qw/ confess /;
-	# use Data::Dumper;
-	# warn Dumper( $batches );
 
 	foreach my $batch ( @{ $batches->batches() } ) {
 		my $build_tasks     = $batch->profile_tasks();
