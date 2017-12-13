@@ -44,7 +44,6 @@ our @EXPORT = qw/
 	make_atomic_write_file
 	mergee_is_starting_cluster
 	min_time_seconds
-	ordered_cluster_name_pair
 	prof_file_of_prof_dir_and_aln_file
 	prof_file_of_prof_dir_and_cluster_id
 	raw_sequences_filename_of_starting_clusters
@@ -275,22 +274,6 @@ sub combine_starting_cluster_names {
 		: [ cluster_name_spaceship_sort( @$starting_clusters_a, @$starting_clusters_b ) ];
 
 	return $result;
-}
-
-=head2 ordered_cluster_name_pair
-
-TODOCUMENT
-
-=cut
-
-sub ordered_cluster_name_pair {
-	my $a = shift;
-	my $b = shift;
-
-	if ( cluster_name_spaceship( $a, $b ) > 0 ) {
-		return [ $b, $a ];
-	}
-	return [ $a, $b ];
 }
 
 =head2 generic_id_of_clusters

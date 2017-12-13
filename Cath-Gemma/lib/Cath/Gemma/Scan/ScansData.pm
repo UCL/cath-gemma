@@ -195,7 +195,7 @@ sub ids_and_score_of_lowest_score {
 			}
 			if ( scalar( @result ) == 0 || ( defined( $score ) && ( ! defined( $result[ 2 ] ) || $score < $result[ 2 ] ) ) ) {
 				@result = (
-					@{ ordered_cluster_name_pair( $id, $other_id ) },
+					cluster_name_spaceship_sort( $id, $other_id ),
 					$score
 				);
 			}

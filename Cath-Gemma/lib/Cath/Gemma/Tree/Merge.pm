@@ -188,7 +188,7 @@ sub starting_nodes {
 			@{ $self->starting_clusters_b( $clusts_ordering ); },
 		]
 		: [
-			sort { cluster_name_spaceship( $a, $b ) } @{ $self->starting_nodes( 'tree_df_ordering' ) }
+			cluster_name_spaceship_sort( @{ $self->starting_nodes( 'tree_df_ordering' ) } )
 		];
 }
 

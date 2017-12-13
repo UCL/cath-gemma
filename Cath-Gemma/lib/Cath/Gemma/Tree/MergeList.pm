@@ -435,7 +435,7 @@ sub starting_clusters {
 			}
 		}
 	}
-	return [ sort { cluster_name_spaceship( $a, $b ) } ( keys ( %starting_clusters ) ) ];
+	return [ cluster_name_spaceship_sort( keys ( %starting_clusters ) ) ];
 }
 
 =head2 starting_cluster_lists
@@ -563,7 +563,7 @@ sub later_scans {
 		delete $clusters{ $id_b };
 
 		if ( scalar( keys ( %clusters ) ) > 0 ) {
-			push @results, [ $new_id, [ sort { cluster_name_spaceship( $a, $b ) } keys ( %clusters ) ] ];
+			push @results, [ $new_id, [ cluster_name_spaceship_sort( keys ( %clusters ) ) ] ];
 		}
 
 		$clusters{ $new_id } = 1;
