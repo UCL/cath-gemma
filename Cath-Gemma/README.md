@@ -1,15 +1,131 @@
 # Cath::Gemma
 
+## Overview of Code
+
+## Overview of Modules
+
+Within `lib` :
+
+~~~
+└── Cath::Gemma                                                       TODOCUMENT
+    ├── (Compute)
+    │   ├── Cath::Gemma::Compute::Task                                TODOCUMENT
+    │   │   ├── Cath::Gemma::Compute::Task::BuildTreeTask             TODOCUMENT
+    │   │   ├── Cath::Gemma::Compute::Task::ProfileBuildTask          TODOCUMENT
+    │   │   └── Cath::Gemma::Compute::Task::ProfileScanTask           TODOCUMENT
+    │   ├── Cath::Gemma::Compute::TaskThreadPooler                    TODOCUMENT
+    │   ├── Cath::Gemma::Compute::WorkBatcher                         TODOCUMENT
+    │   ├── Cath::Gemma::Compute::WorkBatcherState                    TODOCUMENT
+    │   ├── Cath::Gemma::Compute::WorkBatchList                       TODOCUMENT
+    │   └── Cath::Gemma::Compute::WorkBatch                           TODOCUMENT
+    ├── (Disk)
+    │   ├── Cath::Gemma::Disk::BaseDirAndProject                      TODOCUMENT
+    │   ├── Cath::Gemma::Disk::Executables                            TODOCUMENT
+    │   ├── Cath::Gemma::Disk::GemmaDirSet                            TODOCUMENT
+    │   ├── Cath::Gemma::Disk::ProfileDirSet                          TODOCUMENT
+    │   └── Cath::Gemma::Disk::TreeDirSet                             TODOCUMENT
+    ├── Cath::Gemma::Executor                                         Execute a Cath::Gemma::Compute::WorkBatchList of batches in some way
+    │   ├── Cath::Gemma::Executor::HpcExecutor                        Execute a Cath::Gemma::Compute::WorkBatchList in HPC batch scripts using an HpcRunner
+    │   ├── Cath::Gemma::Executor::HpcRunner                          Actually run an HPC batch script (wrapping script/execute_work_batch.pl) for HpcExecutor in some ways
+    │   │   ├── Cath::Gemma::Executor::HpcRunner::HpcLocalRunner      Run an HPC batch script by simulate an HPC environment locally (useful for devel/debug)
+    │   │   └── Cath::Gemma::Executor::HpcRunner::HpcSgeRunner        Submit an real HPC job to run the the HPC script
+    │   └── Cath::Gemma::Executor::LocalExecutor                      Execute a Cath::Gemma::Compute::WorkBatchList locally (ie directly)
+    ├── (Scan)
+    │   ├── Cath::Gemma::Scan::ScanData                               TODOCUMENT
+    │   ├── Cath::Gemma::Scan::ScansDataFactory                       TODOCUMENT
+    │   └── Cath::Gemma::Scan::ScansData                              TODOCUMENT
+    ├── (Tool)
+    │   ├── Cath::Gemma::Tool::Aligner                                TODOCUMENT
+    │   ├── Cath::Gemma::Tool::CompassProfileBuilder                  TODOCUMENT
+    │   └── Cath::Gemma::Tool::CompassScanner                         TODOCUMENT
+    ├── (Tree)
+    │   ├── Cath::Gemma::Tree::MergeBundler                           TODOCUMENT
+    │   │   ├── Cath::Gemma::Tree::MergeBundler::RnnMergeBundler      TODOCUMENT
+    │   │   ├── Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler   TODOCUMENT
+    │   │   └── Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler TODOCUMENT
+    │   ├── Cath::Gemma::Tree::MergeList                              TODOCUMENT
+    │   └── Cath::Gemma::Tree::Merge                                  TODOCUMENT
+    ├── Cath::Gemma::TreeBuilder                                      TODOCUMENT
+    │   ├── Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder         TODOCUMENT
+    │   ├── Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder          TODOCUMENT
+    │   ├── Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder      TODOCUMENT
+    │   ├── Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder            TODOCUMENT
+    │   ├── Cath::Gemma::TreeBuilder::PureTreeBuilder                 TODOCUMENT
+    │   └── Cath::Gemma::TreeBuilder::WindowedTreeBuilder             TODOCUMENT
+    ├── Cath::Gemma::Types                                            TODOCUMENT
+    └── Cath::Gemma::Util                                             TODOCUMENT
+~~~
+
+### Overview of Scripts
+
+Within `script`:
+
+~~~
+ * execute_work_batch.pl         Execute a WorkBatch; can be used in various contexts including in SGE batch jobs when wrapped by `sge_submit_script.bash`
+ * get_sf_seqs_from_gene3d_db.pl Get the input data for standard FunFam generation from a Gene3D release database
+ * get_uniprot_accs_of_md5s.pl   Extract the UniProt accessions corresponding to sequence MD5s from the CATH Biomap database
+ * make_starting_clusters.pl     Make the starting-cluster sequence files given the cluster definitions, the GO terms and a full sequence file
+ * prepare_research_data.pl      The main script to generate a GeMMA tree for some starting clusters
+ * score_tree.pl                 (TEMPORARY?) Score an existing tree
+ * sge_submit_script.bash        The SGE wrapper script for calling execute_work_batch.pl in SGE batches (does the SGE-specific things to keep `execute_work_batch.pl` more general)
+~~~
+
+...also related:
+
+~~~
+/usr/local/svn/source/update/trunk/utilities/UniprotToGo.pl Download the GO annotations associated with an input list of UniProt accessions
+~~~
+
+## Notes on Perl Usage
+
+### Perl Version
+
+For context:
+
+ * CentOS 5.11        : Perl v5.8.8
+ * CentOS release 6.9 : Perl v5.10.1
+ * CS compute cluster : Perl v5.20.1
+ * Legion UCL cluster : Perl v5.22.0 (or v5.16.3 until `module load perl`)
+ * Ubuntu 17.10       : Perl v5.26.0
+
+TODOCUMENT: What version of Perl is currently supported.
+
+The code should be kept working in reasonably old Perls. Eg, the code hasn't used non-destructive substitution regexs, introduced in Perl 5.14.
+
+
+### Debugging
+
+To turn on debug-level logging, put this at the top of the relevant script:
+
+~~~
+use Log::Log4perl::Tiny qw( :easy );
+Log::Log4perl->easy_init({
+	level  => $DEBUG,
+});
+~~~
+
+Known issues:
+
+ * The code doesn't give very informative messages on Type::Tiny violations (and attempts to use `%Error::TypeTiny::CarpInternal`, `$Error::TypeTiny::StackTrace` and `$Error::TypeTiny::LastError` to help with this have failed)
+
 ## Example of running locally on a small example group
 
 ~~~
-mkdir ~/gemma_play
+mkdir -p ~/gemma_play
 cd ~/gemma_play
 echo '3.30.70.1470' > projects.txt
 mkdir -p outputs/starting_clusters
 rsync -av /from/somewhere/else/3.30.70.1470/ outputs/starting_clusters/3.30.70.1470/
 
 ~/cath-gemma/Cath-Gemma/script/prepare_research_data.pl --projects-list-file $PWD/projects.txt --output-root-dir $PWD/outputs --local
+~~~
+
+## Running the Tests
+
+Before running the tests, check all the modules compile (see commands below in Development section). Then:
+
+~~~
+prove -l t
 ~~~
 
 ## Development
@@ -26,15 +142,7 @@ To force the install of a module:
 cpanm -L extlib --force Params::Validate
 ~~~
 
-Consider graphing module dependencies, eg with https://metacpan.org/pod/App::PrereqGrapher
-
-#
-
-Update the projects list
-
-~~~
-ls -1 temporary_example_data/tracefiles/ | sed 's/\.trace$//g' | sort -V > temporary_example_data/projects.txt
-~~~
+It can be useful to graph the module dependencies, eg with https://metacpan.org/pod/App::PrereqGrapher .
 
 To check all scripts compile:
 
@@ -61,15 +169,61 @@ To check for errors in `package` statements:
 lsp | xargs grep -P '^package ' | tr ';' ' ' | sed 's/.pm:package//g' | sed 's/\//::/g' | sed 's/^t:://g' | sed 's/^lib:://g' | awk '$1 != $2'
 ~~~
 
-Of possible future interest
---
+## Checking Test Coverage
 
- * MooX::ConfigFromFile
- * `shift if ref $_[0] eq __PACKAGE__;`
+~~~
+rsync -av ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/
+cd /tmp/Cath-Gemma/
+\make
+cover -test +ignore /^extlib\b/
+~~~
 
+...and then browse to [/tmp/Cath-Gemma/cover_db/coverage.html](file:///tmp/Cath-Gemma/cover_db/coverage.html).
 
-To do:
+## Future
+
+ * Document
+ * Test
+ * Track test coverage with [Devel::Cover](https://metacpan.org/pod/Devel::Cover) [related blog post](http://blogs.perl.org/users/neilb/2014/08/check-your-test-coverage-with-develcover.html) and put summary of process here
+
+### To Do 1
 
  * Add Executor factory with necessary options - abstract that out of scripts
  * Abstract common options out of scripts
  * Use batch_into_n() for batching in WorkBatcher::add_profile_build_work()
+
+### To Do from A3 pad
+
+ * SSH wrapper
+ * `qstat`-ing
+ * Job tracking etc
+ * Document and then fix Executor OO violation
+
+### To Do Soon from A3 pad
+
+ * Get WindowedTreeBuilder to return the number of cycles (consistently regardless of whether previously run)
+ * Write code to count windows in any trace file
+ * Then count all windows in all v4.0 trees
+ * Make child-submitting executor smarter (eg use if estimated time > x)
+
+### To Do Now from A3 pad
+
+ * Change back splice for Optional[CathGemmaCompassProfileType] and just use maybe instead
+ * Sort out qstat-ing (time and loading)
+ * Add a 'retry' (ie persevere with retries) option to execute()
+ * Add an executor that does nothing but assert that there's nothing to do (which can be used in tests)
+ * Add an executor that resubmits smaller jobs
+ * Add MergeBundler
+   * Methods:
+     * what to execute
+     * what to merge
+   * SimpleMergeBundler
+   * RnnMergeBundler
+   * RnnAndsomeMergeBundler
+   * WindowedMergeBundler
+ * Integrate into a TreeBuilder
+
+### Of possible future interest
+
+ * MooX::ConfigFromFile
+ * `shift if ref $_[0] eq __PACKAGE__;`
