@@ -10,15 +10,15 @@ use strict;
 use warnings;
 
 # Core
-use Carp           qw/ confess                                                        /;
-use Digest::MD5    qw/ md5_hex                                                        /;
-use English        qw/ -no_match_vars                                                 /;
-use Exporter       qw/ import                                                         /;
-use List::Util     qw/ min                                                            /;
-use POSIX          qw/ ceil floor log10                                               /;
-use Storable       qw/ dclone                                                         /;
+use Carp                qw/ confess                                                        /;
+use Digest::MD5         qw/ md5_hex                                                        /;
+use English             qw/ -no_match_vars                                                 /;
+use Exporter            qw/ import                                                         /;
+use List::Util          qw/ any min                                                        /;
+use POSIX               qw/ ceil floor log10                                               /;
+use Storable            qw/ dclone                                                         /;
 use Sys::Hostname;
-use Time::HiRes    qw/ gettimeofday tv_interval                                       /;
+use Time::HiRes         qw/ gettimeofday tv_interval                                       /;
 use Time::Seconds;
 use v5.10;
 
@@ -57,13 +57,14 @@ our @EXPORT = qw/
 
 # Non-core (local)
 use File::AtomicWrite;
-use File::Which       qw/ which                                                       /;
-use List::MoreUtils   qw/ all natatime                                                /;
+use File::Which         qw/ which                                                       /;
+use List::MoreUtils     qw/ all natatime                                                /;
+use Log::Log4perl::Tiny qw/ :easy                                                       /;
 use Path::Tiny;
 use Try::Tiny;
-use Type::Params      qw/ compile                                                     /;
-use Types::Path::Tiny qw/ Path                                                        /;
-use Types::Standard   qw/ ArrayRef Bool CodeRef HashRef Maybe Num Optional slurpy Str /;
+use Type::Params        qw/ compile                                                     /;
+use Types::Path::Tiny   qw/ Path                                                        /;
+use Types::Standard     qw/ ArrayRef Bool CodeRef HashRef Maybe Num Optional slurpy Str /;
 
 # Cath
 use Cath::Gemma::Types qw/
@@ -303,7 +304,25 @@ sub get_starting_clusters_of_starting_cluster_dir {
 	state $check = compile( Path );
 	my ( $dir ) = $check->( @ARG );
 
-	return [ sort { cluster_name_spaceship( $a, $b ) } map { $ARG->basename( '.faa' ); } $dir->children ];
+	my @starting_clusters = cluster_name_spaceship_sort(
+		map { $ARG->basename( '.faa' ); } $dir->children
+	);
+
+	if ( any { $ARG =~ /^\./ } @starting_clusters ) {
+		WARN 'Ignoring starting cluster(s) '
+			. join(
+				', ',
+				map {
+					"'$ARG'";
+				}
+				grep {
+					$ARG =~ /^\./
+				} @starting_clusters
+			) . ' because it/they start(s) with dot characters';
+		@starting_clusters = grep { $ARG !~ /^\./ } @starting_clusters;
+	}
+
+	return \@starting_clusters;
 }
 
 =head2 guess_if_running_on_sge
