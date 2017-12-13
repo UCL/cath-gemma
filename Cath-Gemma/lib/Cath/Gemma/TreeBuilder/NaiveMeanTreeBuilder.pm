@@ -12,9 +12,6 @@ use Moo;
 use MooX::StrictConstructor;
 use strictures 1;
 
-
-
-
 with ( 'Cath::Gemma::TreeBuilder' );
 
 =head2 name
