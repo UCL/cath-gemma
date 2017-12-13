@@ -180,25 +180,28 @@ sub compass_scan_to_file {
 
 	my $output_file = $gemma_dir_set->scan_filename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type );
 
-	my $result = run_and_time_filemaking_cmd(
-		'COMPASS scan',
-		$output_file,
-		sub {
-			my $scan_atomic_file = shift;
-			my $tmp_scan_file    = path( $scan_atomic_file->filename );
+	my $result = {};
+	if ( ! -s $output_file ) {
+		$result = run_and_time_filemaking_cmd(
+			'COMPASS scan',
+			$output_file,
+			sub {
+				my $scan_atomic_file = shift;
+				my $tmp_scan_file    = path( $scan_atomic_file->filename );
 
-			my $result = __PACKAGE__->_compass_scan_impl(
-				$exes,
-				$gemma_dir_set->prof_dir(),
-				$query_ids,
-				$match_ids,
-				$compass_profile_build_type,
-			);
+				my $result = __PACKAGE__->_compass_scan_impl(
+					$exes,
+					$gemma_dir_set->prof_dir(),
+					$query_ids,
+					$match_ids,
+					$compass_profile_build_type,
+				);
 
-			$result->write_to_file( $tmp_scan_file );
-			return { result => $result };
-		}
-	);
+				$result->write_to_file( $tmp_scan_file );
+				return { result => $result };
+			}
+		);
+	}
 
 	return defined( $result->{ result } )
 		? $result

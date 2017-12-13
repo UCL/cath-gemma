@@ -71,6 +71,10 @@ sub build_compass_profile_in_dir {
 	my $compass_prof_file = prof_file_of_prof_dir_and_aln_file( $prof_dir, $aln_file, $compass_profile_build_type );
 	my $output_stem       = $aln_file->basename( alignment_profile_suffix() );
 
+	if ( -s $compass_prof_file ) {
+		return {};
+	}
+
 	return run_and_time_filemaking_cmd(
 		'COMPASS profile-building',
 		$compass_prof_file,
