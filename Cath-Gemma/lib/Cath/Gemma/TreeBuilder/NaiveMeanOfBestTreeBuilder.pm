@@ -48,7 +48,7 @@ sub build_tree {
 
 		my $merged_starting_clusters = $scans_data->merge( $id1, $id2, $clusts_ordering );
 		my $other_ids                = $scans_data->sorted_ids();
-		my $merged_node_id           = $scans_data->add_node_of_starting_clusters( $merged_starting_clusters );
+		my $merged_node_id           = $scans_data->add_starting_clusters_group_by_id( $merged_starting_clusters );
 
 		push @nodenames_and_merges, [
 			$merged_node_id,

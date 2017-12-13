@@ -101,10 +101,10 @@ around build_tree => sub {
 		. ' seconds';
 	$executor->execute( $pre_work_batch_list, 'always_wait_for_complete' );
 
-	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_starting_clusters_and_gemma_dir_set(
-		$starting_clusters,
+	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_gemma_dir_set(
 		$gemma_dir_set,
 		$compass_profile_build_type,
+		$starting_clusters,
 	);
 
 	if ( scalar ( @ARG ) < 6 ) {
