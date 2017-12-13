@@ -25,6 +25,10 @@ use lib "$FindBin::Bin/../lib";
 use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Disk::Executables;
 
+Log::Log4perl->easy_init( {
+	level => $DEBUG,
+} );
+
 WARN "Starting $PROGRAM_NAME on ".hostname;
 
 state $check = compile( Path );
@@ -54,7 +58,9 @@ foreach my $result_level1 ( @$result ) {
 }
 
 use Data::Dumper;
-warn Dumper( $result );
+warn Dumper( {
+	execute_work_batch__result => $result,
+} ). ' ';
 
 use JSON::MaybeXS;
 my $json = JSON::MaybeXS->new( convert_blessed => 1 );

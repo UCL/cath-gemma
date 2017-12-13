@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 # Core
-use English           qw/ -no_match_vars               /;
+use English             qw/ -no_match_vars               /;
 use v5.10;
 
 # Moo
@@ -18,9 +18,10 @@ use Moo::Role;
 use strictures 1;
 
 # Non-core (local)
-use Type::Params      qw/ compile                      /;
-use Types::Path::Tiny qw/ Path                         /;
-use Types::Standard   qw/ ArrayRef Object Optional Str /;
+use Log::Log4perl::Tiny qw/ :easy                        /;
+use Type::Params        qw/ compile                      /;
+use Types::Path::Tiny   qw/ Path                         /;
+use Types::Standard     qw/ ArrayRef Object Optional Str /;
 
 # Cath
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
@@ -67,31 +68,37 @@ around build_tree => sub {
 
 	$clusts_ordering //= 'simple_ordering';
 
-	$executor->execute(
-		Cath::Gemma::Compute::WorkBatchList->new(
-			batches => [ Cath::Gemma::Compute::WorkBatch->new(
-				# Build alignments and profiles for...
-				profile_tasks => [
-					# ...all starting_clusters
-					Cath::Gemma::Compute::Task::ProfileBuildTask->new(
-						starting_cluster_lists     => [ map { [ $ARG ] } @$starting_clusters ],
-						dir_set                    => $gemma_dir_set->profile_dir_set(),
-						compass_profile_build_type => $compass_profile_build_type,
-					)->remove_already_present(),
-				],
+	my $pre_work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
+		batches => [ Cath::Gemma::Compute::WorkBatch->new(
+			# Build alignments and profiles for...
+			profile_tasks => [
+				# ...all starting_clusters
+				Cath::Gemma::Compute::Task::ProfileBuildTask->new(
+					starting_cluster_lists     => [ map { [ $ARG ] } @$starting_clusters ],
+					dir_set                    => $gemma_dir_set->profile_dir_set(),
+					compass_profile_build_type => $compass_profile_build_type,
+				)->remove_already_present(),
+			],
 
-				# Perform scans for...
-				scan_tasks => [
-					# ...all initial nodes (ie starting cluster vs other starting clusters)
-					Cath::Gemma::Compute::Task::ProfileScanTask->new(
-						starting_cluster_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
-						dir_set                     => $gemma_dir_set,
-						compass_profile_build_type  => $compass_profile_build_type,
-					)->remove_already_present(),
-				]
-			) ]
-		)
+			# Perform scans for...
+			scan_tasks => [
+				# ...all initial nodes (ie starting cluster vs other starting clusters)
+				Cath::Gemma::Compute::Task::ProfileScanTask->new(
+					starting_cluster_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
+					dir_set                     => $gemma_dir_set,
+					compass_profile_build_type  => $compass_profile_build_type,
+				)->remove_already_present(),
+			]
+		) ]
 	);
+	DEBUG
+		'In '
+		. __PACKAGE__
+		. '->build_tree(), made a work_batch_list of '
+		. $pre_work_batch_list->num_steps()
+		. ' steps, estimated to take up to '
+		. $pre_work_batch_list->estimate_time_to_execute()
+		. ' seconds';
 	$executor->execute( $pre_work_batch_list, 'always_wait_for_complete' );
 
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_starting_clusters_and_gemma_dir_set(

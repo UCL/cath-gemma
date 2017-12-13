@@ -185,6 +185,7 @@ if ( 0 ) {
 		# INFO "Rebatching " . ( $treebuild_batch_list->num_batches() ) . " batches";
 		# my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $treebuild_batch_list );
 		# INFO "".( $rebatched->num_batches() . " treebuild batches to process" );
+		INFO "".( $treebuild_batch_list->num_batches() . " build/scan batches to process" );
 		$executor->execute( $treebuild_batch_list, 'permit_async_launch' );
 	}
 }

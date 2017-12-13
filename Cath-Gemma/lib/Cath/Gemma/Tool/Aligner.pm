@@ -119,8 +119,11 @@ sub make_alignment_file {
 
 				INFO 'About to mafft-align    ' . $num_sequences . ' sequences for cluster ' . $id_of_clusters;
 
+				my @mafft_command = ( "$mafft_exe", @$mafft_params );
+				DEBUG 'About to execute mafft-align command : ' . join( ' ', @mafft_command );
+
 				my ( $mafft_stdout, $mafft_stderr, $mafft_exit ) = capture {
-					system( "$mafft_exe", @$mafft_params );
+					system( @mafft_command );
 				};
 
 				if ( ( $mafft_exit != 0 ) || ( defined( $mafft_stderr ) && $mafft_stderr ne '' ) ) {

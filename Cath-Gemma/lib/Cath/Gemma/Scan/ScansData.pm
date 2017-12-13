@@ -4,10 +4,10 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                                                         /;
-use English            qw/ -no_match_vars                                                  /;
-use List::Util         qw/ max maxstr min minstr sum                                       /;
-use POSIX              qw/ log10                                                           /;
+use Carp                qw/ confess                                                         /;
+use English             qw/ -no_match_vars                                                  /;
+use List::Util          qw/ max maxstr min minstr sum                                       /;
+use POSIX               qw/ log10                                                           /;
 use v5.10;
 
 # Moo
@@ -17,9 +17,10 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use List::MoreUtils    qw/ first_value                                                     /;
-use Type::Params       qw/ compile                                                         /;
-use Types::Standard    qw/ ArrayRef ClassName HashRef Num Tuple Object Optional slurpy Str /;
+use List::MoreUtils     qw/ first_value                                                     /;
+use Log::Log4perl::Tiny qw/ :easy                                                           /;
+use Type::Params        qw/ compile                                                         /;
+use Types::Standard     qw/ ArrayRef ClassName HashRef Num Tuple Object Optional slurpy Str /;
 
 # Cath
 use Cath::Gemma::Types qw/
@@ -182,6 +183,7 @@ sub ids_and_score_of_lowest_score {
 	my ( $window_cutoff, $excluded_ids ) = @{ $extras // [] };
 
 	if ( $self->count() < 2 ) {
+		DEBUG "Cannot find ids_and_score_of_lowest_score() in this ScansData because count is " . $self->count();
 		return [];
 	}
 
@@ -203,6 +205,7 @@ sub ids_and_score_of_lowest_score {
 	}
 
 	if ( scalar( @result ) == 0 ) {
+		DEBUG "Returning from ids_and_score_of_lowest_score() with no possible result";
 		return;
 	}
 	return \@result;
