@@ -4,8 +4,7 @@ use strict;
 use warnings;
 
 # Core
-use English         qw/ -no_match_vars /;
-
+use English             qw/ -no_match_vars /;
 
 # Moo
 use Moo;
@@ -13,7 +12,12 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use List::MoreUtils qw/ first_index    /;
+use List::MoreUtils     qw/ first_index    /;
+use Log::Log4perl::Tiny qw/ :easy          /;
+
+# Cath
+use Cath::Gemma::Executor::LocalExecutor;
+use Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler;
 
 with ( 'Cath::Gemma::TreeBuilder' );
 
@@ -60,14 +64,40 @@ Params checked in Cath::Gemma::TreeBuilder
 sub build_tree {
 	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
 
+	# TODONOW: Sort this out
+	my $local_executor = Cath::Gemma::Executor::LocalExecutor->new();
+
 	my $really_bad_score = 100000000;
 	my %scores;
+
+	my $merge_bundler = Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler->new();
 
 	my @nodenames_and_merges;
 
 	my $num_merge_batches = 0;
 	while ( $scans_data->count() > 1 ) {
-		my $ids_and_score_list = $scans_data->ids_and_score_of_lowest_score_window();
+		# my $ids_and_score_list = $scans_data->ids_and_score_of_lowest_score_window();
+
+		# Get a list of work and then, if it's non-empty, wait for it to be run in child jobs
+		my $work_batch_list = $merge_bundler->make_work_batch_list_of_query_scs_and_match_scs_list( $scans_data, $gemma_dir_set, $compass_profile_build_type );
+		DEBUG
+			'In '
+			. __PACKAGE__
+			. '->build_tree(), made a work_batch_list of '
+			. $work_batch_list->num_steps()
+			. ' steps, estimated to take up to '
+			. $work_batch_list->estimate_time_to_execute()
+			. ' seconds';
+		if ( $work_batch_list->num_steps() > 0 ) {
+			$executor->execute( $work_batch_list, 'always_wait_for_complete' );
+		}
+
+		# Get a list of the merges
+		my $ids_and_score_list = $merge_bundler->get_execution_bundle( $scans_data );
+
+		# map {} @$ids_and_score_list;
+
+		# Cath::Gemma::Tree::MergeBundler;
 
 		foreach my $ids_and_score ( @$ids_and_score_list ) {
 			my ( $id1, $id2, $score ) = @$ids_and_score;
@@ -77,6 +107,9 @@ sub build_tree {
 			my $merged_starting_clusters = $scans_data->merge_remove( $id1, $id2, $clusts_ordering );
 			my $other_ids                = $scans_data->sorted_ids();
 			my $merged_node_id           = $scans_data->add_starting_clusters_group_by_id( $merged_starting_clusters );
+
+			# TODONOW: Change the code to use this...
+			# my $merge_pair_result = $scans_data->merge_pair( $id1, $id2, $clusts_ordering );
 
 			push @nodenames_and_merges, [
 				$merged_node_id,
@@ -92,7 +125,7 @@ sub build_tree {
 			}
 
 			my $new_scan_data = Cath::Gemma::Tool::CompassScanner->build_and_scan_merge_cluster_against_others(
-				$executor->exes(), # TODO: Fix this appalling violation of OO principles
+				$local_executor->exes(), # TODO: Fix this appalling violation of OO principles
 				$merged_starting_clusters,
 				$other_ids,
 				$gemma_dir_set,

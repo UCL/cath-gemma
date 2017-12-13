@@ -99,7 +99,9 @@ around build_tree => sub {
 		. ' steps, estimated to take up to '
 		. $pre_work_batch_list->estimate_time_to_execute()
 		. ' seconds';
-	$executor->execute( $pre_work_batch_list, 'always_wait_for_complete' );
+	if ( $pre_work_batch_list->num_steps() > 0 ) {
+		$executor->execute( $pre_work_batch_list, 'always_wait_for_complete' );
+	}
 
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_gemma_dir_set(
 		$gemma_dir_set,
