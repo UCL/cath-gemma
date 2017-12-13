@@ -69,11 +69,13 @@ sub run_job_array {
 		'h_rt='   . $time_req,
 	];
 	my %cluster_resources          = (
-		'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req, 'hostname=abbott*' ],
+		# 'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req, 'hostname=abbott*' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
+		'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req                     ],
 		'legion.rc.ucl.ac.uk'   => [                                         ],
 	);
 	my %cluster_extras             = (
-		'bchuckle.cs.ucl.ac.uk' => [ '-P', 'cath' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
+		#'bchuckle.cs.ucl.ac.uk' => [ '-P', 'cath' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
+		'bchuckle.cs.ucl.ac.uk' => [              ],
 		'legion.rc.ucl.ac.uk'   => [              ],
 	);
 
