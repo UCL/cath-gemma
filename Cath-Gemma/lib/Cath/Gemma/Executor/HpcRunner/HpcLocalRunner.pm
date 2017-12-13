@@ -89,4 +89,13 @@ sub run_job_array {
 	return; # To ensure this returns undef (otherwise returns '' - perhaps due to Moo wrappers?)
 }
 
+=head2 wait_for_jobs
+
+Since all jobs are run synchronously, there is no need to wait for them here.
+
+=cut
+
+sub wait_for_jobs {
+}
+
 1;

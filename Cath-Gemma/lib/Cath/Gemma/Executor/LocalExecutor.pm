@@ -59,6 +59,9 @@ TODOCUMENT
 
 The parameters are checked in Cath::Gemma::Executor
 
+This can ignore the CathGemmaExecSync parameter because this always
+performs jobs synchronously anyway.
+
 =cut
 
 sub execute {

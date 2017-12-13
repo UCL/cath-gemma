@@ -92,6 +92,7 @@ around build_tree => sub {
 			) ]
 		)
 	);
+	$executor->execute( $pre_work_batch_list, 'always_wait_for_complete' );
 
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_starting_clusters_and_gemma_dir_set(
 		$starting_clusters,

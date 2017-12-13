@@ -35,4 +35,23 @@ before run_job_array => sub {
 	$check->( @ARG );
 };
 
+=head2 requires wait_for_jobs
+
+TODOCUMENT
+
+=cut
+
+requires 'wait_for_jobs';
+
+=head2 before wait_for_jobs
+
+TODOCUMENT
+
+=cut
+
+before wait_for_jobs => sub {
+	state $check = compile( Object, ArrayRef[Maybe[Int]] );
+	$check->( @ARG );
+};
+
 1;

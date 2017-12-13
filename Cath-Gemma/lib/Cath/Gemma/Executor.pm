@@ -24,6 +24,7 @@ use Types::Standard   qw/ ArrayRef Object /;
 # Cath
 use Cath::Gemma::Types qw/
 	CathGemmaComputeWorkBatchList
+	CathGemmaExecSync
 /;
 
 =head2 requires execute
@@ -41,7 +42,7 @@ TODOCUMENT
 =cut
 
 before execute => sub {
-	state $check = compile( Object, CathGemmaComputeWorkBatchList );
+	state $check = compile( Object, CathGemmaComputeWorkBatchList, CathGemmaExecSync );
 
 	$check->( @ARG );
 

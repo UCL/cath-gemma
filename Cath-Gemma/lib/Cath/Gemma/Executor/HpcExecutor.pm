@@ -118,7 +118,7 @@ TODOCUMENT
 =cut
 
 sub execute {
-	my ( $self, $batches ) = @ARG;
+	my ( $self, $batches, $exec_sync ) = @ARG;
 
 	# use Carp qw/ cluck /;
 	# cluck "\n\n\n****** In HpcExecutor::execute";
@@ -193,7 +193,10 @@ sub execute {
 			[ "$execute_batch_script", "$batch_files_file" ],
 		);
 	}
-}
 
+	if ( $exec_sync eq 'always_wait_for_complete' ) {
+		$self->_runner()->wait_for_jobs( \@job_dependencies );
+	}
+}
 
 1;

@@ -11,6 +11,7 @@ use Type::Library
 	-declare => qw(
 		CathGemmaCompassProfileType
 		CathGemmaComputeBatchingPolicy
+		CathGemmaExecSync
 		CathGemmaHpcMode
 		CathGemmaNodeOrdering
 
@@ -50,6 +51,11 @@ enum       CathGemmaCompassProfileType,  [ qw/
 enum       CathGemmaComputeBatchingPolicy,  [ qw/
 	permit_empty__forbid_overflow
 	allow_overflow_to_ensure_non_empty
+/ ];
+
+enum       CathGemmaExecSync, [ qw/
+	always_wait_for_complete
+	permit_async_launch
 / ];
 
 enum       CathGemmaHpcMode, [ qw/

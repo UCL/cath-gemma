@@ -11,7 +11,9 @@ use warnings;
 
 # Core
 use Carp                qw/ confess        /;
+use Data::Dumper;
 use English             qw/ -no_match_vars /;
+use List::Util          qw/ any            /;
 
 # Moo
 use Moo;
@@ -21,6 +23,21 @@ use strictures 1;
 # Non-core (local)
 use Capture::Tiny       qw/ capture        /;
 use Log::Log4perl::Tiny qw/ :easy          /;
+
+# Cath
+use Cath::Gemma::Util;
+
+=head2 _get_submit_host
+
+TODOCUMENT
+
+=cut
+
+sub _get_submit_host {
+	return ( defined( $ENV{ SGE_CLUSTER_NAME } ) && $ENV{ SGE_CLUSTER_NAME } =~ /leg/i )
+		? 'legion.rc.ucl.ac.uk'
+		: 'bchuckle.cs.ucl.ac.uk';
+}
 
 
 with ( 'Cath::Gemma::Executor::HpcRunner' );
@@ -38,9 +55,7 @@ sub run_job_array {
 		confess 'Cannot perform a job with zero/negative number of batches : ' . $num_batches;
 	}
 
-	my $submit_host = ( defined( $ENV{SGE_CLUSTER_NAME} ) && $ENV{SGE_CLUSTER_NAME} =~ /leg/i )
-	                  ? 'legion.rc.ucl.ac.uk'
-	                  : 'bchuckle.cs.ucl.ac.uk';
+	my $submit_host = _get_submit_host();
 
 	my $memy_req                   = '7G';
 	# my $time_req                   = '00:30:00'; # 3.40.50.970/n0de_2777281414f5519508e7c439148ccfcb.mk_compass_db.prof takes around 1h15m to build
@@ -134,6 +149,74 @@ sub run_job_array {
 	INFO "Submitted compute-cluster job $job_id with $num_batches batches";
 
 	return $job_id;
+}
+
+=head2 wait_for_jobs
+
+TODOCUMENT
+
+=cut
+
+sub wait_for_jobs {
+	my ( $self, $jobs ) = @ARG;
+
+	my @wanted_jobs = sort { $a <=> $b } grep { defined( $ARG ); } @$jobs;
+	my %wanted_jobs = map { ( $ARG, 1 ); } @wanted_jobs;
+
+	while ( 1 ) {
+		sleep 60;
+
+		DEBUG "Waiting for submitted jobs : ". join( ', ', @wanted_jobs );
+
+		DEBUG "Submit host is : " . _get_submit_host();
+
+		my @qstat_command = (
+			'ssh', _get_submit_host(),
+			'qstat',
+		);
+		DEBUG "qstat command is : " . join( ' ', @qstat_command );
+
+		warn localtime() . ' : About to run     command ' . join( ' ', @qstat_command );
+		my ( $qstat_stdout, $qstat_stderr, $qstat_exit ) = capture {
+			system( @qstat_command );
+		};
+		warn localtime() . ' : Finished running command ' . join( ' ', @qstat_command );
+		warn localtime() . ' : \$qstat_stdout : ' . $qstat_stdout;
+		warn localtime() . ' : \$qstat_exit   : ' . $qstat_exit;
+		warn localtime() . ' : \$qstat_stderr : ' . $qstat_stderr;
+		DEBUG 'Dumper is ' . Dumper( {
+			command_arr => \@qstat_command,
+			command_str => join( ' ', @qstat_command ),
+			exit        => $qstat_exit,
+			stderr      => $qstat_stderr,
+			stdout      => $qstat_stdout,
+		} );
+
+		if ( $qstat_exit != 0 ) {
+			warn Dumper( {
+				command_arr => \@qstat_command,
+				command_str => join( ' ', @qstat_command ),
+				exit        => $qstat_exit,
+				stderr      => $qstat_stderr,
+				stdout      => $qstat_stdout,
+			} );
+		}
+
+		my @stdout_lines   = split( /\n/, $qstat_stdout );
+		my @active_job_ids = map { $ARG =~ /^(\d+)\s/; $1; } grep { $ARG =~ /^\d+\s/ } @stdout_lines;
+
+		my $any_running_jobs_wanted = any { $wanted_jobs{ $ARG } } @active_job_ids;
+		DEBUG
+			"Found active running jobs are : "
+			. join( ', ', @active_job_ids )
+			. ' (so any_running_jobs_wanted is : '
+			. $any_running_jobs_wanted
+			. ')';
+		if ( ! $any_running_jobs_wanted ) {
+			warn localtime() . ' : Jobs complete - will now return';
+			return;
+		}
+	}
 }
 
 1;
