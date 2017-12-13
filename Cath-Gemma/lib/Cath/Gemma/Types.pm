@@ -26,6 +26,7 @@ use Type::Library
 		CathGemmaExecutorHpcRunner
 		CathGemmaScanScanData
 		CathGemmaScanScansData
+		CathGemmaStartingClustersOfId
 		CathGemmaTreeMerge
 		CathGemmaTreeMergeList
 		ComputeProfileBuildTask
@@ -75,6 +76,7 @@ class_type CathGemmaDiskTreeDirSet,              { class => "Cath::Gemma::Disk::
 
 class_type CathGemmaScanScanData,                { class => "Cath::Gemma::Scan::ScanData"                  };
 class_type CathGemmaScanScansData,               { class => "Cath::Gemma::Scan::ScansData"                 };
+class_type CathGemmaStartingClustersOfId         { class => "Cath::Gemma::StartingClustersOfId"            };
 class_type CathGemmaTreeMerge,                   { class => "Cath::Gemma::Tree::Merge"                     };
 class_type CathGemmaTreeMergeList,               { class => "Cath::Gemma::Tree::MergeList"                 };
 
