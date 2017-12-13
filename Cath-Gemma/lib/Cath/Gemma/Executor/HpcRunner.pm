@@ -22,6 +22,17 @@ use Type::Params      qw/ compile                       /;
 use Types::Path::Tiny qw/ Path                          /;
 use Types::Standard   qw/ ArrayRef Int Maybe Object Str /;
 
+# Cath
+use Cath::Gemma::Types  qw/
+	TimeSeconds
+	/;
+
+=head2 requires execute
+
+TODOCUMENT
+
+=cut
+
 requires 'run_job_array';
 
 =head2 before execute
@@ -31,7 +42,7 @@ TODOCUMENT
 =cut
 
 before run_job_array => sub {
-	state $check = compile( Object, Path, Str, Path, Path, Int, ArrayRef[Maybe[Int]], ArrayRef[Str] );
+	state $check = compile( Object, Path, Str, Path, Path, Int, ArrayRef[Maybe[Int]], ArrayRef[Str], TimeSeconds );
 	$check->( @ARG );
 };
 

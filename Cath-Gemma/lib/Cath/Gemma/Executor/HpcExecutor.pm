@@ -14,6 +14,7 @@ use Carp                qw/ confess        /;
 use English             qw/ -no_match_vars /;
 use FindBin;
 use Switch;
+use List::Util          qw/ max            /;
 use v5.10;
 
 # Moo
@@ -154,9 +155,16 @@ sub execute {
 		my ( $batch_indices, $dependencies ) = @$dependencies_group;
 		# warn "****** In HpcExecutor::execute(), in loop over deps";
 
-		my $group_batches = [ @{ $batches->batches() }[ @$batch_indices ] ];
+		my $group_batches          = [ @{ $batches->batches() }[ @$batch_indices ] ];
 
-		my $id      = $batches->id_of_batch_indices( $batch_indices );
+		# TODONOW Consider moving this to Executor::execute() and have that just return if nothing to do
+		# Then can remove those checks from TreeBuilder and WindowedTreeBuilder
+		my $max_est_batch_exe_time = Time::Seconds->new( max( map { $ARG->estimate_time_to_execute(); } @$group_batches ) );
+		if ( $max_est_batch_exe_time == Time::Seconds->new( 0 ) ) {
+			WARN 'In Cath::Gemma::Executor::HpcExecutor::execute(), asked to execute job with estimated execution time of 0s - perhaps client code is unknowingly attempting to do work that has already been done';
+		}
+
+		my $id                     = $batches->id_of_batch_indices( $batch_indices );
 
 		my @batch_files;
 		foreach my $batch ( @$group_batches ) {
@@ -191,6 +199,7 @@ sub execute {
 			$num_batches,
 			[ @job_dependencies[ @$dependencies ] ],
 			[ "$execute_batch_script", "$batch_files_file" ],
+			$max_est_batch_exe_time,
 		);
 	}
 

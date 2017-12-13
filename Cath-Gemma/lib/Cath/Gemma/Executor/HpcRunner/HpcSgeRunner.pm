@@ -13,7 +13,7 @@ use warnings;
 use Carp                qw/ confess        /;
 use Data::Dumper;
 use English             qw/ -no_match_vars /;
-use List::Util          qw/ any            /;
+use List::Util          qw/ any max        /;
 
 # Moo
 use Moo;
@@ -49,7 +49,7 @@ TODOCUMENT
 =cut
 
 sub run_job_array {
-	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps, $job_args ) = @ARG;
+	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps, $job_args, $max_est_time ) = @ARG;
 
 	if ( $num_batches <= 0 ) {
 		confess 'Cannot perform a job with zero/negative number of batches : ' . $num_batches;
@@ -57,10 +57,12 @@ sub run_job_array {
 
 	my $submit_host = _get_submit_host();
 
-	my $memy_req                   = '7G';
-	# my $time_req                   = '00:30:00'; # 3.40.50.970/n0de_2777281414f5519508e7c439148ccfcb.mk_compass_db.prof takes around 1h15m to build
-	# my $time_req                   = '01:30:00'; # 3.40.50.970/n0de_2777281414f5519508e7c439148ccfcb.mk_compass_db.prof takes around 1h15m to build
-	my $time_req                   = '06:00:00'; # 3.40.50.970/n0de_2777281414f5519508e7c439148ccfcb.mk_compass_db.prof takes around 1h15m to build
+	my $memy_req                   = '15G';
+	my $duration_in_seconds        = max(
+		$max_est_time + $max_est_time + $max_est_time + $max_est_time,
+		Time::Seconds->new ( 21600 ) # 6 hours
+	);
+	my $time_req                   = time_seconds_to_sge_string( $duration_in_seconds );
 	my $default_resources          = [
 		'vf='     . $memy_req,
 		'h_vmem=' . $memy_req,
@@ -146,7 +148,7 @@ sub run_job_array {
 			stdout      => $qsub_stdout,
 		} );
 	}
-	INFO "Submitted compute-cluster job $job_id with $num_batches batches";
+	INFO "Submitted compute-cluster job $job_id with $num_batches batches (requested : $time_req time; $memy_req memory)";
 
 	return $job_id;
 }
