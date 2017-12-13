@@ -40,7 +40,8 @@ TODOCUMENT
 has est_time_per_batch => (
 	is      => 'rwp',
 	isa     => TimeSeconds,
-	default => sub { Time::Seconds->new( 150 ); },
+	default => sub { Time::Seconds->new( 75 ); },
+	# default => sub { Time::Seconds->new( 150 ); },
 );
 
 =head2 rebatch

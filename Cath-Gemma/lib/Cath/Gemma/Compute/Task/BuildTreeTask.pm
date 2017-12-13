@@ -438,7 +438,7 @@ TODOCUMENT
 sub estimate_time_to_execute_step_of_index {
 	my ( $self, $index ) = @ARG;
 	my $step = $self->step_of_index( $index );
-	return Time::Seconds->new( 3600 );
+	return Time::Seconds->new( 86400 ); # 86400 seconds = 1 day
 }
 
 =head2 make_batch_of_indices
