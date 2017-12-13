@@ -127,19 +127,6 @@ my $projects_list_data = $projects_list_file->slurp()
 	or confess "Was unable to read any projects from project list file $projects_list_file";
 my @projects = grep( ! /^#/, split( /\n+/, $projects_list_data ) );
 
-my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
-	batches => [ map {
-		my $project = $ARG;
-
-		@{ work_batches_for_mergelist(
-			Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir_and_project(
-				$output_rootdir,
-				$project
-			)
-		) };
-	} @projects ],
-);
-
 my $executor =
 	$local
 		? Cath::Gemma::Executor::LocalExecutor->new(
@@ -154,17 +141,31 @@ my $executor =
 			# hpc_mode => 'hpc_sge',
 		);
 
-if ( $work_batch_list->num_batches() == 0 ) {
-	INFO "No build/scan work to do";
-}
-else {
-	my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $work_batch_list );
-	INFO "".( $rebatched->num_batches() . " build/scan batches to process" );
-	$executor->execute( $work_batch_list, 'permit_async_launch' );
-}
-
 if ( 0 ) {
+	my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
+		batches => [ map {
+			my $project = $ARG;
 
+			@{ work_batches_for_mergelist(
+				Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir_and_project(
+					$output_rootdir,
+					$project
+				)
+			) };
+		} @projects ],
+	);
+
+	if ( $work_batch_list->num_batches() == 0 ) {
+		INFO "No build/scan work to do";
+	}
+	else {
+		my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $work_batch_list );
+		INFO "".( $rebatched->num_batches() . " build/scan batches to process" );
+		$executor->execute( $work_batch_list, 'permit_async_launch' );
+	}
+}
+
+if ( 1 ) {
 	my $treebuild_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 		batches => [ map {
 			my $project = $ARG;
@@ -197,7 +198,7 @@ sub work_batches_for_mergelist {
 	state $check = compile( CathGemmaDiskGemmaDirSet );
 	my ( $gemma_dir_set ) = $check->( @ARG );
 
-	my $starting_clusters = get_starting_clusters_of_starting_cluster_dir( $gemma_dir_set->starting_cluster_dir() );
+	my $starting_clusters = $gemma_dir_set->get_starting_clusters();
 
 	return [
 		map {
@@ -279,9 +280,7 @@ sub treebuild_batches {
 								clusts_ordering            => $clusts_ordering,
 								compass_profile_build_type => $compass_profile_build_type,
 								dir_set                    => $tree_dir_set,
-								starting_cluster_lists     => [
-									get_starting_clusters_of_starting_cluster_dir( $tree_dir_set->starting_cluster_dir() )
-								],
+								starting_cluster_lists     => [ $tree_dir_set->get_starting_clusters() ],
 								tree_builder               => $tree_builder,
 							)
 						]
