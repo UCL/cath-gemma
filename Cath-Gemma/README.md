@@ -171,11 +171,13 @@ lsp | xargs grep -P '^package ' | tr ';' ' ' | sed 's/.pm:package//g' | sed 's/\
 
 ## Checking Test Coverage
 
+Ensure the Devel::Cover package is installed (which can be done in Ubuntu with package libdevel-cover-perl). Then...
+
 ~~~
-rsync -av ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/
+rsync -av --exclude 'other_stuff' ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/
 cd /tmp/Cath-Gemma/
 \make
-cover -test +ignore /^extlib\b/
+cover -test +ignore ^extlib/
 ~~~
 
 ...and then browse to [/tmp/Cath-Gemma/cover_db/coverage.html](file:///tmp/Cath-Gemma/cover_db/coverage.html).
