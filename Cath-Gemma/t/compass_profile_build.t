@@ -2,7 +2,7 @@ use strict;
 use warnings;
 
 # Core
-use English           qw/ -no_match_vars /;
+use English             qw/ -no_match_vars /;
 use FindBin;
 use v5.10;
 
@@ -14,10 +14,11 @@ use Test::More tests => 2;
 
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
-use Type::Params      qw/ compile        /;
-use Types::Path::Tiny qw/ Path           /;
-use Types::Standard   qw/ Str            /;
+use Type::Params        qw/ compile        /;
+use Types::Path::Tiny   qw/ Path           /;
+use Types::Standard     qw/ Str            /;
 
 # Cath Test
 use Cath::Gemma::Test;
@@ -26,6 +27,9 @@ use Cath::Gemma::Test;
 use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Util;
+
+# Don't flood this test with INFO messages
+Log::Log4perl->easy_init( { level => $WARN } );
 
 my $test_base_dir             = path( $FindBin::Bin . '/data' )->realpath();
 my $build_compass_profile_dir = $test_base_dir            ->child( 'build_compass_profile'  );

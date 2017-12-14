@@ -2,8 +2,8 @@ use strict;
 use warnings;
 
 # Core
-use Carp              qw/ confess        /;
-use English           qw/ -no_match_vars /;
+use Carp                qw/ confess        /;
+use English             qw/ -no_match_vars /;
 use FindBin;
 use v5.10;
 
@@ -14,10 +14,11 @@ use lib $FindBin::Bin . '/lib';
 use Test::More tests => 3;
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
-use Type::Params      qw/ compile        /;
-use Types::Path::Tiny qw/ Path           /;
-use Types::Standard   qw/ Str            /;
+use Type::Params        qw/ compile        /;
+use Types::Path::Tiny   qw/ Path           /;
+use Types::Standard     qw/ Str            /;
 
 # Cath Test
 use Cath::Gemma::Test;
@@ -26,6 +27,9 @@ use Cath::Gemma::Test;
 use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Types qw/ CathGemmaCompassProfileType /;
+
+# Don't flood this test with INFO messages
+Log::Log4perl->easy_init( { level => $WARN } );
 
 =head2 cmp_compass_profile_type_against_file
 
