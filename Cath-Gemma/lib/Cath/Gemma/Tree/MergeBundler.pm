@@ -85,7 +85,13 @@ sub get_query_scs_and_match_scs_list_of_bundle {
 	];
 	my $merge_details = $scans_data->no_op_merge_pairs( $bundle_mergee_id_pairs );
 	return [
+		grep {
+			scalar( @{ $ARG->[ 0 ] } ) > 0
+			&&
+			scalar( @{ $ARG->[ 1 ] } ) > 0
+		}
 		map {
+
 			[ @$ARG[ 1, 2 ] ];
 		} @$merge_details
 	];
