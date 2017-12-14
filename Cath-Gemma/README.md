@@ -25,6 +25,7 @@ Within `lib` :
     │   ├── Cath::Gemma::Disk::ProfileDirSet                          TODOCUMENT
     │   └── Cath::Gemma::Disk::TreeDirSet                             TODOCUMENT
     ├── Cath::Gemma::Executor                                         Execute a Cath::Gemma::Compute::WorkBatchList of batches in some way
+    │   ├── Cath::Gemma::Executor::ConfessExecutor                    Confess (ie die with stack-trace) on any attempt to call execute()
     │   ├── Cath::Gemma::Executor::HpcExecutor                        Execute a Cath::Gemma::Compute::WorkBatchList in HPC batch scripts using an HpcRunner
     │   ├── Cath::Gemma::Executor::HpcRunner                          Actually run an HPC batch script (wrapping script/execute_work_batch.pl) for HpcExecutor in some ways
     │   │   ├── Cath::Gemma::Executor::HpcRunner::HpcLocalRunner      Run an HPC batch script by simulate an HPC environment locally (useful for devel/debug)

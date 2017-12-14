@@ -36,6 +36,7 @@ WriteMakefile(
     },
     TEST_REQUIRES => {
         'Test::Differences'       => 0,
+        'Test::Exception'         => 0,
         'Test::Files'             => 0,
         'Test::More'              => 0,
     },

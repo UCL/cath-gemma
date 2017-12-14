@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 # Core (test)
-use Test::More tests => 43;
+use Test::More tests => 44;
 
 # Core
 use FindBin;
@@ -28,6 +28,7 @@ use_ok( 'Cath::Gemma::Disk::GemmaDirSet'                        );
 use_ok( 'Cath::Gemma::Disk::ProfileDirSet'                      );
 use_ok( 'Cath::Gemma::Disk::TreeDirSet'                         );
 use_ok( 'Cath::Gemma::Executor'                                 );
+use_ok( 'Cath::Gemma::Executor::ConfessExecutor'                );
 use_ok( 'Cath::Gemma::Executor::HpcExecutor'                    );
 use_ok( 'Cath::Gemma::Executor::HpcRunner'                      );
 use_ok( 'Cath::Gemma::Executor::HpcRunner::HpcLocalRunner'      );
