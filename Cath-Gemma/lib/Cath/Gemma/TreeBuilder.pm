@@ -37,6 +37,7 @@ use Cath::Gemma::Types qw/
 	CathGemmaExecutor
 	CathGemmaNodeOrdering
 /;
+use Cath::Gemma::Util;
 
 =head2 requires build_tree
 
@@ -63,10 +64,11 @@ TODOCUMENT
 around build_tree => sub {
 	my $orig = shift;
 
-	state $check = compile( Object, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType, Optional[CathGemmaNodeOrdering] );
+	state $check = compile( Object, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType], Optional[CathGemmaNodeOrdering] );
 	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering            //= 'simple_ordering';
+	$compass_profile_build_type //= default_compass_profile_build_type();
 
 	my $pre_work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 		batches => [ Cath::Gemma::Compute::WorkBatch->new(
@@ -108,6 +110,10 @@ around build_tree => sub {
 		$compass_profile_build_type,
 		$starting_clusters,
 	);
+
+	if ( scalar ( @ARG ) < 5 ) {
+		push @ARG, $compass_profile_build_type;
+	}
 
 	if ( scalar ( @ARG ) < 6 ) {
 		push @ARG, $clusts_ordering;
