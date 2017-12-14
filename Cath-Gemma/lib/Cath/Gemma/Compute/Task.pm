@@ -171,7 +171,7 @@ before execute_task => sub {
 	state $check = compile( Object, CathGemmaDiskExecutables );
 	my ( $self, $exes ) = $check->( @ARG );
 
-	if ( ! $self->dir_set()->is_set() ) {
+	if ( ! $self->dir_set()->assert_is_set() ) {
 		warn "Cannot execute_task() without all directories configured";
 	}
 };

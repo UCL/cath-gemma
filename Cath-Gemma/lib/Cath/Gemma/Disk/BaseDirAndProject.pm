@@ -1,5 +1,13 @@
 package Cath::Gemma::Disk::BaseDirAndProject;
 
+=head1 NAME
+
+Cath::Gemma::Disk::BaseDirAndProject - Store a base directory for files and optionally a sub-project
+
+This is used in DirSets as an easy way to determine the standard directories for alignments, profiles etc.
+
+=cut
+
 use strict;
 use warnings;
 
@@ -19,7 +27,7 @@ use Types::Standard   qw/ Object Maybe Str /;
 
 =head2 base_dir
 
-TODOCUMENT
+The base directory for files
 
 =cut
 
@@ -31,7 +39,7 @@ has base_dir => (
 
 =head2 project
 
-TODOCUMENT
+An optional project string (or undef)
 
 =cut
 
@@ -43,7 +51,13 @@ has project => (
 
 =head2 get_project_subdir_of_subdir
 
-TODOCUMENT
+Get the specified subdirectory associated with this base_dir, ie:
+
+`/base_dir/argument`
+
+...or, if a project has been specified, then:
+
+`/base_dir/argument/project`
 
 =cut
 

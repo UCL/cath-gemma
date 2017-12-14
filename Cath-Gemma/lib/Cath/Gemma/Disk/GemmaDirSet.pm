@@ -100,21 +100,18 @@ sub is_equal_to {
 	);
 }
 
-=head2 is_set
+=head2 assert_is_set
 
-TODOCUMENT
+Check that all the directories are set and die if not
 
 =cut
 
-sub is_set {
+sub assert_is_set {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	return (
-		$self->profile_dir_set->is_set()
-		&&
-		$self->scan_dir()
-	);
+	$self->profile_dir_set->assert_is_set();
+	$self->scan_dir();
 }
 
 =head2 scan_filename_of_cluster_ids
@@ -150,7 +147,7 @@ sub get_starting_clusters {
 
 =head2 make_gemma_dir_set_of_base_dir_and_project
 
-TODOCUMENT
+Make a GemmaDirSet from the specified base_dir and project
 
 =cut
 
@@ -165,5 +162,20 @@ sub make_gemma_dir_set_of_base_dir_and_project {
 	);
 }
 
+=head2 make_gemma_dir_set_of_base_dir
+
+Make a GemmaDirSet from the specified base_dir
+
+=cut
+
+sub make_gemma_dir_set_of_base_dir {
+	state $check = compile( Invocant, Path );
+	my ( $proto, $base_dir ) = $check->( @ARG );
+	return Cath::Gemma::Disk::GemmaDirSet->new(
+		profile_dir_set => Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir(
+			$base_dir
+		)
+	);
+}
 
 1;

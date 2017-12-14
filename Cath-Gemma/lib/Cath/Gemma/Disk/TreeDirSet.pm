@@ -102,21 +102,18 @@ sub is_equal_to {
 	);
 }
 
-=head2 is_set
+=head2 assert_is_set
 
-TODOCUMENT
+Check that all the directories are set and die if not
 
 =cut
 
-sub is_set {
+sub assert_is_set {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	return (
-		$self->gemma_dir_set->is_set()
-		&&
-		$self->tree_dir()
-	);
+	$self->gemma_dir_set->assert_is_set();
+	$self->tree_dir();
 }
 
 # =head2 scan_filename_of_cluster_ids
