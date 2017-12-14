@@ -16,7 +16,7 @@ use lib "$FindBin::Bin/../extlib/lib/perl5";
 # Non-core (local)
 use Path::Tiny;
 
-use lib "$FindBin::Bin/../lib";
+use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
 
 # Cath
 use Cath::Gemma::Disk::GemmaDirSet;

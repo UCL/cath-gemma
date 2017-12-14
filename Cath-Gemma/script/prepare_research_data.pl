@@ -20,7 +20,7 @@ use Path::Tiny;
 use Type::Params        qw/ compile                 /;
 use Types::Standard     qw/ ArrayRef Int Object Str /; # ***** TEMPORARY *****
 
-use lib "$FindBin::Bin/../lib";
+use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
 
 # Cath
 use Cath::Gemma::Compute::Task::BuildTreeTask;
