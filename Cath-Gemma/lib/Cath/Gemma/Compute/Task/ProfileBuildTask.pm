@@ -34,52 +34,6 @@ use Cath::Gemma::Types qw/
 /;
 use Cath::Gemma::Util;
 
-with ( 'Cath::Gemma::Compute::Task' );
-
-=head2 starting_cluster_lists
-
-TODOCUMENT
-
-=cut
-
-has starting_cluster_lists => (
-	is          => 'ro', # TODO: Can we get away with ro or does it need to be rwp?
-	isa         => ArrayRef[ArrayRef[Str]],
-	handles_via => 'Array',
-	handles     => {
-		is_empty       => 'is_empty',
-		num_steps_impl => 'count',
-		step_of_index  => 'get',
-	},
-	required    => 1,
-);
-
-=head2 num_steps
-
-TODOCUMENT
-
-This pass-through is to satisfy the corresponding 'requires' in Task,
-which isn't satisfied by the 'handles' above
-
-=cut
-
-sub num_steps {
-	my $self = shift;
-	return $self->num_steps_impl();
-}
-
-=head2 compass_profile_build_type
-
-TODOCUMENT
-
-=cut
-
-has compass_profile_build_type => (
-	is       => 'ro',
-	isa      => CathGemmaCompassProfileType,
-	required => 1,
-);
-
 =head2 dir_set
 
 TODOCUMENT
@@ -95,6 +49,39 @@ has dir_set  => (
 		prof_dir             => 'prof_dir',
 		starting_cluster_dir => 'starting_cluster_dir',
 	},
+	required => 1,
+);
+
+=head2 starting_cluster_lists
+
+TODOCUMENT
+
+=cut
+
+has starting_cluster_lists => (
+	is          => 'ro', # TODO: Can we get away with ro or does it need to be rwp?
+	isa         => ArrayRef[ArrayRef[Str]],
+	handles_via => 'Array',
+	handles     => {
+		is_empty      => 'is_empty',
+		num_steps     => 'count',
+		step_of_index => 'get',
+	},
+	required    => 1,
+);
+
+# !!!!!!!!! PLACED BELOW THE ATTRIBUTES THAT ARE USED TO SATISFY THIS ROLE !!!!!!!!!
+with ( 'Cath::Gemma::Compute::Task' );
+
+=head2 compass_profile_build_type
+
+TODOCUMENT
+
+=cut
+
+has compass_profile_build_type => (
+	is       => 'ro',
+	isa      => CathGemmaCompassProfileType,
 	required => 1,
 );
 

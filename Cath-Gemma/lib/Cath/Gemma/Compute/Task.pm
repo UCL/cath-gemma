@@ -55,6 +55,15 @@ before id => sub {
 # 	my ( $self ) = $check->( @ARG );
 };
 
+=head2 requires dir_set
+
+Require the task to make its dir_set accessible so that this can assert it's set
+
+=cut
+
+requires 'dir_set';
+
+
 =head2 requires num_steps
 
 TODOCUMENT
