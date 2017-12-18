@@ -16,10 +16,15 @@ use Test::More tests => 18;
 use Path::Tiny;
 
 use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
+use lib path( "$FindBin::Bin/lib" )->realpath()->stringify();
 
 # Cath
 use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Executor::LocalExecutor;
+
+
+# Cath Test
+use Cath::Gemma::Test;
 
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder'    ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder'     ) }
@@ -28,7 +33,9 @@ BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder'       ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::PureTreeBuilder'            ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::WindowedTreeBuilder'        ) }
 
-my $data_base_dir              = path( $FindBin::Bin )->child( '/data/3.30.70.1470/' )->realpath();
+my $superfamily                = '3.30.70.1470';
+my $data_base_dir              = path( $FindBin::Bin )->child( '/data' )->child( $superfamily )->realpath();
+my $tracefiles_dir             = $data_base_dir->child( 'tracefiles' );
 my $executor                   = Cath::Gemma::Executor::LocalExecutor->new();
 my $gemma_dir_set              = Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir( $data_base_dir );
 my $starting_clusters          = $gemma_dir_set->get_starting_clusters();
@@ -48,6 +55,15 @@ foreach my $tree_builder_name ( qw/
 		$starting_clusters,
 		$gemma_dir_set,
 	);
-	my $newick_string = $merge_list->to_newick_string();
-	like( $newick_string, qr/\(520,/ );
+
+	my $got_file = Path::Tiny->tempfile();
+	$merge_list->write_to_tracefile( $got_file );
+
+	my $expected_file = $tracefiles_dir->child( $superfamily . '.' . $tree_builder->name() );
+
+	file_matches(
+		$got_file,
+		$expected_file,
+		'TreeBuilder generates MergeList that when output to a tracefile, matches expected'
+	);
 }
