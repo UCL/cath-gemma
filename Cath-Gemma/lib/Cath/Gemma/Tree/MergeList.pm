@@ -45,9 +45,9 @@ has merges => (
 	isa         => ArrayRef[CathGemmaTreeMerge],
 	handles_via => 'Array',
 	handles     => {
+		all             => 'all',
 		count           => 'count',
 		is_empty        => 'is_empty',
-		all             => 'all',
 		merge_of_index  => 'get',
 		push            => 'push',
 	},

@@ -41,19 +41,17 @@ TODOCUMENT
 has starting_clusters_of_ids => (
 	is          => 'rwp',
 	isa         => CathGemmaStartingClustersOfId,
-	handles     => {
-		# ids                               => 'keys',
-		# is_empty                          => 'is_empty',
-		add_separate_starting_clusters    => 'add_separate_starting_clusters',
-		add_starting_clusters_group_by_id => 'add_starting_clusters_group_by_id',
-		contains_id                       => 'contains',
-		count                             => 'count',
-		get_starting_clusters_of_id       => 'get_starting_clusters_of_id',
-		no_op_merge_pair                  => 'no_op_merge_pair',
-		no_op_merge_pairs                 => 'no_op_merge_pairs',
-		remove_id                         => 'remove_id',
-		sorted_ids                        => 'sorted_ids',
-	},
+	handles     => [ qw/
+		add_separate_starting_clusters
+		add_starting_clusters_group_by_id
+		contains_id
+		count
+		get_starting_clusters_of_id
+		no_op_merge_pair
+		no_op_merge_pairs
+		remove_id
+		sorted_ids
+	/ ],
 	default     => sub { Cath::Gemma::StartingClustersOfId->new(); },
 );
 

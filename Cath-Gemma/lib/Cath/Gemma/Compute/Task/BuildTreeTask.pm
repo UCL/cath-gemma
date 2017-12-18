@@ -49,13 +49,13 @@ has dir_set => (
 	is      => 'ro',
 	isa     => CathGemmaDiskTreeDirSet,
 	default => sub { Cath::Gemma::Disk::TreeDirSet->new(); },
-	handles => {
-		aln_dir              => 'aln_dir',
-		prof_dir             => 'prof_dir',
-		scan_dir             => 'scan_dir',
-		starting_cluster_dir => 'starting_cluster_dir',
-		tree_dir             => 'tree_dir',
-	},
+	handles => [ qw/
+		aln_dir
+		prof_dir
+		scan_dir
+		starting_cluster_dir
+		tree_dir
+	/ ],
 	required => 1,
 );
 

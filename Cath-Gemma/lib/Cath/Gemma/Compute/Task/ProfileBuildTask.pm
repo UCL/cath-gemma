@@ -44,11 +44,11 @@ has dir_set  => (
 	is       => 'ro',
 	isa      => CathGemmaDiskProfileDirSet,
 	default  => sub { Cath::Gemma::Disk::ProfileDirSet->new(); },
-	handles  => {
-		aln_dir              => 'aln_dir',
-		prof_dir             => 'prof_dir',
-		starting_cluster_dir => 'starting_cluster_dir',
-	},
+	handles  => [ qw/
+		aln_dir
+		prof_dir
+		starting_cluster_dir
+	/ ],
 	required => 1,
 );
 

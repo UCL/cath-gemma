@@ -37,12 +37,12 @@ has profile_dir_set => (
 	is      => 'ro',
 	isa     => CathGemmaDiskProfileDirSet,
 	default => sub { Cath::Gemma::Disk::ProfileDirSet->new(); },
-	handles => {
-		aln_dir              => 'aln_dir',
-		base_dir_and_project => 'base_dir_and_project',
-		prof_dir             => 'prof_dir',
-		starting_cluster_dir => 'starting_cluster_dir',
-	},
+	handles => [ qw/
+		aln_dir
+		base_dir_and_project
+		prof_dir
+		starting_cluster_dir
+	/ ],
 );
 
 =head2 scan_dir

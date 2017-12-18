@@ -36,15 +36,15 @@ has gemma_dir_set => (
 	is      => 'ro',
 	isa     => CathGemmaDiskGemmaDirSet,
 	default => sub { Cath::Gemma::Disk::GemmaDirSet->new(); },
-	handles => {
-		aln_dir               => 'aln_dir',
-		base_dir_and_project  => 'base_dir_and_project',
-		get_starting_clusters => 'get_starting_clusters',
-		prof_dir              => 'prof_dir',
-		profile_dir_set       => 'profile_dir_set',
-		scan_dir              => 'scan_dir',
-		starting_cluster_dir  => 'starting_cluster_dir',
-	},
+	handles => [ qw/
+		aln_dir
+		base_dir_and_project
+		get_starting_clusters
+		prof_dir
+		profile_dir_set
+		scan_dir
+		starting_cluster_dir
+	/ ],
 );
 
 =head2 tree_dir
