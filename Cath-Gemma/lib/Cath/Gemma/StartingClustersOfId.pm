@@ -145,14 +145,12 @@ TODOCUMENT
 
 sub merge_remove {
 	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2 ) = $check->( @ARG );
-
-	splice( @ARG, 0, 3 );
+	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
 
 	my $starting_clusters_1 = $self->remove_id( $id1 );
 	my $starting_clusters_2 = $self->remove_id( $id2 );
 
-	return combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @ARG );
+	return combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
 }
 
 =head2 merge_pair
@@ -184,13 +182,12 @@ TODOCUMENT
 
 sub merge_pairs {
 	state $check = compile( Object, ArrayRef[Tuple[Str, Str]], Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id_pairs ) = $check->( @ARG );
-	splice( @ARG, 0, 2 );
+	my ( $self, $id_pairs, @clusts_ordering ) = $check->( @ARG );
 
 	return [
 		map {
 			my ( $id1, $id2 ) = @$ARG;
-			$self->merge_pair( $id1, $id2, @ARG );
+			$self->merge_pair( $id1, $id2, @clusts_ordering );
 		} @$id_pairs
 	];
 }

@@ -124,14 +124,12 @@ TODOCUMENT
 
 sub make_work_batch_list_of_query_scs_and_match_scs_list {
 	state $check = compile( Object, CathGemmaScanScansData, CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType] );
-	my ( $self, $scans_data, $gemma_dir_set ) = $check->( @ARG );
-
-	splice( @ARG, 0, 3 );
+	my ( $self, $scans_data, $gemma_dir_set, @profile_type ) = $check->( @ARG );
 
 	return Cath::Gemma::Compute::WorkBatchList->make_work_batch_list_of_query_scs_and_match_scs_list(
 		$self->get_query_scs_and_match_scs_list_of_bundle( $scans_data ),
 		$gemma_dir_set,
-		@ARG
+		@profile_type,
 	);
 }
 

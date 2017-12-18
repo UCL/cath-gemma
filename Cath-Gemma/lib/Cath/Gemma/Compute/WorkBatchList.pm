@@ -299,9 +299,7 @@ TODOCUMENT
 
 sub make_work_batch_list_of_query_scs_and_match_scs_list {
 	state $check = compile( ClassName, ArrayRef[Tuple[ArrayRef[Str], ArrayRef[Str]]], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType] );
-	my ( $class, $query_scs_and_match_scs_list, $gemma_dir_set ) = $check->( @ARG );
-
-	splice( @ARG, 0, 3 );
+	my ( $class, $query_scs_and_match_scs_list, $gemma_dir_set, @profile_type ) = $check->( @ARG );
 
 	my $rebatch = 1;
 
@@ -310,7 +308,7 @@ sub make_work_batch_list_of_query_scs_and_match_scs_list {
 		batches => [ Cath::Gemma::Compute::WorkBatch->make_work_batch_of_query_scs_and_match_scs_list(
 			$query_scs_and_match_scs_list,
 			$gemma_dir_set,
-			@ARG
+			@profile_type,
 		) ],
 	);
 

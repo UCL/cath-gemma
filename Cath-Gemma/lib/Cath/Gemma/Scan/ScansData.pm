@@ -252,14 +252,12 @@ TODOCUMENT
 
 sub merge_remove {
 	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2 ) = $check->( @ARG );
-
-	splice( @ARG, 0, 3 );
+	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
 
 	my $starting_clusters_1 = $self->remove( $id1 );
 	my $starting_clusters_2 = $self->remove( $id2 );
 
-	return combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @ARG );
+	return combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
 }
 
 =head2 merge_add_with_score_of_lowest
@@ -270,8 +268,7 @@ TODOCUMENT
 
 sub merge_add_with_score_of_lowest {
 	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2 ) = $check->( @ARG );
-	splice( @ARG, 0, 3 );
+	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
 
 	my $scans = $self->scans();
 
@@ -290,7 +287,7 @@ sub merge_add_with_score_of_lowest {
 	my $starting_clusters_1 = $self->remove( $id1 );
 	my $starting_clusters_2 = $self->remove( $id2 );
 
-	my $starting_clusters = combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @ARG );
+	my $starting_clusters = combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
 	my $merged_id         = id_of_starting_clusters( $starting_clusters );
 	$self->add_starting_clusters_group_by_id( $starting_clusters, $merged_id );
 
@@ -309,8 +306,7 @@ TODOCUMENT
 
 sub merge_add_with_score_of_highest {
 	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2 ) = $check->( @ARG );
-	splice( @ARG, 0, 3 );
+	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
 
 	my $scans = $self->scans();
 
@@ -329,7 +325,7 @@ sub merge_add_with_score_of_highest {
 	my $starting_clusters_1 = $self->remove( $id1 );
 	my $starting_clusters_2 = $self->remove( $id2 );
 
-	my $starting_clusters = combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @ARG );
+	my $starting_clusters = combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
 	my $merged_id         = id_of_starting_clusters( $starting_clusters );
 	$self->add_starting_clusters_group_by_id( $starting_clusters, $merged_id );
 
@@ -348,7 +344,7 @@ TODOCUMENT
 
 sub merge_add_with_unweighted_geometric_mean_score {
 	state $check = compile( Object, Str, Str, CathGemmaScanScansData, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2, $orig_scans ) = $check->( @ARG );
+	my ( $self, $id1, $id2, $orig_scans, @clusts_ordering ) = $check->( @ARG );
 
 	my $really_bad_score = 100000000;
 
@@ -401,11 +397,9 @@ TODOCUMENT
 
 sub merge_pair {
 	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2 ) = $check->( @ARG );
+	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
 
-	splice( @ARG, 0, 3 );
-
-	my $merged_starting_clusters = $self->merge_remove( $id1, $id2, @ARG );
+	my $merged_starting_clusters = $self->merge_remove( $id1, $id2, @clusts_ordering );
 	my $other_ids                = $self->sorted_ids();
 	my $merged_node_id           = $self->add_starting_clusters_group_by_id( $merged_starting_clusters );
 	return [
@@ -423,14 +417,12 @@ TODOCUMENT
 
 sub merge_pairs {
 	state $check = compile( Object, ArrayRef[Tuple[Str, Str]], Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id_pairs ) = $check->( @ARG );
-
-	splice( @ARG, 0, 2 );
+	my ( $self, $id_pairs, @clusts_ordering ) = $check->( @ARG );
 
 	return [
 		map {
 			my ( $id1, $id2 ) = @$ARG;
-			$self->merge_pair( $id1, $id2, @ARG );
+			$self->merge_pair( $id1, $id2, @clusts_ordering );
 		} @$id_pairs
 	];
 }
