@@ -46,9 +46,12 @@ sub build_tree {
 	while ( $scans_data->count() > 2 ) {
 		my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score() };
 
-		my $merged_starting_clusters = $scans_data->merge( $id1, $id2, $clusts_ordering );
+		my $merged_starting_clusters = $scans_data->merge_remove( $id1, $id2, $clusts_ordering );
 		my $other_ids                = $scans_data->sorted_ids();
 		my $merged_node_id           = $scans_data->add_starting_clusters_group_by_id( $merged_starting_clusters );
+
+		# TODONOW: Change the code to use this...
+		# my $merge_pair_result = $scans_data->merge_pair( $id1, $id2, $clusts_ordering );
 
 		push @nodenames_and_merges, [
 			$merged_node_id,
@@ -64,11 +67,10 @@ sub build_tree {
 			$merged_starting_clusters,
 			$other_ids,
 			$gemma_dir_set,
+			$compass_profile_build_type,
 		)->{ result };
 
 		$scans_data->add_scan_data( $new_scan_data );
-
-		warn Cath::Gemma::Tree::MergeList->build_from_nodenames_and_merges( \@nodenames_and_merges )->to_tracefile_string() . "\n\n\n";
 	}
 
 	my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score() };
