@@ -10,7 +10,7 @@ use FindBin;
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Test
-use Test::More tests => 14;
+use Test::More tests => 18;
 
 # Non-core (local)
 use Path::Tiny;
@@ -42,10 +42,6 @@ foreach my $tree_builder_name ( qw/
                                    Cath::Gemma::TreeBuilder::WindowedTreeBuilder
                                    / ) {
 	my $tree_builder = new_ok( $tree_builder_name );
-
-	if ( $tree_builder =~ /Naive/ ) {
-		next;
-	}
 
 	my $merge_list   = $tree_builder->build_tree(
 		$executor,
