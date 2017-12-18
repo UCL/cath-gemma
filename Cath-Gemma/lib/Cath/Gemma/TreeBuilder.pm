@@ -26,8 +26,6 @@ use Types::Standard     qw/ ArrayRef Object Optional Str /;
 # Cath
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;
-use Cath::Gemma::Compute::WorkBatch;
-use Cath::Gemma::Compute::WorkBatchList;
 use Cath::Gemma::Executor;
 use Cath::Gemma::Scan::ScansDataFactory;
 use Cath::Gemma::Tree::MergeList;
@@ -63,6 +61,8 @@ TODOCUMENT
 
 around build_tree => sub {
 	my $orig = shift;
+
+	require Cath::Gemma::Compute::WorkBatchList;
 
 	state $check = compile( Object, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType], Optional[CathGemmaNodeOrdering] );
 	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering ) = $check->( @ARG );
