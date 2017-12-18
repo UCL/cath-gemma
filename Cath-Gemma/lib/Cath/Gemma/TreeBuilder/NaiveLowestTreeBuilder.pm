@@ -46,8 +46,8 @@ sub build_tree {
 	while ( $scans_data->count() > 1 ) {
 		my $result = $scans_data->ids_and_score_of_lowest_score();
 		if ( ! defined( $result ) ) {
-			my @ids = sort( keys( %{ $scans_data->starting_clusters_of_ids() } ) );
-			$result = [ $ids[ 0 ], $ids[ 1 ], $really_bad_score ];
+			my $sorted_ids = $scans_data->sorted_ids();
+			$result = [ $sorted_ids->[ 0 ], $sorted_ids->[ 1 ], $really_bad_score ];
 		}
 		my ( $id1, $id2, $score ) = @$result;
 

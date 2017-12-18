@@ -32,7 +32,7 @@ use Cath::Gemma::Types qw/
 # /;
 use Cath::Gemma::Util;
 
-=head2 starting_clusters_of_ids
+=head2 _scoi
 
 TODOCUMENT
 
@@ -45,10 +45,8 @@ has _scoi => (
 	isa         => HashRef[ArrayRef[Str]],
 	handles_via => 'Hash',
 	handles     => {
-		contains => 'exists',
-		count    => 'count',
-	# 	is_empty => 'is_empty',
-	# 	ids      => 'keys',
+		contains_id => 'exists',
+		count       => 'count',
 	},
 	default     => sub { {}; },
 );
