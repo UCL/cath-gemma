@@ -379,7 +379,7 @@ sub merge_add_with_unweighted_geometric_mean_score {
 	}
 
 	# Merge the pairs and grab the id of the newly merged node
-	my $merged_id = $self->merge_pair( [ [ $id1, $id2 ] ] )->[ 0 ];
+	my $merged_id = $self->merge_pair( $id1, $id2, @clusts_ordering )->[ 0 ];
 
 	foreach my $new_result ( @new_results ) {
 		$self->add_scan_entry( $merged_id, @$new_result );
