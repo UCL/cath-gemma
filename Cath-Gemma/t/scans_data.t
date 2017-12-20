@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
@@ -8,12 +10,13 @@ use Storable qw/ dclone /;
 # Core (test)
 use Test::More tests => 10;
 
+# Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
 use Path::Tiny;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Scan::ScansDataFactory;
 use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::Util;

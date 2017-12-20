@@ -24,7 +24,7 @@ use strictures 1;
 use Capture::Tiny       qw/ capture        /;
 use Log::Log4perl::Tiny qw/ :easy          /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Util;
 
 =head2 _get_submit_host

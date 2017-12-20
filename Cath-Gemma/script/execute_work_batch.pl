@@ -8,9 +8,9 @@ use Carp                qw/ confess        /;
 use English             qw/ -no_match_vars /;
 use FindBin;
 use Sys::Hostname; # ***** TEMPORARY *****
-
 use v5.10;
 
+# Find non-core external lib directory using FindBin
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core (local)
@@ -19,9 +19,10 @@ use Path::Tiny;
 use Type::Params        qw/ compile        /;
 use Types::Path::Tiny   qw/ Path           /;
 
+# Find Gemma lib directory using FindBin (and tidy using Path::Tiny)
 use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Disk::Executables;
 

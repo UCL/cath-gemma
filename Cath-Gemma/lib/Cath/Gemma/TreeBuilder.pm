@@ -23,7 +23,7 @@ use Type::Params        qw/ compile                      /;
 use Types::Path::Tiny   qw/ Path                         /;
 use Types::Standard     qw/ ArrayRef Object Optional Str /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;
 use Cath::Gemma::Executor;

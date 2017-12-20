@@ -1,22 +1,23 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
 # Core
 use FindBin;
 
-use lib $FindBin::Bin . '/../extlib/lib/perl5';
-use lib $FindBin::Bin . '/lib';
-
-# Test
+# Core (test)
 use Test::More tests => 5;
+
+# Find non-core external lib directory using FindBin
+use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
 use Path::Tiny;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Disk::BaseDirAndProject;
 use Cath::Gemma::Disk::ProfileDirSet;
-
 
 my $base_dir_and_proj = Cath::Gemma::Disk::BaseDirAndProject->new(
 	base_dir => path( '/tmp' ),

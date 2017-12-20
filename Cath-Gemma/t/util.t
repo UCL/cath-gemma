@@ -1,18 +1,21 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
 # Core
 use FindBin;
 
-use lib $FindBin::Bin . '/../extlib/lib/perl5';
-
-# Test
+# Core (test)
 use Test::More tests => 22;
+
+# Find non-core external lib directory using FindBin
+use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
 use Time::Seconds;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Util;
 
 # evalue_window_ceiling() / evalue_window_floor()

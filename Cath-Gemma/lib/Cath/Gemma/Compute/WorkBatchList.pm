@@ -27,7 +27,7 @@ use Array::Utils       qw/ intersect                                        /;
 use Type::Params       qw/ compile Invocant                                 /;
 use Types::Standard    qw/ ArrayRef ClassName Int Object Optional Str Tuple /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Types qw/

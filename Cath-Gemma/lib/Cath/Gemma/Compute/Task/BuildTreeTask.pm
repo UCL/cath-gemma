@@ -21,7 +21,7 @@ use Object::Util;
 use Path::Tiny;
 use Types::Standard     qw/ ArrayRef Object Optional Str /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Executor::LocalExecutor;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;

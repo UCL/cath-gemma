@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
@@ -6,9 +8,11 @@ use English qw/ -no_match_vars /;
 use FindBin;
 use Storable qw/ freeze thaw /;
 
-use lib $FindBin::Bin . '/../extlib/lib/perl5';
-
+# Core (test)
 use Test::More tests => 1;
+
+# Find non-core external lib directory using FindBin
+use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
 use JSON::MaybeXS;

@@ -24,7 +24,7 @@ use Log::Log4perl::Tiny qw/ :easy               /;
 use Type::Params        qw/ compile             /;
 use Types::Standard     qw/ ArrayRef Int Object /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Types  qw/
 	CathGemmaComputeTaskProfileBuildTask
 	CathGemmaComputeTaskProfileScanTask

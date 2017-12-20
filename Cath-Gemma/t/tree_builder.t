@@ -6,24 +6,23 @@ use warnings;
 # Core
 use FindBin;
 
-# Find non-core lib directory using FindBin
-use lib $FindBin::Bin . '/../extlib/lib/perl5';
-
-# Test
+# Core (test)
 use Test::More tests => 18;
+
+# Find non-core external lib directory using FindBin
+use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
 use Path::Tiny;
 
-use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
-use lib path( "$FindBin::Bin/lib" )->realpath()->stringify();
+# Find Cath::Gemma::Test lib directory using FindBin (and tidy using Path::Tiny)
+use lib path( $FindBin::Bin . '/lib' )->realpath()->stringify();
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Executor::LocalExecutor;
 
-
-# Cath Test
+# Cath::Gemma Test
 use Cath::Gemma::Test;
 
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder'    ) }

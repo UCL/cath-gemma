@@ -24,7 +24,7 @@ use Type::Params      qw/ compile Invocant                   /;
 use Types::Path::Tiny qw/ Path                               /;
 use Types::Standard   qw/ ArrayRef Maybe Object Optional Str /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Disk::BaseDirAndProject;
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType

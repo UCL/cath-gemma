@@ -27,7 +27,7 @@ use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
 use Types::Path::Tiny   qw/ Path           /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Executor::HpcRunner::HpcLocalRunner;
 use Cath::Gemma::Executor::HpcRunner::HpcSgeRunner;
 use Cath::Gemma::Types qw/

@@ -12,7 +12,7 @@ use Type::Params      qw/ compile Invocant      /;
 use Types::Path::Tiny qw/ Path                  /;
 use Types::Standard   qw/ ArrayRef Optional Str /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Scan::ScanData;
 use Cath::Gemma::Scan::ScansData;

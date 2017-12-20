@@ -23,7 +23,7 @@ use Type::Params        qw/ compile Invocant        /;
 use Types::Path::Tiny   qw/ Path                    /;
 use Types::Standard     qw/ ArrayRef Int Object Str /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Types qw/

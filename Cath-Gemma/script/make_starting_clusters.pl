@@ -19,12 +19,12 @@ use Getopt::Long;
 use List::Util          qw/ max min none   /;
 use Pod::Usage;
 
+# Find non-core external lib directory using FindBin
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core
 use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
-
 
 my $help = undef;
 

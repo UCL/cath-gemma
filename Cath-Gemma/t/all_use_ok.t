@@ -3,13 +3,13 @@
 use strict;
 use warnings;
 
-# Core (test)
-use Test::More tests => 44;
-
 # Core
 use FindBin;
 
-# Find non-core lib directory using FindBin
+# Core (test)
+use Test::More tests => 44;
+
+# Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 use_ok( 'Cath::Gemma'                                           );

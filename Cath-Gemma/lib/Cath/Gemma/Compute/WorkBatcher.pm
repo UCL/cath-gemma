@@ -24,7 +24,7 @@ use Object::Util;
 use Type::Params       qw/ compile        /;
 use Types::Standard    qw/ Int Object     /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Compute::WorkBatcherState;
 use Cath::Gemma::Types qw/
 	CathGemmaComputeWorkBatchList

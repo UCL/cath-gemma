@@ -8,6 +8,7 @@ use Carp    qw/ confess        /;
 use English qw/ -no_match_vars /;
 use FindBin;
 
+# Find non-core external lib directory using FindBin
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core

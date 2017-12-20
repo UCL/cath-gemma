@@ -1,16 +1,23 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
 # Core
+use English qw/ -no_match_vars /;
 use FindBin;
 
+# Core (test)
+use Test::More tests => 1;
+
+# Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
-use English qw/ -no_match_vars /;
+# Non-core (local)
 use Path::Tiny;
-use Test::More tests => 1;
 use Try::Tiny;
 
+# Cath::Gemma
 use Cath::Gemma::Util;
 
 my $temp_test_dir = Path::Tiny->tempdir(

@@ -1,24 +1,23 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
-
-# Core (test)
-use Test::More tests => 6;
 
 # Core
 use English           qw/ -no_match_vars /;
 use FindBin;
 use v5.10;
 
-# Find non-core lib directory using FindBin
+# Core (test)
+use Test::More tests => 6;
+
+# Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
 use Path::Tiny;
 
-# Find Cath::Gemma lib directory using FindBin
-use lib $FindBin::Bin . '/lib';
-
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Disk::GemmaDirSet; # ****** TEMPORARY ******
 use Cath::Gemma::Scan::ScansDataFactory;
 use Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler;

@@ -25,7 +25,7 @@ use strictures 1;
 use Type::Params        qw/ compile         /;
 use Types::Standard     qw/ Object Optional /;
 
-# Cath
+# Cath::Gemma
 # use Cath::Gemma::Disk::TreeDirSet;
 use Cath::Gemma::Compute::WorkBatchList; # ********** ?? TEMPORARY ?? ************
 use Cath::Gemma::Types  qw/

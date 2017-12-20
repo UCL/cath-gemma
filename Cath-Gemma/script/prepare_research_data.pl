@@ -12,6 +12,7 @@ use Getopt::Long;
 use Pod::Usage;
 use v5.10;
 
+# Find non-core external lib directory using FindBin
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core (local)
@@ -20,9 +21,10 @@ use Path::Tiny;
 use Type::Params        qw/ compile                 /;
 use Types::Standard     qw/ ArrayRef Int Object Str /; # ***** TEMPORARY *****
 
-use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
+# Find Gemma lib directory using FindBin (and tidy using Path::Tiny)
+use lib path( $FindBin::Bin . '/../lib' )->realpath()->stringify();
 
-# Cath
+# Cath:Gemma
 use Cath::Gemma::Compute::Task::BuildTreeTask;
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;

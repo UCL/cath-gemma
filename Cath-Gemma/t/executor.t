@@ -1,16 +1,21 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
 # Core
 use FindBin;
 
-use lib $FindBin::Bin . '/../extlib/lib/perl5';
-
-# Test
-use Test::Exception;
+# Core (test)
 use Test::More tests => 2;
 
-# Cath
+# Find non-core external lib directory using FindBin
+use lib $FindBin::Bin . '/../extlib/lib/perl5';
+
+# Non-core (test) (local)
+use Test::Exception;
+
+# Cath::Gemma
 use Cath::Gemma::Compute::WorkBatchList;
 use Cath::Gemma::Executor::ConfessExecutor;
 use Cath::Gemma::Types qw/

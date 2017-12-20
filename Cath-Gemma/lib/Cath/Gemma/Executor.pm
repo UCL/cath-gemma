@@ -21,7 +21,7 @@ use strictures 1;
 use Type::Params      qw/ compile         /;
 use Types::Standard   qw/ ArrayRef Object /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Types qw/
 	CathGemmaComputeWorkBatchList
 	CathGemmaExecSync

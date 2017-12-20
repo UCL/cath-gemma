@@ -24,7 +24,7 @@ use Log::Log4perl::Tiny qw/ :easy            /;
 use Type::Params        qw/ compile          /;
 use Types::Standard     qw/ Int Object Maybe /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Disk::TreeDirSet;
 use Cath::Gemma::Types  qw/
 	CathGemmaComputeBatchingPolicy

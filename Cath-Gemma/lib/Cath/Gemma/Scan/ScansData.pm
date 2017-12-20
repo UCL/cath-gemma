@@ -22,7 +22,7 @@ use Log::Log4perl::Tiny qw/ :easy                                               
 use Type::Params        qw/ compile                                                         /;
 use Types::Standard     qw/ ArrayRef ClassName HashRef Num Tuple Object Optional slurpy Str /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::StartingClustersOfId;
 use Cath::Gemma::Types qw/
 	CathGemmaNodeOrdering

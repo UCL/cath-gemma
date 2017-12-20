@@ -18,7 +18,7 @@ use Path::Tiny;
 use Type::Params       qw/ compile                 /;
 use Types::Standard    qw/ Num Object Optional Str /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Types qw/
 	CathGemmaNodeOrdering
 	CathGemmaTreeMerge

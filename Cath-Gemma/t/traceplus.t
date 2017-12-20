@@ -1,19 +1,21 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
 # Core
 use FindBin;
 
-use lib $FindBin::Bin . '/../extlib/lib/perl5';
-use lib $FindBin::Bin . '/lib';
-
-# Test
+# Core (test)
 use Test::More tests => 3;
+
+# Find non-core external lib directory using FindBin
+use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
 use Path::Tiny;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Tree::MergeList;
 
 my $merge_list = Cath::Gemma::Tree::MergeList->read_from_tracefile(

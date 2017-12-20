@@ -22,7 +22,7 @@ use Type::Params        qw/ compile                  /;
 use Types::Path::Tiny   qw/ Path                     /;
 use Types::Standard     qw/ ArrayRef ClassName Str   /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Types  qw/
 	CathGemmaDiskExecutables
 	CathGemmaDiskProfileDirSet

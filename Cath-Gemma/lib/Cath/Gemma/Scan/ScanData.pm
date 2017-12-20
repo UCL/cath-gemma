@@ -19,7 +19,7 @@ use Type::Params      qw/ compile Invocant                  /;
 use Types::Path::Tiny qw/ Path                              /;
 use Types::Standard   qw/ ArrayRef Int Num Object Str Tuple /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Util;
 
 =head2 scan_data

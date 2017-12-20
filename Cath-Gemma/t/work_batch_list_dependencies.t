@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
@@ -6,11 +8,14 @@ use English           qw/ -no_match_vars /;
 use FindBin;
 use v5.10;
 
-use lib $FindBin::Bin . '/../extlib/lib/perl5';
-use lib $FindBin::Bin . '/lib';
-
-# Test
+# Core (test)
 use Test::More tests => 1;
+
+# Find non-core external lib directory using FindBin
+use lib $FindBin::Bin . '/../extlib/lib/perl5';
+
+# Non-core (local)
+use Path::Tiny;
 
 # Non-core (local)
 # use Path::Tiny;
@@ -18,10 +23,10 @@ use Test::More tests => 1;
 # use Types::Path::Tiny qw/ Path           /;
 # use Types::Standard   qw/ Str            /;
 
-# Cath Test
+# Cath::Gemma Test
 # use Cath::Gemma::Test;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Compute::WorkBatchList;
 # use Cath::Gemma::Disk::Executables;
 # use Cath::Gemma::Tool::CompassProfileBuilder;

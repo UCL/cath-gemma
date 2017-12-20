@@ -31,7 +31,7 @@ use Type::Params        qw/ compile Invocant                             /;
 use Types::Path::Tiny   qw/ Path                                         /;
 use Types::Standard     qw/ ArrayRef ClassName Object Optional Str Tuple /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Compute::Task::BuildTreeTask;
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;

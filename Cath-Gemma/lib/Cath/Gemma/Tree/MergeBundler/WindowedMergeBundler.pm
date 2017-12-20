@@ -24,7 +24,7 @@ use strictures 1;
 # # use Types::Standard    qw/ ArrayRef Int Object Str /;
 # use Types::Standard    qw/ ArrayRef Object Optional Str /;
 
-# Cath
+# Cath::Gemma
 # use Cath::Gemma::Disk::ProfileDirSet;
 # use Cath::Gemma::Tool::CompassProfileBuilder;
 

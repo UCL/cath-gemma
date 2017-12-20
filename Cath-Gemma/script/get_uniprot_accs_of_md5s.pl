@@ -27,6 +27,7 @@ use feature             qw/ say            /;
 use List::Util          qw/ shuffle        /;
 use FindBin;
 
+# Find non-core external lib directory using FindBin
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core (local)
@@ -35,7 +36,7 @@ use List::MoreUtils     qw/ natatime       /;
 use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
 
-# Cath
+# Cath::Gemma
 use Cath::Schema::Biomap;
 
 # The number of IDs to which everything should be limited

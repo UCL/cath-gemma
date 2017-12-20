@@ -21,7 +21,7 @@ use strictures 1;
 use Log::Log4perl::Tiny qw/ :easy                    /;
 use Types::Standard     qw/ Int                      /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Compute::TaskThreadPooler;
 use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Types  qw/ CathGemmaDiskExecutables /;

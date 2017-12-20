@@ -15,7 +15,7 @@ use strictures 1;
 use List::MoreUtils     qw/ first_index    /;
 use Log::Log4perl::Tiny qw/ :easy          /;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Executor::LocalExecutor;
 use Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler;
 

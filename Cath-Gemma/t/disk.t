@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 use strict;
 use warnings;
 
@@ -5,20 +7,19 @@ use warnings;
 use Storable qw/ dclone /;
 use FindBin;
 
-# Find non-core lib directory using FindBin
-use lib $FindBin::Bin . '/../extlib/lib/perl5';
-
-# Test
-use Test::Exception;
+# Core (test)
 use Test::More tests => 51;
+
+# Find non-core external lib directory using FindBin
+use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
 use Path::Tiny;
 
-# Find Cath::Gemma lib directory using FindBin
-use lib $FindBin::Bin . '/lib';
+# Non-core (test) (local)
+use Test::Exception;
 
-# Cath
+# Cath::Gemma
 use Cath::Gemma::Util;
 
 BEGIN { use_ok( 'Cath::Gemma::Disk::BaseDirAndProject' ) }
