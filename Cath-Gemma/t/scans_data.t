@@ -8,7 +8,7 @@ use FindBin;
 use Storable qw/ dclone /;
 
 # Core (test)
-use Test::More tests => 10;
+use Test::More tests => 2;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -21,7 +21,7 @@ use Cath::Gemma::Scan::ScansDataFactory;
 use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::Util;
 
-{
+subtest 'example_1.20.5.200' => sub {
 	my $data_base_dir         = path( $FindBin::Bin . '/data/1.20.5.200' )->realpath();
 	my $starting_clusters_dir = $data_base_dir->child( 'starting_clusters' );
 	my $scans_dir             = $data_base_dir->child( 'scans'             );
@@ -52,9 +52,9 @@ use Cath::Gemma::Util;
 	is( $id_and_score_b->[ 0 ], '3',        'Highest score in data involves starting cluster 3' );
 	is( $id_and_score_b->[ 1 ], '4',        'Highest score in data involves starting cluster 4' );
 	is( $id_and_score_b->[ 2 ], '5.19e-09', 'Highest score in data has score 5.19e-09'          );
-}
+};
 
-{
+subtest 'toy_data' => sub {
 	my $scans_data = Cath::Gemma::Scan::ScansData->new(
 		starting_clusters_of_ids => Cath::Gemma::StartingClustersOfId->new_from_starting_clusters( [ 1, 2, 3 ] ),
 		scans => {
@@ -78,4 +78,4 @@ use Cath::Gemma::Util;
 		[ '3', 5.0 ],
 		'Respects $excluded_ids, even if an excluded ID gets the same score as the answer and comes earlier',
 	);
-}
+};

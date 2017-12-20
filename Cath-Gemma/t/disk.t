@@ -8,7 +8,7 @@ use Storable qw/ dclone /;
 use FindBin;
 
 # Core (test)
-use Test::More tests => 51;
+use Test::More tests => 6;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -31,18 +31,19 @@ my $base_dir    = path( '/my_base' );
 my $project     = 'a_proj';
 my $strt_clusts = [ qw/ sc_9 sc_10 / ];
 
-# Cath::Gemma::Disk::BaseDirAndProject
-{
+subtest 'Cath::Gemma::Disk::BaseDirAndProject' => sub {
+
 	my $bdap_no_proj = new_ok( 'Cath::Gemma::Disk::BaseDirAndProject' => [ base_dir => $base_dir                      ] );
 	my $bdap_wi_proj = new_ok( 'Cath::Gemma::Disk::BaseDirAndProject' => [ base_dir => $base_dir, project => $project ] );
 
 	is( $bdap_no_proj->get_project_subdir_of_subdir( 'child' ), path( '/my_base/child'        ), 'Subdir is correct with no project' );
 	is( $bdap_wi_proj->get_project_subdir_of_subdir( 'child' ), path( '/my_base/child/a_proj' ), 'Subdir is correct with a project'  );
-}
+};
 
-# Cath::Gemma::Disk::ProfileDirSet
-{
-	{
+subtest 'Cath::Gemma::Disk::ProfileDirSet' => sub {
+
+	subtest 'create from base dir' => sub {
+
 		my $prof_dirset = Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir( $base_dir );
 		isa_ok( $prof_dirset, 'Cath::Gemma::Disk::ProfileDirSet' );
 
@@ -57,9 +58,10 @@ my $strt_clusts = [ qw/ sc_9 sc_10 / ];
 
 		ok(   $prof_dirset->is_equal_to( dclone( $prof_dirset ) ) );
 		ok( ! $prof_dirset->is_equal_to( Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir( 'other'   ) ) );
-	}
+	};
 
-	{
+	subtest 'create from base dir and project' => sub {
+
 		my $prof_dirset = Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir_and_project( $base_dir, $project );
 		isa_ok( $prof_dirset, 'Cath::Gemma::Disk::ProfileDirSet' );
 
@@ -74,28 +76,32 @@ my $strt_clusts = [ qw/ sc_9 sc_10 / ];
 
 		ok(   $prof_dirset->is_equal_to( dclone( $prof_dirset ) ) );
 		ok( ! $prof_dirset->is_equal_to( Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir( 'other' ) ) );
-	}
+	};
 
-	{
+	subtest 'create using new without arguments' => sub {
+
 		my $emptyprof_dirset = new_ok( 'Cath::Gemma::Disk::ProfileDirSet' );
 		dies_ok( sub { $emptyprof_dirset->assert_is_set                          (              ) } );
 		dies_ok( sub { $emptyprof_dirset->alignment_filename_of_starting_clusters( $strt_clusts ) } );
 		dies_ok( sub { $emptyprof_dirset->aln_dir                                (              ) } );
 		dies_ok( sub { $emptyprof_dirset->prof_dir                               (              ) } );
 		dies_ok( sub { $emptyprof_dirset->starting_cluster_dir                   (              ) } );
-	}
+	};
 
-	{
+	subtest 'create using new with starting_cluster_dir' => sub {
+
 		my $emptyprof_dirset = new_ok( 'Cath::Gemma::Disk::ProfileDirSet' => [ starting_cluster_dir => path('/sc') ] );
 		dies_ok( sub { $emptyprof_dirset->assert_is_set() } );
-	}
+	};
 
-	{
+	subtest 'create using new with starting_cluster_dir and aln_dir' => sub {
+
 		my $emptyprof_dirset = new_ok( 'Cath::Gemma::Disk::ProfileDirSet' => [ starting_cluster_dir => path('/sc'), aln_dir => path('/al') ] );
 		dies_ok( sub { $emptyprof_dirset->assert_is_set() } );
-	}
+	};
 
-	{
+	subtest 'create using new with starting_cluster_dir, aln_dir and prof_dir' => sub {
+
 		my $prof_dirset = new_ok( 'Cath::Gemma::Disk::ProfileDirSet' => [
 			aln_dir              => path( '/al_dir' ),
 			prof_dir             => path( '/pr_dir' ),
@@ -131,15 +137,13 @@ my $strt_clusts = [ qw/ sc_9 sc_10 / ];
 			prof_dir             => path( '/pr_dir'  ),
 			starting_cluster_dir => path( '/sc_dir2' ),
 		) ) );
-	}
-}
+	};
+};
 
-# # Cath::Gemma::Disk::GemmaDirSet
-# {
+# subtest 'Cath::Gemma::Disk::GemmaDirSet' => sub {
+#
+# };
 
-# }
-
-# # Cath::Gemma::Disk::TreeDirSet
-# {
-
-# }
+# subtest 'Cath::Gemma::Disk::TreeDirSet' => sub {
+#
+# };

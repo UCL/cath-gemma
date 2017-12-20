@@ -7,7 +7,7 @@ use warnings;
 use FindBin;
 
 # Core (test)
-use Test::More tests => 22;
+use Test::More tests => 5;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -18,22 +18,19 @@ use Time::Seconds;
 # Cath::Gemma
 use Cath::Gemma::Util;
 
-# evalue_window_ceiling() / evalue_window_floor()
-{
+subtest 'evalue_window_ceiling() / evalue_window_floor()' => sub {
 	is( evalue_window_ceiling( 1.2e-15 ), 1e-10, 'evalue_window_ceiling() calculates correctly' );
 	is( evalue_window_floor  ( 1.2e-15 ), 1e-20, 'evalue_window_floor  () calculates correctly' );
-}
+};
 
-# cluster_name_spaceship_sort()
-{
+subtest 'cluster_name_spaceship_sort()' => sub {
 	my @src_names          = ( qw/ clst_12 clst_10 clst_2 clst_99 clst_101 clst_102 clst_11 clst_100 clst_1 / );
 	my @sorted_clust_names = cluster_name_spaceship_sort( @src_names );
 	my @expected           = ( qw/ clst_1 clst_2 clst_10 clst_11 clst_12 clst_99 clst_100 clst_101 clst_102 / );
 	is_deeply( \@sorted_clust_names, \@expected, 'cluster_name_spaceship_sort() sorts as expected' );
-}
+};
 
-# combine_starting_cluster_names()
-{
+subtest 'combine_starting_cluster_names()' => sub {
 	is_deeply(
 		combine_starting_cluster_names( [ qw/ clst_101 clst_99 / ], [ qw/ clst_100 clst_98 / ], 'tree_df_ordering' ),
 		[ qw/ clst_101 clst_99 clst_100 clst_98  / ]
@@ -46,18 +43,16 @@ use Cath::Gemma::Util;
 		combine_starting_cluster_names( [ qw/ clst_101 clst_99 / ], [ qw/ clst_100 clst_98 / ],                    ),
 		[ qw/ clst_98  clst_99 clst_100 clst_101 / ]
 	);
-}
+};
 
-# unique_by_hashing()
-{
+subtest 'unique_by_hashing()' => sub {
 	is_deeply( [ unique_by_hashing( 0                ) ], [ 0    ], 'unique_by_hashing() is correct on: 0'                );
 	is_deeply( [ unique_by_hashing( 0, 0, 0          ) ], [ 0    ], 'unique_by_hashing() is correct on: 0, 0, 0'          );
 	is_deeply( [ unique_by_hashing( 1, 2             ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2'             );
 	is_deeply( [ unique_by_hashing( 1, 2, 2, 1, 2, 1 ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2, 2, 1, 2, 1' );
-}
+};
 
-# time_seconds_to_sge_string()
-{
+subtest 'time_seconds_to_sge_string()' => sub {
 	is( time_seconds_to_sge_string( Time::Seconds->new(      0 ) ),  '00:00:00', 'time_seconds_to_sge_string() is correct on 0 seconds'           );
 	is( time_seconds_to_sge_string( Time::Seconds->new(      1 ) ),  '00:00:01', 'time_seconds_to_sge_string() is correct on 1 second'            );
 
@@ -78,4 +73,4 @@ use Cath::Gemma::Util;
 		'00:02:00',
 		'time_seconds_to_sge_string() is correct on 1 minute + 1 minute'
 	);
-}
+};

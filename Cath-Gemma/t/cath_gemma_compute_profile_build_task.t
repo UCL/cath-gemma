@@ -48,7 +48,6 @@ sub make_example_profile_build_task {
 }
 
 subtest 'constructs_without_error' => sub {
-	plan tests => 1;
 	new_ok( 'Cath::Gemma::Compute::Task::ProfileBuildTask' => [
 		starting_cluster_lists     => [ [ qw/ a b / ] ],
 		compass_profile_build_type => default_compass_profile_build_type(),
@@ -61,7 +60,6 @@ subtest 'constructs_without_error' => sub {
 };
 
 subtest 'freezes_and_thaws_to_orig' => sub {
-	plan tests => 1;
 	is_deeply(
 		thaw( freeze( make_example_profile_build_task() ) ),
 		make_example_profile_build_task()
