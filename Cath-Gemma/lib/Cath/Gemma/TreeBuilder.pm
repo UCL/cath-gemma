@@ -93,15 +93,15 @@ around build_tree => sub {
 			]
 		) ]
 	);
-	DEBUG
-		'In '
-		. __PACKAGE__
-		. '->build_tree(), made a work_batch_list of '
-		. $pre_work_batch_list->num_steps()
-		. ' steps, estimated to take up to '
-		. $pre_work_batch_list->estimate_time_to_execute()
-		. ' seconds';
 	if ( $pre_work_batch_list->num_steps() > 0 ) {
+		DEBUG
+			'In '
+			. __PACKAGE__
+			. '->build_tree(), made a work_batch_list of '
+			. $pre_work_batch_list->num_steps()
+			. ' steps, estimated to take up to '
+			. $pre_work_batch_list->estimate_time_to_execute()
+			. ' seconds';
 		$executor->execute( $pre_work_batch_list, 'always_wait_for_complete' );
 	}
 
