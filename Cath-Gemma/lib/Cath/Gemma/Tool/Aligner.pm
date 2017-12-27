@@ -87,6 +87,12 @@ sub make_alignment_file {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet );
 	my ( $class, $exes, $starting_clusters, $profile_dir_set ) = $check->( @ARG );
 
+	my $aln_file = $profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters );
+
+	if ( -s $aln_file ) {
+		return { file_already_present => 1 };
+	}
+
 	return run_and_time_filemaking_cmd(
 		'mafft alignment',
 		$profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters ),
@@ -94,7 +100,7 @@ sub make_alignment_file {
 			my $aln_atomic_file = shift;
 			my $tmp_aln_file    = path( $aln_atomic_file->filename );
 
-			my $id_of_clusters = id_of_starting_clusters( $starting_clusters );
+			my $id_of_clusters = id_of_clusters( $starting_clusters );
 
 			my $raw_seqs_filename  = Path::Tiny->tempfile( TEMPLATE => '.temp_raw_seqs.XXXXXXXXXXX',
 			                                               DIR      => $exes->tmp_dir(),
@@ -165,8 +171,9 @@ sub make_alignment_file {
 			}
 
 			return {
-				mean_seq_length => $build_raw_seqs_result->{ mean_seq_length },
-				num_sequences   => $num_sequences,
+				mean_seq_length      => $build_raw_seqs_result->{ mean_seq_length },
+				num_sequences        => $num_sequences,
+				file_already_present => 0,
 			};
 		}
 	);

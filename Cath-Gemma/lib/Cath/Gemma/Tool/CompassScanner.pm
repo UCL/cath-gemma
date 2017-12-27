@@ -118,7 +118,7 @@ sub build_temp_profile_lib_file {
 	state $check = compile( ClassName, Path, ArrayRef[Str], Path, CathGemmaCompassProfileType );
 	my ( $class, $profile_dir, $cluster_ids, $dest_dir, $compass_profile_build_type ) = $check->( @ARG );
 
-	my $lib_filename = Path::Tiny->tempfile( TEMPLATE => '.' . id_of_starting_clusters( $cluster_ids ) . '.XXXXXXXXXXX',
+	my $lib_filename = Path::Tiny->tempfile( TEMPLATE => '.' . id_of_clusters( $cluster_ids ) . '.XXXXXXXXXXX',
 	                                         DIR      => $dest_dir,
 	                                         SUFFIX   => '.prof_lib',
 	                                         CLEANUP  => 1,
@@ -181,7 +181,8 @@ sub compass_scan_to_file {
 	my $output_file = $gemma_dir_set->scan_filename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type );
 
 	my $result = {};
-	if ( ! -s $output_file ) {
+	my $file_already_present = ( -s $output_file ) ? 1 : 0;
+	if ( ! $file_already_present ) {
 		$result = run_and_time_filemaking_cmd(
 			'COMPASS scan',
 			$output_file,
@@ -206,7 +207,8 @@ sub compass_scan_to_file {
 	return defined( $result->{ result } )
 		? $result
 		: {
-			result => Cath::Gemma::Scan::ScanData->read_from_file( $output_file )
+			result                    => Cath::Gemma::Scan::ScanData->read_from_file( $output_file ),
+			scan_file_already_present => $file_already_present,
 		};
 }
 
@@ -220,20 +222,29 @@ sub build_and_scan_merge_cluster_against_others {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType );
 	my ( $class, $exes, $query_starting_cluster_ids, $match_ids, $gemma_dir_set, $compass_profile_build_type ) = $check->( @ARG );
 
-	my $build_aln_and_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
+	my $aln_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
 		$exes,
 		$query_starting_cluster_ids,
 		$gemma_dir_set->profile_dir_set(),
 		$compass_profile_build_type,
 	);
 
-	return __PACKAGE__->compass_scan_to_file(
+	my $result = __PACKAGE__->compass_scan_to_file(
 		$exes,
-		[ id_of_starting_clusters( $query_starting_cluster_ids ) ],
+		[ id_of_clusters( $query_starting_cluster_ids ) ],
 		$match_ids,
 		$gemma_dir_set,
 		$compass_profile_build_type,
 	);
+	return {
+		%$result,
+
+		( defined( $aln_prof_result->{ aln_file_already_present  } ) ? ( aln_file_already_present  => $aln_prof_result->{ aln_file_already_present  } ) : () ),
+		( defined( $aln_prof_result->{ aln_filename              } ) ? ( aln_filename              => $aln_prof_result->{ aln_filename              } ) : () ),
+		( defined( $aln_prof_result->{ prof_file_already_present } ) ? ( prof_file_already_present => $aln_prof_result->{ prof_file_already_present } ) : () ),
+		( defined( $aln_prof_result->{ prof_filename             } ) ? ( prof_filename             => $aln_prof_result->{ prof_filename             } ) : () ),
+
+	};
 }
 
 =head2 get_pair_scan_score

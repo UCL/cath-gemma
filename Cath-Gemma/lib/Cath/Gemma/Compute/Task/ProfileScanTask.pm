@@ -53,15 +53,15 @@ has dir_set => (
 	required => 1,
 );
 
-=head2 starting_cluster_list_pairs
+=head2 clust_and_clust_list_pairs
 
 TODOCUMENT
 
 =cut
 
-has starting_cluster_list_pairs => (
+has clust_and_clust_list_pairs => (
 	is          => 'ro',
-	isa         => ArrayRef[Tuple[ArrayRef[Str],ArrayRef[Str]]],
+	isa         => ArrayRef[Tuple[Str,ArrayRef[Str]]],
 	handles_via => 'Array',
 	handles     => {
 		is_empty      => 'is_empty',
@@ -95,7 +95,7 @@ has compass_profile_build_type => (
 # sub id {
 # 	state $check = compile( Object );
 # 	my ( $self ) = $check->( @ARG );
-# 	return generic_id_of_clusters( [ map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() } ] );
+# 	return generic_id_of_clusters( [ map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() } ] );
 # }
 
 # =head2 get_sub_task
@@ -128,10 +128,10 @@ sub id {
 		$self->compass_profile_build_type(),
 		map {
 			(
-				id_of_starting_clusters( $ARG->[ 0 ] ),
-				id_of_starting_clusters( $ARG->[ 1 ] ),
+				id_of_clusters( $ARG->[ 0 ] ),
+				id_of_clusters( $ARG->[ 1 ] ),
 			);
-		} @{ $self->starting_cluster_list_pairs() }
+		} @{ $self->clust_and_clust_list_pairs() }
 	] );
 }
 
@@ -145,19 +145,19 @@ sub remove_already_present {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	my $starting_cluster_list_pairs = $self->starting_cluster_list_pairs();
+	my $clust_and_clust_list_pairs = $self->clust_and_clust_list_pairs();
 
 	my @del_indices = grep {
-		my $starting_cluster_list_pair = $starting_cluster_list_pairs->[ $ARG ];
+		my $starting_cluster_list_pair = $clust_and_clust_list_pairs->[ $ARG ];
 		-s ( '' . $self->dir_set()->scan_filename_of_cluster_ids(
-			$starting_cluster_list_pair->[ 0 ],
-			$starting_cluster_list_pair->[ 1 ],
+			[ $starting_cluster_list_pair->[ 0 ] ],
+			  $starting_cluster_list_pair->[ 1 ],
 			$self->compass_profile_build_type()
 		) )
-	} ( 0 .. $#$starting_cluster_list_pairs );
+	} ( 0 .. $#$clust_and_clust_list_pairs );
 
 	foreach my $reverse_index ( reverse( @del_indices ) ) {
-		splice( @$starting_cluster_list_pairs, $reverse_index, 1 );
+		splice( @$clust_and_clust_list_pairs, $reverse_index, 1 );
 	}
 
 	return $self;
@@ -198,12 +198,10 @@ sub execute_task {
 	return [
 		map
 		{
-			my ( $query_ids, $match_ids ) = @$ARG;
-			INFO 'Scanning '
-				. scalar( @$query_ids )
-				. ' query starting cluster(s) (beginning with '
-				. join( ', ', @$query_ids[ 0 .. min( 20, $#$query_ids ) ] )
-				. ') against '
+			my ( $query_id, $match_ids ) = @$ARG;
+			INFO 'Scanning query cluster '
+				. $query_id
+				. ' against '
 				. scalar( @$match_ids )
 				. ' starting cluster(s) (beginning with '
 				. join( ', ', @$match_ids[ 0 .. min( 20, $#$match_ids ) ] )
@@ -211,13 +209,13 @@ sub execute_task {
 				;
 			Cath::Gemma::Tool::CompassScanner->compass_scan_to_file(
 				$exes,
-				$query_ids,
+				[ $query_id ],
 				$match_ids,
 				$self->dir_set(),
 				$self->compass_profile_build_type(),
 			);
 		}
-		@{ $self->starting_cluster_list_pairs() },
+		@{ $self->clust_and_clust_list_pairs() },
 	];
 }
 
@@ -233,8 +231,8 @@ sub split_into_singles {
 
 	return [
 		map
-			{ $self->$_clone( starting_cluster_list_pairs => [ $ARG ] ); }
-			@{ $self->starting_cluster_list_pairs() }
+			{ $self->$_clone( clust_and_clust_list_pairs => [ $ARG ] ); }
+			@{ $self->clust_and_clust_list_pairs() }
 	];
 }
 
@@ -262,17 +260,17 @@ sub remove_duplicate_scan_tasks {
 		my %prev_seen_ids;
 		foreach my $scan_task ( @$scan_tasks ) {
 
-			my $starting_cluster_list_pairs = $scan_task->starting_cluster_list_pairs();
+			my $clust_and_clust_list_pairs = $scan_task->clust_and_clust_list_pairs();
 			my @del_indices = grep {
-				my $pair              = $starting_cluster_list_pairs->[ $ARG ];
-				my $id                = id_of_starting_clusters( $pair->[ 0 ] ) . '/' . id_of_starting_clusters( $pair->[ 1 ] );
+				my $pair              = $clust_and_clust_list_pairs->[ $ARG ];
+				my $id                = $pair->[ 0 ] . '/' . id_of_clusters( $pair->[ 1 ] );
 				my $prev_seen         = $prev_seen_ids{ $id };
 				$prev_seen_ids{ $id } = 1;
 				$prev_seen;
-			} ( 0 .. $#$starting_cluster_list_pairs );
+			} ( 0 .. $#$clust_and_clust_list_pairs );
 
 			foreach my $reverse_index ( reverse( @del_indices ) ) {
-				splice( @$starting_cluster_list_pairs, $reverse_index, 1 );
+				splice( @$clust_and_clust_list_pairs, $reverse_index, 1 );
 			}
 		}
 	}
@@ -305,7 +303,9 @@ sub make_batch_of_indices {
 	return Cath::Gemma::Compute::WorkBatch->new(
 		scan_tasks => [
 			$self->$_clone(
-				starting_cluster_list_pairs => [ @{ $self->starting_cluster_list_pairs() } [ $start_index .. ( $start_index + $num_steps - 1 ) ] ]
+				clust_and_clust_list_pairs => [
+					@{ $self->clust_and_clust_list_pairs() } [ $start_index .. ( $start_index + $num_steps - 1 ) ]
+				]
 			)
 		],
 	);

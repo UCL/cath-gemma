@@ -450,9 +450,17 @@ sub make_work_batch_of_query_scs_and_match_scs_list {
 
 		scan_tasks => Cath::Gemma::Compute::Task::ProfileScanTask->remove_duplicate_scan_tasks( [
 			Cath::Gemma::Compute::Task::ProfileScanTask->new(
-				starting_cluster_list_pairs => $query_scs_and_match_scs_list,
-				dir_set                     => $gemma_dir_set,
-				compass_profile_build_type  => $compass_profile_build_type,
+				clust_and_clust_list_pairs => [
+					map {
+						my $query_scs_and_match_scs = $ARG;
+						[
+							id_of_clusters( $query_scs_and_match_scs->[ 0 ] ),
+							$query_scs_and_match_scs->[ 1 ],
+						];
+					} @$query_scs_and_match_scs_list
+				],
+				dir_set                    => $gemma_dir_set,
+				compass_profile_build_type => $compass_profile_build_type,
 			)->remove_already_present(),
 		] ),
 	)->remove_empty_tasks();

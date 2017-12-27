@@ -124,15 +124,30 @@ sub build_tree {
 				last;
 			}
 
-			my $new_scan_data = Cath::Gemma::Tool::CompassScanner->build_and_scan_merge_cluster_against_others(
+			my $response = Cath::Gemma::Tool::CompassScanner->build_and_scan_merge_cluster_against_others(
 				$local_executor->exes(), # TODO: Fix this appalling violation of OO principles
 				$merged_starting_clusters,
 				$other_ids,
 				$gemma_dir_set,
 				$compass_profile_build_type,
-			)->{ result };
+			);
 
-			$scans_data->add_scan_data( $new_scan_data );
+			foreach my $check ( qw/ aln_file_already_present prof_file_already_present scan_file_already_present / ) {
+				if ( ! $response->{ $check } ) {
+					WARN
+						  'In '
+						. __PACKAGE__
+						. '::build_tree(), failed to find file ( '
+						. $check
+						. ') that should already be present after previous execution (starting clusters: '
+						. join( ', ', @$merged_starting_clusters )
+						. '; other IDs: '
+						. join( ', ', @$other_ids )
+						. ')';
+				}
+			}
+
+			$scans_data->add_scan_data( $response->{ result } );
 		}
 		# warn "\n";
 		++$num_merge_batches;

@@ -95,7 +95,7 @@ sub id {
 	my $self = shift;
 	return generic_id_of_clusters( [
 		$self->compass_profile_build_type(),
-		map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
+		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
 	] );
 }
 
@@ -228,7 +228,7 @@ sub remove_duplicate_build_tasks {
 			my $starting_cluster_lists = $build_task->starting_cluster_lists();
 			my @del_indices = grep {
 
-				my $id                = id_of_starting_clusters( $starting_cluster_lists->[ $ARG ] );
+				my $id                = id_of_clusters( $starting_cluster_lists->[ $ARG ] );
 				my $prev_seen         = $prev_seen_ids{ $id };
 				$prev_seen_ids{ $id } = 1;
 				$prev_seen;

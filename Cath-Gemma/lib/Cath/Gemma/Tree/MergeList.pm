@@ -502,7 +502,7 @@ sub inital_scan_lists_of_starting_clusters {
 
 	return [
 		map
-		{ [ [ $ARG->[ 0 ] ], $ARG->[ 1 ] ]; }
+		{ [ $ARG->[ 0 ], $ARG->[ 1 ] ]; }
 		@{ $proto->inital_scans_of_starting_clusters( $starting_clusters ) }
 	];
 }

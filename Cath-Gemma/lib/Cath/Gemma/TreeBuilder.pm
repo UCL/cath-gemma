@@ -86,9 +86,9 @@ around build_tree => sub {
 			scan_tasks => [
 				# ...all initial nodes (ie starting cluster vs other starting clusters)
 				Cath::Gemma::Compute::Task::ProfileScanTask->new(
-					starting_cluster_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
-					dir_set                     => $gemma_dir_set,
-					compass_profile_build_type  => $compass_profile_build_type,
+					clust_and_clust_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
+					dir_set                    => $gemma_dir_set,
+					compass_profile_build_type => $compass_profile_build_type,
 				)->remove_already_present(),
 			]
 		) ]

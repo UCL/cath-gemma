@@ -41,7 +41,7 @@ subtest 'example_1.20.5.200' => sub {
 
 	my $premerge_scans_data = dclone( $scans_data );
 	my $merge_1_2_dry_run   = $scans_data->no_op_merge_pair( qw/ 1 2 / );
-	my $expected_merge_1_2  = [ id_of_starting_clusters( [ qw/ 1 2 / ] ), [ qw/ 1 2 / ], [ qw/ 3 4 / ] ];
+	my $expected_merge_1_2  = [ id_of_clusters( [ qw/ 1 2 / ] ), [ qw/ 1 2 / ], [ qw/ 3 4 / ] ];
 	is_deeply( $premerge_scans_data, $scans_data, 'no_op_merge_pair() does not change ScansData' );
 	is_deeply( $merge_1_2_dry_run, $expected_merge_1_2, 'this test' );
 

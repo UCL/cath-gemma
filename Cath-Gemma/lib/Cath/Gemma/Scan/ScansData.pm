@@ -288,7 +288,7 @@ sub merge_add_with_score_of_lowest {
 	my $starting_clusters_2 = $self->remove( $id2 );
 
 	my $starting_clusters = combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
-	my $merged_id         = id_of_starting_clusters( $starting_clusters );
+	my $merged_id         = id_of_clusters( $starting_clusters );
 	$self->add_starting_clusters_group_by_id( $starting_clusters, $merged_id );
 
 	foreach my $new_result ( @new_results ) {
@@ -326,7 +326,7 @@ sub merge_add_with_score_of_highest {
 	my $starting_clusters_2 = $self->remove( $id2 );
 
 	my $starting_clusters = combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
-	my $merged_id         = id_of_starting_clusters( $starting_clusters );
+	my $merged_id         = id_of_clusters( $starting_clusters );
 	$self->add_starting_clusters_group_by_id( $starting_clusters, $merged_id );
 
 	foreach my $new_result ( @new_results ) {

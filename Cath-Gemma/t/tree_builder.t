@@ -37,6 +37,7 @@ BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::PureTreeBuilder'            ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::WindowedTreeBuilder'        ) }
 
 # Prep some useful data
+# my $superfamily                = '1.20.5.200';
 my $superfamily                = '3.30.70.1470';
 my $data_base_dir              = path( $FindBin::Bin )->child( '/data' )->child( $superfamily )->realpath();
 my $tracefiles_dir             = $data_base_dir->child( 'tracefiles' );

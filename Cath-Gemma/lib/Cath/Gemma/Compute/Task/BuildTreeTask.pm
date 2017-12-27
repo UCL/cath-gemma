@@ -129,7 +129,7 @@ sub id {
 		$self->tree_builder()->name(),
 		$self->compass_profile_build_type(),
 		$self->clusts_ordering(),
-		map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() },
+		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() },
 	] );
 }
 
@@ -160,7 +160,7 @@ sub id {
 # 	my ( $self ) = $check->( @ARG );
 # 	return generic_id_of_clusters( [
 # 		$self->compass_profile_build_type(),
-# 		map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
+# 		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
 # 	] );
 # }
 
@@ -312,7 +312,7 @@ sub split_into_singles {
 # 			my $starting_cluster_lists = $build_task->starting_cluster_lists();
 # 			my @del_indices = grep {
 
-# 				my $id                = id_of_starting_clusters( $starting_cluster_lists->[ $ARG ] );
+# 				my $id                = id_of_clusters( $starting_cluster_lists->[ $ARG ] );
 # 				my $prev_seen         = $prev_seen_ids{ $id };
 # 				$prev_seen_ids{ $id } = 1;
 # 				$prev_seen;

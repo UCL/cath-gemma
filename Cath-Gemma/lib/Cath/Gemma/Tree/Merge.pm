@@ -204,7 +204,7 @@ sub id {
 
 	$clusts_ordering //= 'simple_ordering';
 
-	return id_of_starting_clusters( $self->starting_nodes( $clusts_ordering ) );
+	return id_of_clusters( $self->starting_nodes( $clusts_ordering ) );
 }
 
 1;

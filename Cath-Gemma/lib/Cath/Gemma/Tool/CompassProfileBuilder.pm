@@ -72,7 +72,9 @@ sub build_compass_profile_in_dir {
 	my $output_stem       = $aln_file->basename( alignment_profile_suffix() );
 
 	if ( -s $compass_prof_file ) {
-		return {};
+		return {
+			file_already_present => 1,
+		};
 	}
 
 	return run_and_time_filemaking_cmd(
@@ -177,7 +179,9 @@ sub build_compass_profile_in_dir {
 				}
 			}
 
-			return {};
+			return {
+				file_already_present => 0,
+			};
 		}
 	);
 }
@@ -216,7 +220,8 @@ sub build_alignment_and_compass_profile {
 	my $alignment_result = 
 		( -s $aln_file )
 		? {
-			out_filename => $aln_file
+			out_filename         => $aln_file,
+			file_already_present => 1,
 		}
 		: Cath::Gemma::Tool::Aligner->make_alignment_file(
 			$exes,
@@ -257,13 +262,15 @@ sub build_alignment_and_compass_profile {
 	}
 
 	return {
-		( defined( $alignment_result->{ duration          } ) ? ( aln_duration          => $alignment_result->{ duration         } ) : () ),
-		( defined( $alignment_result->{ mean_seq_length   } ) ? ( mean_seq_length       => $alignment_result->{ mean_seq_length    } ) : () ),
-		( defined( $alignment_result->{ num_sequences     } ) ? ( num_sequences         => $alignment_result->{ num_sequences    } ) : () ),
-		( defined( $alignment_result->{ wrapper_duration  } ) ? ( aln_wrapper_duration  => $alignment_result->{ wrapper_duration } ) : () ),
+		( defined( $alignment_result->{ duration             } ) ? ( aln_duration              => $alignment_result->{ duration             } ) : () ),
+		( defined( $alignment_result->{ mean_seq_length      } ) ? ( mean_seq_length           => $alignment_result->{ mean_seq_length      } ) : () ),
+		( defined( $alignment_result->{ num_sequences        } ) ? ( num_sequences             => $alignment_result->{ num_sequences        } ) : () ),
+		( defined( $alignment_result->{ wrapper_duration     } ) ? ( aln_wrapper_duration      => $alignment_result->{ wrapper_duration     } ) : () ),
+		( defined( $alignment_result->{ file_already_present } ) ? ( aln_file_already_present  => $alignment_result->{ file_already_present } ) : () ),
 
-		( defined( $profile_result  ->{ duration          } ) ? ( prof_duration         => $profile_result  ->{ duration         } ) : () ),
-		( defined( $profile_result  ->{ wrapper_duration  } ) ? ( prof_wrapper_duration => $profile_result  ->{ wrapper_duration } ) : () ),
+		( defined( $profile_result  ->{ duration             } ) ? ( prof_duration             => $profile_result  ->{ duration             } ) : () ),
+		( defined( $profile_result  ->{ wrapper_duration     } ) ? ( prof_wrapper_duration     => $profile_result  ->{ wrapper_duration     } ) : () ),
+		( defined( $profile_result  ->{ file_already_present } ) ? ( prof_file_already_present => $profile_result  ->{ file_already_present } ) : () ),
 		aln_filename  => $aln_file,
 		prof_filename => $profile_result->{ out_filename  },
 	};

@@ -72,7 +72,7 @@ with ( 'Cath::Gemma::Tree::MergeBundler' );
 # 		$self->tree_builder()->name(),
 # 		$self->compass_profile_build_type(),
 # 		$self->clusts_ordering(),
-# 		map { id_of_starting_clusters( $ARG ) } @{ $self->starting_cluster_lists() },
+# 		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() },
 # 	] );
 # }
 

@@ -40,7 +40,7 @@ our @EXPORT = qw/
 	guess_if_running_on_sge
 	has_seg_exes
 	has_sge_enviroment_variables
-	id_of_starting_clusters
+	id_of_clusters
 	make_atomic_write_file
 	mergee_is_starting_cluster
 	min_time_seconds
@@ -400,18 +400,15 @@ sub make_atomic_write_file {
 	return $atomic_file;
 }
 
-=head2 id_of_starting_clusters
+=head2 id_of_clusters
 
 TODOCUMENT
 
 =cut
 
-sub id_of_starting_clusters {
-	my $starting_clusters = shift;
-
-	if ( ref( $starting_clusters ) ne 'ARRAY' ) {
-		confess "Argh";
-	}
+sub id_of_clusters {
+	state $check = compile( ArrayRef );
+	my ( $starting_clusters ) = $check->( @ARG );
 
 	if ( scalar( @$starting_clusters ) == 0 ) {
 		confess "Cannot calculate an ID for an empty list of starting clusters";
@@ -526,7 +523,7 @@ TODOCUMENT
 
 sub alignment_filebasename_of_starting_clusters {
 	my $starting_clusters = shift;
-	return id_of_starting_clusters( $starting_clusters ) . alignment_profile_suffix();
+	return id_of_clusters( $starting_clusters ) . alignment_profile_suffix();
 }
 
 =head2 prof_file_of_prof_dir_and_aln_file
@@ -567,7 +564,7 @@ TODOCUMENT
 
 sub raw_sequences_filename_of_starting_clusters {
 	my $starting_clusters = shift;
-	return id_of_starting_clusters( $starting_clusters ) . '.fa';
+	return id_of_clusters( $starting_clusters ) . '.fa';
 }
 
 =head2 scan_filebasename_of_cluster_ids

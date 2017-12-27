@@ -89,7 +89,7 @@ TODOCUMENT
 sub add_starting_clusters_group_by_id {
 	state $check = compile( Object, ArrayRef[Str], Optional[Str] );
 	my ( $self, $starting_clusters, $id ) = $check->( @ARG );
-	$id //= id_of_starting_clusters( $starting_clusters );
+	$id //= id_of_clusters( $starting_clusters );
 	$self->_scoi()->{ $id } = $starting_clusters;
 	return $id;
 }
