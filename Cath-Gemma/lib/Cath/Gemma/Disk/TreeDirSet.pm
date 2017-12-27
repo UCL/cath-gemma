@@ -116,24 +116,6 @@ sub assert_is_set {
 	$self->tree_dir();
 }
 
-# =head2 scan_filename_of_cluster_ids
-
-# TODOCUMENT
-
-# =cut
-
-# sub scan_filename_of_cluster_ids {
-# 	state $check = compile( Object, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
-# 	my ( $self, $query_ids, $match_ids, $compass_profile_build_type ) = $check->( @ARG );
-
-# 	return scan_filename_of_dir_and_cluster_ids(
-# 		$self->tree_dir(),
-# 		$query_ids,
-# 		$match_ids,
-# 		$compass_profile_build_type,
-# 	);
-# }
-
 =head2 make_tree_dir_set_of_base_dir_and_project
 
 TODOCUMENT
