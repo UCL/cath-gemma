@@ -91,7 +91,6 @@ sub get_query_scs_and_match_scs_list_of_bundle {
 			scalar( @{ $ARG->[ 1 ] } ) > 0
 		}
 		map {
-
 			[ @$ARG[ 1, 2 ] ];
 		} @$merge_details
 	];
