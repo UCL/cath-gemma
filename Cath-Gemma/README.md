@@ -32,9 +32,12 @@ Within `lib` :
     │   │   └── Cath::Gemma::Executor::HpcRunner::HpcSgeRunner        Submit an real HPC job to run the the HPC script
     │   └── Cath::Gemma::Executor::LocalExecutor                      Execute a Cath::Gemma::Compute::WorkBatchList locally (ie directly)
     ├── (Scan)
+    │   ├── (Impl)
+    │   │   └── Cath::Gemma::Scan::Impl::Links                        TODOCUMENT
     │   ├── Cath::Gemma::Scan::ScanData                               TODOCUMENT
     │   ├── Cath::Gemma::Scan::ScansDataFactory                       TODOCUMENT
     │   └── Cath::Gemma::Scan::ScansData                              TODOCUMENT
+    ├── Cath::Gemma::StartingClustersOfId                             TODOCUMENT
     ├── (Tool)
     │   ├── Cath::Gemma::Tool::Aligner                                TODOCUMENT
     │   ├── Cath::Gemma::Tool::CompassProfileBuilder                  TODOCUMENT
@@ -182,6 +185,14 @@ cover -test +ignore ^extlib/
 ~~~
 
 ...and then browse to [/tmp/Cath-Gemma/cover_db/coverage.html](file:///tmp/Cath-Gemma/cover_db/coverage.html).
+
+It can be useful to specify a single test. One way is:
+
+~~~
+rsync -av --exclude 'other_stuff' ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/ ; rm -f /tmp/Cath-Gemma/t/*.t ; rsync -av ~/cath-gemma/Cath-Gemma/t/links.t /tmp/Cath-Gemma/t/links.t ; \make ; cover -test +ignore ^extlib/
+~~~
+
+...though it can probably be done more cleanly with the `cover` command line arguments.
 
 ## Future
 
