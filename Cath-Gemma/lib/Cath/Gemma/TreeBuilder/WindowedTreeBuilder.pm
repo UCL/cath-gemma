@@ -95,21 +95,17 @@ sub build_tree {
 		# Get a list of the merges
 		my $ids_and_score_list = $merge_bundler->get_execution_bundle( $scans_data );
 
-		# map {} @$ids_and_score_list;
-
-		# Cath::Gemma::Tree::MergeBundler;
-
 		foreach my $ids_and_score ( @$ids_and_score_list ) {
 			my ( $id1, $id2, $score ) = @$ids_and_score;
 
 			( $id1, $id2 ) = id_flip( [ map { $ARG->[ 0 ] } @nodenames_and_merges ], $id1, $id2 );
 
-			my $merged_starting_clusters = $scans_data->merge_remove( $id1, $id2, $clusts_ordering );
-			my $other_ids                = $scans_data->sorted_ids();
-			my $merged_node_id           = $scans_data->add_starting_clusters_group_by_id( $merged_starting_clusters );
+			my ( $merged_node_id, $merged_starting_clusters, $other_ids ) = @{ $scans_data->merge_pair_without_new_scores(
+				$id1,
+				$id2,
+				$clusts_ordering
+			) };
 
-			# TODONOW: Change the code to use this...
-			# my $merge_pair_result = $scans_data->merge_pair( $id1, $id2, $clusts_ordering );
 
 			push @nodenames_and_merges, [
 				$merged_node_id,
@@ -153,7 +149,7 @@ sub build_tree {
 		++$num_merge_batches;
 	}
 
-	warn "Number of merge-batches : $num_merge_batches\n";
+	INFO "Number of merge-batches : $num_merge_batches\n";
 
 	return Cath::Gemma::Tree::MergeList->build_from_nodenames_and_merges( \@nodenames_and_merges );
 }

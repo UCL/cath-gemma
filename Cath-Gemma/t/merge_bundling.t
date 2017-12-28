@@ -206,5 +206,5 @@ foreach my $ctr ( 0 .. 5 ) {
 	# use Data::Dumper;
 	# warn Dumper( $sue );
 
-	my $merge_result = $scans_data->merge_pairs( [ map { [ @$ARG[ 0, 1 ] ] } @$bundle ] );
+	my $merge_result = $scans_data->merge_pairs_without_new_scores( [ map { [ @$ARG[ 0, 1 ] ] } @$bundle ] );
 }

@@ -16,7 +16,7 @@ use strictures 1;
 # Non-core (local)
 use Path::Tiny;
 use Type::Params       qw/ compile                 /;
-use Types::Standard    qw/ Num Object Optional Str /;
+use Types::Standard    qw/ LaxNum Object Optional Str /;
 
 # Cath::Gemma
 use Cath::Gemma::Types qw/
@@ -52,7 +52,7 @@ TODOCUMENT
 
 has score => (
 	is  => 'rw',
-	isa => Num,
+	isa => LaxNum,
 );
 
 =head2 score_with_lower_bound
@@ -62,7 +62,7 @@ TODOCUMENT
 =cut
 
 sub score_with_lower_bound {
-	state $check = compile( Object, Optional[Num] );
+	state $check = compile( Object, Optional[LaxNum] );
 	my ( $self, $lower_bound ) = $check->( @ARG );
 
 	return max( $self->score(), ( $lower_bound // 1e-300 ) );

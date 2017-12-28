@@ -80,6 +80,7 @@ class_type CathGemmaDiskGemmaDirSet,             { class => "Cath::Gemma::Disk::
 class_type CathGemmaDiskProfileDirSet,           { class => "Cath::Gemma::Disk::ProfileDirSet"             };
 class_type CathGemmaDiskTreeDirSet,              { class => "Cath::Gemma::Disk::TreeDirSet"                };
 
+class_type CathGemmaScanImplLinks,               { class => "Cath::Gemma::Scan::Impl::Links"               };
 class_type CathGemmaScanScanData,                { class => "Cath::Gemma::Scan::ScanData"                  };
 class_type CathGemmaScanScansData,               { class => "Cath::Gemma::Scan::ScansData"                 };
 class_type CathGemmaStartingClustersOfId         { class => "Cath::Gemma::StartingClustersOfId"            };

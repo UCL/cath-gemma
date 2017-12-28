@@ -290,7 +290,7 @@ sub to_tracefile_string {
 			. "\t"
 			. $new_id
 			. "\t"
-			. $merge->score()
+			. ( ( defined( $merge->score() ) && lc( $merge->score() ) ne 'inf' ) ? $merge->score() : 100000000 )
 			. "\n"
 		);
 	} );
@@ -372,7 +372,7 @@ sub build_from_nodenames_and_merges {
 		push @merges, Cath::Gemma::Tree::Merge->new(
 			mergee_a => $fix_mergee->( $merge->mergee_a() ),
 			mergee_b => $fix_mergee->( $merge->mergee_b() ),
-			score    => $merge->score,
+			score    => $merge->score // 'inf',
 		);
 		$merge_ref_of_mergee_number{ $nodename } = $merges[ -1 ];
 	};

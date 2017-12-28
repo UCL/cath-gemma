@@ -15,6 +15,7 @@ use v5.10;
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
 use Type::Params        qw/ compile        /;
 use Types::Standard     qw/ Str            /;
@@ -28,6 +29,8 @@ use Cath::Gemma::Executor::LocalExecutor;
 
 # Cath::Gemma Test
 use Cath::Gemma::Test;
+
+Log::Log4perl->easy_init( { level => $WARN } );
 
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder'    ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder'     ) }

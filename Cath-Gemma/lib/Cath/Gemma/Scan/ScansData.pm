@@ -4,10 +4,10 @@ use strict;
 use warnings;
 
 # Core
-use Carp                qw/ confess                                                         /;
-use English             qw/ -no_match_vars                                                  /;
-use List::Util          qw/ max maxstr min minstr sum                                       /;
-use POSIX               qw/ log10                                                           /;
+use Carp                qw/ confess                                                                 /;
+use English             qw/ -no_match_vars                                                          /;
+use List::Util          qw/ max maxstr min minstr sum                                               /;
+use POSIX               qw/ log10                                                                   /;
 use v5.10;
 
 # Moo
@@ -17,59 +17,88 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use List::MoreUtils     qw/ first_value                                                     /;
-use Log::Log4perl::Tiny qw/ :easy                                                           /;
-use Type::Params        qw/ compile                                                         /;
-use Types::Standard     qw/ ArrayRef ClassName HashRef Num Tuple Object Optional slurpy Str /;
+use List::MoreUtils     qw/ first_value                                                             /;
+use Log::Log4perl::Tiny qw/ :easy                                                                   /;
+use Type::Params        qw/ compile                                                                 /;
+use Types::Standard     qw/ ArrayRef ClassName CodeRef HashRef Num Tuple Object Optional slurpy Str /;
 
 # Cath::Gemma
+use Cath::Gemma::Scan::Impl::Links;
 use Cath::Gemma::StartingClustersOfId;
 use Cath::Gemma::Types qw/
 	CathGemmaNodeOrdering
+	CathGemmaScanImplLinks
 	CathGemmaScanScanData
 	CathGemmaScanScansData
 	CathGemmaStartingClustersOfId
 /;
 use Cath::Gemma::Util;
 
-=head2 starting_clusters_of_ids
+=head2 _starting_clusters_of_ids
 
 TODOCUMENT
 
 =cut
 
-has starting_clusters_of_ids => (
+has _starting_clusters_of_ids => (
 	is          => 'rwp',
 	isa         => CathGemmaStartingClustersOfId,
 	handles     => [ qw/
-		add_separate_starting_clusters
-		add_starting_clusters_group_by_id
 		contains_id
 		count
 		get_starting_clusters_of_id
 		no_op_merge_pair
 		no_op_merge_pairs
-		remove_id
 		sorted_ids
 	/ ],
 	default     => sub { Cath::Gemma::StartingClustersOfId->new(); },
 );
 
-=head2 scans
+=head2 _links_data
 
 TODOCUMENT
 
 =cut
 
-has scans => (
+has _links_data => (
 	is          => 'rwp',
-	isa         => HashRef[HashRef[Num]],
-	default     => sub { {}; },
-	handles_via => 'Hash',
-	handles     => {
-		scan_ids => 'keys',
-	},
+	isa         => CathGemmaScanImplLinks,
+	default     => sub { Cath::Gemma::Scan::Impl::Links->new(); },
+	handles     => [ qw/
+		get_id_and_score_of_lowest_score_of_id
+		get_score_between
+		ids
+	/ ],
 );
+
+=head2 add_separate_starting_clusters
+
+TODOCUMENT
+
+=cut
+
+sub add_separate_starting_clusters {
+	state $check = compile( Object, ArrayRef[Str] );
+	my ( $self, $ids ) = $check->( @ARG );
+
+	$self->_links_data()->add_separate_starting_clusters( $ids );
+	$self->_starting_clusters_of_ids()->add_separate_starting_clusters( $ids );
+	return $self;
+}
+
+=head2 add_starting_clusters_group_by_id
+
+TODOCUMENT
+
+=cut
+
+sub add_starting_clusters_group_by_id {
+	state $check = compile( Object, ArrayRef[Str], Optional[Str] );
+	my ( $self, $starting_clusters, $id ) = $check->( @ARG );
+
+	$self->_links_data()->add_starting_clusters_group_by_id( $starting_clusters, $id );
+	return $self->_starting_clusters_of_ids()->add_starting_clusters_group_by_id( $starting_clusters, $id );
+}
 
 =head2 add_scan_entry
 
@@ -84,15 +113,12 @@ sub add_scan_entry {
 	foreach my $id ( $id1, $id2 ) {
 		if ( ! defined( $self->contains_id( $id ) ) ) {
 			use Data::Dumper;
-			confess "Cannot add scan_entry for unrecognised ID \"$id\" " . Dumper( $self->starting_clusters_of_ids() );
+			confess "Cannot add scan_entry for unrecognised ID \"$id\" " . Dumper( $self->_starting_clusters_of_ids() );
 		}
 	}
 
-	my $scans = $self->scans();
-	$scans->{ $id1 }->{ $id2 } = $score;
-	$scans->{ $id2 }->{ $id1 } = $score;
+	$self->_links_data()->add_scan_entry( $id1, $id2, $score );
 }
-
 
 =head2 add_scan_data
 
@@ -107,46 +133,6 @@ sub add_scan_data {
 	foreach my $scan_entry ( @{ $scan_data->scan_data() } ) {
 		$self->add_scan_entry( @$scan_entry );
 	}
-}
-
-
-=head2 get_id_and_score_of_lowest_score_of_id
-
-TODOCUMENT
-
-=cut
-
-sub get_id_and_score_of_lowest_score_of_id {
-	state $check = compile( Object, Str, Optional[HashRef] );
-	my ( $self, $id, $excluded_ids ) = $check->( @ARG );
-
-	$excluded_ids //= {};
-
-	if ( $self->count() < 2 ) {
-		confess 'Argh TODOCUMENT';
-	}
-
-	my $scan_of_id       = $self->scans()->{ $id };
-	my @non_excluded_ids = grep { ! defined( $excluded_ids->{ $ARG } ) } keys( %$scan_of_id );
-	my $min_score        = min( map { $scan_of_id->{ $ARG } } @non_excluded_ids );
-
-	if ( ! defined( $min_score ) ) {
-		my @all_ids      = @{ $self->sorted_ids() };
-		my $different_id = ( $id eq $all_ids[ 0 ] ) ? $all_ids[ 1 ]
-		                                            : $all_ids[ 0 ];
-		return [
-			$different_id,
-			undef
-		];
-	}
-
-	my $other_id = first_value {
-		( $scan_of_id->{ $ARG } == $min_score ) && ! defined( $excluded_ids->{ $ARG } );
-	} sort( keys( %$scan_of_id ) );
-	return [
-		$other_id,
-		$min_score
-	];
 }
 
 =head2 ids_and_score_of_lowest_score
@@ -166,9 +152,9 @@ sub ids_and_score_of_lowest_score {
 		return [];
 	}
 
-	my $scans = $self->scans();
+	# my $links_data = $self->_links_data();
 	my @result;
-	foreach my $id ( sort( $self->scan_ids() ) ) {
+	foreach my $id ( @{ $self->sorted_ids() } ) {
 		if ( ! defined( $excluded_ids->{ $id } ) ) {
 			my ( $other_id, $score ) = @{ $self->get_id_and_score_of_lowest_score_of_id( $id, $excluded_ids ) };
 			if ( defined( $window_cutoff ) && ( ! defined( $score) || $score > $window_cutoff ) ) {
@@ -183,12 +169,28 @@ sub ids_and_score_of_lowest_score {
 		}
 	}
 
-	if ( scalar( @result ) == 0 ) {
-		DEBUG "Returning from ids_and_score_of_lowest_score() with no possible result";
-		return;
-	}
-	return \@result;
+	return ( scalar( @result ) > 0 ) ? \@result : undef;
 }
+
+=head2 ids_and_score_of_lowest_score_or_arbitrary
+
+TODOCUMENT
+
+=cut
+
+sub ids_and_score_of_lowest_score_or_arbitrary {
+	state $check = compile( Object, Optional[Tuple[Num,HashRef]] );
+	my ( $self, @extras ) = $check->( @ARG );
+
+	my $result = $self->ids_and_score_of_lowest_score( @extras );
+	if ( ! defined( $result ) ) {
+		DEBUG "Returning from ids_and_score_of_lowest_score_or_arbitrary() with arbitrary result due to there being no usable scores between clusters";
+		my $sorted_ids = $self->sorted_ids();
+		return [ $sorted_ids->[ 0 ], $sorted_ids->[ 1 ], "inf" ];
+	}
+	return $result;
+}
+
 
 =head2 ids_and_score_of_lowest_score_window
 
@@ -217,6 +219,7 @@ sub ids_and_score_of_lowest_score_window {
 	my %excluded_ids = ( $id1 => 1, $id2 => 1 );
 	while ( my $next_result_in_window = $self->ids_and_score_of_lowest_score( [ $evalue_cutoff, \%excluded_ids ] ) ) {
 		push @results, $next_result_in_window;
+		# use Data::Dumper;
 		my ( $next_id1, $next_id2, $next_score ) = @$next_result_in_window;
 		$excluded_ids{ $next_result_in_window->[ 0 ] } = 1;
 		$excluded_ids{ $next_result_in_window->[ 1 ] } = 1;
@@ -225,115 +228,166 @@ sub ids_and_score_of_lowest_score_window {
 	return \@results;
 }
 
-=head2 remove
+=head2 merge_pair
 
-TODOCUMENT
+Remove the specified nodes and return the starting clusters associated with them,
+ordered according to the specified CathGemmaNodeOrdering
 
 =cut
 
-sub remove {
-	state $check = compile( Object, Str );
-	my ( $self, $id ) = $check->( @ARG );
+sub merge_pair {
+	state $check = compile( Object, Str, Str, CodeRef, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $id1, $id2, $score_update_function, @clusts_ordering ) = $check->( @ARG );
 
-	my $scans = $self->scans();
-	foreach my $other_id ( sort( keys( %{ $scans->{ $id } } ) ) ) {
-		delete $scans->{ $other_id }->{ $id };
-	}
-	delete $scans->{ $id };
+	my $merged_starting_clusters = combine_starting_cluster_names(
+		$self->_starting_clusters_of_ids()->remove_id( $id1 ),
+		$self->_starting_clusters_of_ids()->remove_id( $id2 ),
+		@clusts_ordering
+	);
+	my $other_ids = $self->sorted_ids();
+	my $merged_node_id = $self->_starting_clusters_of_ids()->add_starting_clusters_group_by_id(
+		$merged_starting_clusters
+	);
+	$self->_links_data()->merge_pair(
+		$merged_node_id,
+		$id1,
+		$id2,
+		$score_update_function
+	);
 
-	return $self->remove_id( $id );
+	return [
+		$merged_node_id,
+		$merged_starting_clusters,
+		$other_ids,
+	];
 }
 
-=head2 merge_remove
+=head2 merge_pair_without_new_scores
 
 TODOCUMENT
 
 =cut
 
-sub merge_remove {
+sub merge_pair_without_new_scores {
 	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
 
-	my $starting_clusters_1 = $self->remove( $id1 );
-	my $starting_clusters_2 = $self->remove( $id2 );
-
-	return combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
+	return $self->merge_pair(
+		$id1,
+		$id2,
+		sub { undef; },
+		@clusts_ordering
+	);
 }
 
-=head2 merge_add_with_score_of_lowest
+=head2 merge_pairs
 
 TODOCUMENT
 
 =cut
 
-sub merge_add_with_score_of_lowest {
-	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
+sub merge_pairs {
+	state $check = compile( Object, ArrayRef[Tuple[Str, Str]], CodeRef, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $id_pairs, $score_update_function, @clusts_ordering ) = $check->( @ARG );
 
-	my $scans = $self->scans();
-
-	my @new_results;
-	foreach my $other_id ( sort( keys( %{ $scans->{ $id1 } } ) ) ) {
-		if ( $other_id ne $id1 && $other_id ne $id2 ) {
-			my $result1 = $scans->{ $id1 }->{ $other_id };
-			my $result2 = $scans->{ $id2 }->{ $other_id };
-			push @new_results, [
-				$other_id,
-				defined( $result2 ) ? min( $result2, $result1 ) : $result1
-			];
-		}
-	}
-
-	my $starting_clusters_1 = $self->remove( $id1 );
-	my $starting_clusters_2 = $self->remove( $id2 );
-
-	my $starting_clusters = combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
-	my $merged_id         = id_of_clusters( $starting_clusters );
-	$self->add_starting_clusters_group_by_id( $starting_clusters, $merged_id );
-
-	foreach my $new_result ( @new_results ) {
-		$self->add_scan_entry( $merged_id, @$new_result );
-	}
-
-	return $merged_id;
+	return [
+		map {
+			my ( $id1, $id2 ) = @$ARG;
+			$self->merge_pair( $id1, $id2, $score_update_function, @clusts_ordering );
+		} @$id_pairs
+	];
 }
 
-=head2 merge_add_with_score_of_highest
+
+=head2 merge_pairs_without_new_scores
 
 TODOCUMENT
 
 =cut
 
-sub merge_add_with_score_of_highest {
+sub merge_pairs_without_new_scores {
+	state $check = compile( Object, ArrayRef[Tuple[Str, Str]], Optional[CathGemmaNodeOrdering] );
+	my ( $self, $id_pairs, @clusts_ordering ) = $check->( @ARG );
+
+	return [
+		map {
+			my ( $id1, $id2 ) = @$ARG;
+			$self->merge_pair( $id1, $id2, sub { undef; }, @clusts_ordering );
+		} @$id_pairs
+	];
+}
+
+=head2 merge_pair_using_lowest_score
+
+TODOCUMENT
+
+TODO: Consider returning the full merge data
+
+=cut
+
+sub merge_pair_using_lowest_score {
 	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
 
-	my $scans = $self->scans();
+	return $self->merge_pair(
+		$id1,
+		$id2,
+		sub {
+			my ( $score1, $score2 ) = @ARG;
+			$score1 = ( defined( $score1 ) && lc( $score1 ) ne 'inf' ) ? $score1 : undef;
+			$score2 = ( defined( $score2 ) && lc( $score2 ) ne 'inf' ) ? $score2 : undef;
 
-	my @new_results;
-	foreach my $other_id ( sort( keys( %{ $scans->{ $id1 } } ) ) ) {
-		if ( $other_id ne $id1 && $other_id ne $id2 ) {
-			my $result1 = $scans->{ $id1 }->{ $other_id };
-			my $result2 = $scans->{ $id2 }->{ $other_id };
-			push @new_results, [
-				$other_id,
-				defined( $result2 ) ? max( $result2, $result1 ) : $result1
-			];
-		}
-	}
+			# TODO: The below code doesn't really make much sense. Replace with:
+			# return ( defined( $score1 ) && defined( $score2 ) )
+			# 	? min( $score1, $score2 )
+			# 	: ( $score1 // $score2 // 'inf' );
+			return
+				defined( $score1 )
+				? (
+					defined( $score2 )
+					? min( $score2, $score1 )
+					: $score1
+				)
+				: 'inf';
+		},
+		@clusts_ordering
+	)->[ 0 ];
+}
 
-	my $starting_clusters_1 = $self->remove( $id1 );
-	my $starting_clusters_2 = $self->remove( $id2 );
+=head2 merge_pair_using_highest_score
 
-	my $starting_clusters = combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
-	my $merged_id         = id_of_clusters( $starting_clusters );
-	$self->add_starting_clusters_group_by_id( $starting_clusters, $merged_id );
+TODOCUMENT
 
-	foreach my $new_result ( @new_results ) {
-		$self->add_scan_entry( $merged_id, @$new_result );
-	}
+TODO: Consider returning the full merge data
 
-	return $merged_id;
+=cut
+
+sub merge_pair_using_highest_score {
+	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
+	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
+
+	return $self->merge_pair(
+		$id1,
+		$id2,
+		sub {
+			my ( $score1, $score2 ) = @ARG;
+			$score1 = ( defined( $score1 ) && lc( $score1 ) ne 'inf' ) ? $score1 : undef;
+			$score2 = ( defined( $score2 ) && lc( $score2 ) ne 'inf' ) ? $score2 : undef;
+
+			# TODO: The below code doesn't really make much sense. Replace with:
+			# return ( defined( $score1 ) && defined( $score2 ) )
+			# 	? max( $score1, $score2 )
+			# 	: 'inf';
+			return defined( $score1 )
+				? (
+					defined( $score2 )
+					? max( $score2, $score1 )
+					: $score1
+				)
+				: 'inf';
+		},
+		@clusts_ordering
+	)->[ 0 ];
 }
 
 =head2 merge_add_with_unweighted_geometric_mean_score
@@ -346,85 +400,64 @@ sub merge_add_with_unweighted_geometric_mean_score {
 	state $check = compile( Object, Str, Str, CathGemmaScanScansData, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $id1, $id2, $orig_scans, @clusts_ordering ) = $check->( @ARG );
 
-	my $really_bad_score = 100000000;
-
 	my $starting_clusters_1 = $self->get_starting_clusters_of_id( $id1 );
 	my $starting_clusters_2 = $self->get_starting_clusters_of_id( $id2 );
 
-	my $scans = $self->scans();
-
-	my @new_results;
-	foreach my $other_id ( sort( keys( %{ $scans->{ $id1 } } ) ) ) {
-		if ( $other_id ne $id1 && $other_id ne $id2 ) {
+	return $self->merge_pair(
+		$id1,
+		$id2,
+		sub {
+			my ( $score1, $score2, $other_id ) = @ARG;
+			if ( ! defined( $score1 ) || lc( $score1 ) eq 'inf' ) {
+				return 'inf';
+			}
 			my $other_starting_clusters = $self->get_starting_clusters_of_id( $other_id );
 			my @log_10_scores = 0;
 			foreach my $starting_cluster ( @$starting_clusters_1, @$starting_clusters_2 ) {
 				foreach my $other_starting_cluster ( @$other_starting_clusters ) {
-					# if ( $starting_cluster eq '97' && $other_starting_cluster eq '38' ) {
-					# 	warn "*******  HERE *******";
-					# }
-					my $score = $orig_scans->scans()->{ $starting_cluster }->{ $other_starting_cluster };
+					my $score = $orig_scans->get_score_between( $starting_cluster, $other_starting_cluster );
+					$score = ( defined( $score ) && lc( $score ) ne 'inf' ) ? $score : undef;
 					# If undefined, make      large
 					# If zero,      make very small
 					# Otherwise,    use value
 					push @log_10_scores, log10( ( $score // 1e10 ) || 1e-200 );
 				}
 			}
-			my $geom_mean_score = 10 ** ( sum( @log_10_scores ) / scalar( @log_10_scores ) );
-			push @new_results, [
-				$other_id,
-				$geom_mean_score
-			];
+
+			my $new_score = ( scalar( @log_10_scores ) > 0 )
+				? ( 10 ** ( sum( @log_10_scores ) / scalar( @log_10_scores ) ) )
+				: 'inf';
+			# if ( defined( $new_score ) ) {
+			# 	warn "$merged_node_id <- ( $id1 +\t$id2 )\t$other_id\t$new_score\n";
+			# }
+
+			return ( scalar( @log_10_scores ) > 0 )
+				? ( 10 ** ( sum( @log_10_scores ) / scalar( @log_10_scores ) ) )
+				: 'inf';
+		},
+		@clusts_ordering
+	)->[ 0 ];
+}
+
+
+=head2 new_from_score_of_id_of_id
+
+TODOCUMENT
+
+=cut
+
+sub new_from_score_of_id_of_id {
+	state $check = compile( ClassName, HashRef[HashRef[Num]] );
+	my ( $class, $data ) = $check->( @ARG );
+
+	my $new = $class->new();
+	foreach my $id1 ( sort( keys( %$data ) ) ) {
+		my $data_of_id1 = $data->{ $id1 };
+		foreach my $id2 ( sort( keys( %$data_of_id1 ) ) ) {
+			$new->add_scan_entry( $id1, $id2, $data_of_id1->{ $id2 } );
 		}
 	}
-
-	# Merge the pairs and grab the id of the newly merged node
-	my $merged_id = $self->merge_pair( $id1, $id2, @clusts_ordering )->[ 0 ];
-
-	foreach my $new_result ( @new_results ) {
-		$self->add_scan_entry( $merged_id, @$new_result );
-	}
-
-	# Return the id of the newly merged node
-	return $merged_id;
-}
-
-=head2 merge_pair
-
-TODOCUMENT
-
-=cut
-
-sub merge_pair {
-	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
-
-	my $merged_starting_clusters = $self->merge_remove( $id1, $id2, @clusts_ordering );
-	my $other_ids                = $self->sorted_ids();
-	my $merged_node_id           = $self->add_starting_clusters_group_by_id( $merged_starting_clusters );
-	return [
-		$merged_node_id,
-		$merged_starting_clusters,
-		$other_ids,
-	];
-}
-
-=head2 merge_pairs
-
-TODOCUMENT
-
-=cut
-
-sub merge_pairs {
-	state $check = compile( Object, ArrayRef[Tuple[Str, Str]], Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id_pairs, @clusts_ordering ) = $check->( @ARG );
-
-	return [
-		map {
-			my ( $id1, $id2 ) = @$ARG;
-			$self->merge_pair( $id1, $id2, @clusts_ordering );
-		} @$id_pairs
-	];
+	return $new;
 }
 
 =head2 new_from_starting_clusters

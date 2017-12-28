@@ -38,24 +38,25 @@ Params checked in Cath::Gemma::TreeBuilder
 sub build_tree {
 	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
 
-	my $really_bad_score = 100000000;
 	my %scores;
 
 	my @nodenames_and_merges;
 
 	while ( $scans_data->count() > 2 ) {
-		my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score() };
+		my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score_or_arbitrary() };
 
-		my $merged_starting_clusters = $scans_data->merge_remove( $id1, $id2, $clusts_ordering );
-		my $other_ids                = $scans_data->sorted_ids();
-		my $merged_node_id           = $scans_data->add_starting_clusters_group_by_id( $merged_starting_clusters );
+		my ( $merged_node_id, $merged_starting_clusters, $other_ids ) = @{ $scans_data->merge_pair_without_new_scores(
+			$id1,
+			$id2,
+			$clusts_ordering
+		) };
 
 		push @nodenames_and_merges, [
 			$merged_node_id,
 			Cath::Gemma::Tree::Merge->new(
 				mergee_a => $id1,
 				mergee_b => $id2,
-				score    => $score // $really_bad_score,
+				score    => $score,
 			),
 		];
 
@@ -70,13 +71,14 @@ sub build_tree {
 		$scans_data->add_scan_data( $new_scan_data );
 	}
 
-	my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score() };
+
+	my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score_or_arbitrary() };
 	push @nodenames_and_merges, [
 		'final_merge',
 		Cath::Gemma::Tree::Merge->new(
 			mergee_a => $id1,
 			mergee_b => $id2,
-			score    => $score // $really_bad_score,
+			score    => $score,
 		),
 	];
 

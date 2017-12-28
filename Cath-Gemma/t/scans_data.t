@@ -45,7 +45,7 @@ subtest 'example_1.20.5.200' => sub {
 	is_deeply( $premerge_scans_data, $scans_data, 'no_op_merge_pair() does not change ScansData' );
 	is_deeply( $merge_1_2_dry_run, $expected_merge_1_2, 'this test' );
 
-	my $merge_1_2_real = $scans_data->merge_pair( qw/ 1 2 / );
+	my $merge_1_2_real = $scans_data->merge_pair_without_new_scores( qw/ 1 2 / );
 	is_deeply( $merge_1_2_real, $expected_merge_1_2, 'this other test' );
 
 	my $id_and_score_b = $scans_data->ids_and_score_of_lowest_score();
@@ -55,9 +55,8 @@ subtest 'example_1.20.5.200' => sub {
 };
 
 subtest 'toy_data' => sub {
-	my $scans_data = Cath::Gemma::Scan::ScansData->new(
-		starting_clusters_of_ids => Cath::Gemma::StartingClustersOfId->new_from_starting_clusters( [ 1, 2, 3 ] ),
-		scans => {
+	my $scans_data = Cath::Gemma::Scan::ScansData->new_from_score_of_id_of_id(
+		{
 			1 => {
 				2 => 5.0,
 				3 => 5.0,
@@ -70,7 +69,7 @@ subtest 'toy_data' => sub {
 				1 => 5.0,
 				2 => 7.0,
 			},
-		},
+		}
 	);
 
 	is_deeply(
