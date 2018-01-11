@@ -12,6 +12,10 @@ use Test::More tests => 45;
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
+# To generate updated list (under tcsh), you can use:
+#
+#     find lib -iname '*.pm' | sed 's#/#::#g' | env LC_ALL=C sort -uf | sed "s#\.pm#' );#g" | sed "s#^lib::#use_ok( '#g" | column -t
+
 use_ok( 'Cath::Gemma'                                           );
 use_ok( 'Cath::Gemma::Compute::Task'                            );
 use_ok( 'Cath::Gemma::Compute::Task::BuildTreeTask'             );
