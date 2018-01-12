@@ -73,8 +73,6 @@ sub add_scan_entry {
 
 	push @{ $self->_links_data() }, [ $other_index, $score ];
 
-	# use Data::Dumper;
-	# warn Dumper( $self );
 	return $self;
 }
 
@@ -132,11 +130,6 @@ sub get_idx_and_score_of_lowest_score_of_id {
 	}
 	grep {
 		my $other_idx         = $links_data->[ $ARG ]->[ 0 ];
-		# if ( $other_idx =~ /item/ ) {
-		# 	use Data::Dumper;
-		# 	use Carp qw/ confess /;
-		# 	confess Dumper( $self ) . ' ';
-		# }
 		my $index_is_active   = defined( $actives->[ $other_idx ] );
 		my $index_is_excluded = bsearch { $ARG <=> $other_idx } @$excluded_indices;
 
