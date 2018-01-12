@@ -141,7 +141,7 @@ sub get_idx_and_score_of_lowest_score_of_id {
 		: [ undef, 'inf' ];
 }
 
-=head2 add_merged_pair
+=head2 make_link_list
 
 Make a LinkList of the specified array of arrays of index and score
 
