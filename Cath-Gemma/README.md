@@ -33,6 +33,7 @@ Within `lib` :
     │   └── Cath::Gemma::Executor::LocalExecutor                      Execute a Cath::Gemma::Compute::WorkBatchList locally (ie directly)
     ├── (Scan)
     │   ├── (Impl)
+    │   │   └── Cath::Gemma::Scan::Impl::LinkList                     [For use in ScansData] Store the links from one cluster to another
     │   │   └── Cath::Gemma::Scan::Impl::Links                        TODOCUMENT
     │   ├── Cath::Gemma::Scan::ScanData                               TODOCUMENT
     │   ├── Cath::Gemma::Scan::ScansDataFactory                       TODOCUMENT

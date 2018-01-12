@@ -7,7 +7,7 @@ use warnings;
 use FindBin;
 
 # Core (test)
-use Test::More tests => 45;
+use Test::More tests => 46;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -38,6 +38,7 @@ use_ok( 'Cath::Gemma::Executor::HpcRunner'                      );
 use_ok( 'Cath::Gemma::Executor::HpcRunner::HpcLocalRunner'      );
 use_ok( 'Cath::Gemma::Executor::HpcRunner::HpcSgeRunner'        );
 use_ok( 'Cath::Gemma::Executor::LocalExecutor'                  );
+use_ok( 'Cath::Gemma::Scan::Impl::LinkList'                     );
 use_ok( 'Cath::Gemma::Scan::Impl::Links'                        );
 use_ok( 'Cath::Gemma::Scan::ScanData'                           );
 use_ok( 'Cath::Gemma::Scan::ScansData'                          );
