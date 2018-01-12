@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use List::Util          qw/ first min                                                                  /;
 use Carp                qw/ confess                                                                    /;
 use English             qw/ -no_match_vars                                                             /;
+use Storable            qw/ dclone                                                                     /;
 use v5.10;
 
 # Moo
@@ -16,12 +16,14 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use List::MoreUtils     qw/ bsearch uniq                                                               /;
-use List::UtilsBy       qw/ min_by                                                                     /;
 use Type::Params        qw/ compile                                                                    /;
 use Types::Standard     qw/ ArrayRef ClassName CodeRef HashRef Int Maybe Num Object Optional Str Tuple /;
 
 # Cath::Gemma
+use Cath::Gemma::Scan::Impl::LinkList;
+use Cath::Gemma::Types qw/
+	CathGemmaScanImplLinkList
+/;
 use Cath::Gemma::Util;
 
 =head2 _id_of_index
@@ -72,7 +74,7 @@ TODOCUMENT
 
 has _links_data => (
 	is          => 'rwp',
-	isa         => ArrayRef[ArrayRef[Tuple[Int,Num]]],
+	isa         => ArrayRef[CathGemmaScanImplLinkList],
 	default     => sub { []; },
 	handles_via => 'Array',
 	handles     => {
@@ -110,9 +112,9 @@ sub _ensure_index_of_id {
 
 	if ( ! $self->_contains_index_of_id( $id ) ) {
 		my $new_index = $self->_num_indices();
-		$self->_set_index_of_id ( $id, $new_index );
-		$self->_push_id_of_index( $id             );
-		$self->_set_links_data  ( $new_index, []  );
+		$self->_set_index_of_id ( $id,        $new_index                               );
+		$self->_push_id_of_index( $id                                                  );
+		$self->_set_links_data  ( $new_index, Cath::Gemma::Scan::Impl::LinkList->new() );
 	}
 	return $self->_get_index_of_id( $id );
 }
@@ -127,12 +129,9 @@ sub get_score_between {
 	state $check = compile( Object, Str, Str );
 	my ( $self, $id1, $id2 ) = $check->( @ARG );
 
-	my $index1        = $self->_checked_index_of_id( $id1 );
-	my $index2        = $self->_checked_index_of_id( $id2 );
-	my $index_1_links = $self->_get_links_data( $index1 );
-	my $link          = first { $ARG->[ 0 ] == $index2 } ( @$index_1_links );
-
-	return defined( $link ) ? $link->[ -1 ] : undef;
+	my $index1 = $self->_checked_index_of_id( $id1 );
+	my $index2 = $self->_checked_index_of_id( $id2 );
+	return $self->_get_links_data( $index1 )->get_score_to( $index2 );
 }
 
 =head2 sorted_ids
@@ -180,10 +179,9 @@ sub add_scan_entry {
 	my $index1 = $self->_ensure_index_of_id( $id1 );
 	my $index2 = $self->_ensure_index_of_id( $id2 );
 
-	my $the_links_data1 = $self->_get_links_data( $index1 );
-	my $the_links_data2 = $self->_get_links_data( $index2 );
-	push @$the_links_data1, [ $index2, $score ];
-	push @$the_links_data2, [ $index1, $score ];
+	$self->_get_links_data( $index1 )->add_scan_entry( $index2, $score );
+	$self->_get_links_data( $index2 )->add_scan_entry( $index1, $score );
+
 	return $self;
 }
 
@@ -214,22 +212,10 @@ sub merge_pair {
 	state $check = compile( Object, Str, Str, Str, CodeRef );
 	my ( $self, $merged_node_id, $id1, $id2, $score_update_function ) = $check->( @ARG );
 
-	my $index1 = $self->_checked_index_of_id( $id1 );
-	my $index2 = $self->_checked_index_of_id( $id2 );
-
-	my $get_other_scores = sub {
-		my $index = shift;
-		my @other_scores;
-		$other_scores[ $self->_num_indices() ] = undef;
-		shift @other_scores;
-		foreach my $link ( @{ $self->_get_links_data( $index ) } ) {
-			my ( $other_index, $other_score ) = @$link;
-			@other_scores[ $other_index ] = $other_score;
-		}
-		return \@other_scores;
-	};
-	my $other_scores1 = $get_other_scores->( $index1 );
-	my $other_scores2 = $get_other_scores->( $index2 );
+	my $index1        = $self->_checked_index_of_id( $id1 );
+	my $index2        = $self->_checked_index_of_id( $id2 );
+	my $other_scores1 = $self->_get_links_data( $index1 )->get_laid_out_scores( $self->_num_indices() );
+	my $other_scores2 = $self->_get_links_data( $index2 )->get_laid_out_scores( $self->_num_indices() );
 
 	#
 	my @new_clust_scores = grep {
@@ -259,10 +245,10 @@ sub merge_pair {
 	} ( 0..$#$other_scores1 );
 
 	my $index = $self->_ensure_index_of_id( $merged_node_id );
-	$self->_set_links_data( $index, \@new_clust_scores );
+	$self->_set_links_data( $index, Cath::Gemma::Scan::Impl::LinkList->make_link_list( \@new_clust_scores ) );
 	foreach my $new_clust_score ( @new_clust_scores ) {
 		my ( $other_index, $other_score ) = @$new_clust_score;
-		push @{ $self->_get_links_data( $other_index ) }, [ $index, $other_score ];
+		$self->_get_links_data( $other_index )->add_scan_entry( $index, $other_score );
 	}
 
 	$self->remove( $id1 );
@@ -281,41 +267,32 @@ sub get_id_and_score_of_lowest_score_of_id {
 	state $check = compile( Object, Str, Optional[HashRef] );
 	my ( $self, $id, $excluded_ids ) = $check->( @ARG );
 
-	$excluded_ids //= {};
-	my @excluded_indices = sort { $a <=> $b } map { $self->_get_index_of_id( $ARG ); } keys( %$excluded_ids );
-
+	# Check this is large enough
 	if ( $self->count() < 2 ) {
 		use Data::Dumper;
 		confess 'Cannot get ID and score of lowest score of ID when there are fewer than two items that are linked ' . Dumper( $self ) . ' ';
 	}
 
+	# Make an array of sorted indices corresponding to the excluded IDs
+	$excluded_ids //= {};
+	my @excluded_indices = sort { $a <=> $b } map { $self->_get_index_of_id( $ARG ); } keys( %$excluded_ids );
+
+
+	# Get the index of the id in question and then get *a copy of* the lowest score link from that index
+	# (use a copy so that it can be modified without altering the original data)
 	my $index       = $self->_get_index_of_id( $id );
-	my $links_of_id = $self->_get_links_data( $index );
+	my $best_result = dclone(
+		$self
+			->_get_links_data( $index )
+			->get_idx_and_score_of_lowest_score_of_id( $self->_id_of_index(), \@excluded_indices )
+	);
 
-	# It would be better if this were full deterministic (ie deterministically chose
-	# the same index amongst several with the same best score)
-	my $best_link_index = min_by {
-		$links_of_id->[ $ARG ]->[ -1 ];
-	}
-	grep {
-		my $other_idx         = $links_of_id->[ $ARG ]->[ 0 ];
-		my $index_is_active   = defined( $self->_get_id_of_index( $other_idx ) );
-		my $index_is_excluded = bsearch { $ARG <=> $other_idx } @excluded_indices;
-
-		( $index_is_active && ! $index_is_excluded );
-	} ( 0 .. $#$links_of_id );
-
-	if ( ! defined( $best_link_index ) ) {
-		return [ undef, 'inf' ];
+	# If the link isn't a null link, change its index back to an ID
+	if ( defined( $best_result->[ 0 ] ) ) {
+		$best_result->[ 0 ] = $self->_get_id_of_index( $best_result->[ 0 ] );
 	}
 
-	my ( $best_index, $best_score ) = @{ $links_of_id->[ $best_link_index ] };
-	my $best_id = $self->_get_id_of_index( $best_index );
-
-	return [
-		$best_id,
-		$best_score
-	];
+	return $best_result;
 }
 
 =head2 new_from_score_of_id_of_id
