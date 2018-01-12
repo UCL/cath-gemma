@@ -190,7 +190,7 @@ cover -test +ignore ^extlib/
 It can be useful to specify a single test. One way is:
 
 ~~~
-rsync -av --exclude 'other_stuff' ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/ ; rm -f /tmp/Cath-Gemma/t/*.t ; rsync -av ~/cath-gemma/Cath-Gemma/t/links.t /tmp/Cath-Gemma/t/links.t ; \make ; cover -test +ignore ^extlib/
+rsync -av --exclude 'other_stuff' ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/ ; rm -f /tmp/Cath-Gemma/t/*.t ; rsync -av ~/cath-gemma/Cath-Gemma/t/links.t /tmp/Cath-Gemma/t/links.t ; cd /tmp/Cath-Gemma/ ; \make ; cover -test +ignore ^extlib/
 ~~~
 
 ...though it can probably be done more cleanly with the `cover` command line arguments.
