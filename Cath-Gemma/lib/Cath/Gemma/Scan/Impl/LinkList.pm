@@ -1,5 +1,13 @@
 package Cath::Gemma::Scan::Impl::LinkList;
 
+=head1 NAME
+
+Cath::Gemma::Scan::Impl::LinkList - [For use in ScansData via Links] Store the links from one cluster to another
+
+TODOCUMENT - how the actives work (and why that makes sense because it's permanently stored in Links)
+
+=cut
+
 use strict;
 use warnings;
 

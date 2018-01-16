@@ -2,7 +2,7 @@ package Cath::Gemma::Executor::LocalExecutor;
 
 =head1 NAME
 
-Cath::Gemma::Executor::LocalExecutor - TODOCUMENT
+Cath::Gemma::Executor::LocalExecutor - Execute a Cath::Gemma::Compute::WorkBatchList locally (ie directly)
 
 =cut
 

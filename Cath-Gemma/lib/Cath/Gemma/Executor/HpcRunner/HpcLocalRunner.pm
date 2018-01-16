@@ -2,7 +2,7 @@ package Cath::Gemma::Executor::HpcRunner::HpcLocalRunner;
 
 =head1 NAME
 
-Cath::Gemma::Executor::HpcRunner::HpcLocalRunner - TODOCUMENT
+Cath::Gemma::Executor::HpcRunner::HpcLocalRunner - Run an HPC batch script by simulate an HPC environment locally (useful for devel/debug)
 
 =cut
 

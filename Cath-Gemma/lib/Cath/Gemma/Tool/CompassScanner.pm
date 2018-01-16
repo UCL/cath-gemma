@@ -1,5 +1,11 @@
 package Cath::Gemma::Tool::CompassScanner;
 
+=head1 NAME
+
+Cath::Gemma::Tool::CompassScanner - Scan COMPASS profiles against libraries of others and store the results in a file
+
+=cut
+
 use strict;
 use warnings;
 

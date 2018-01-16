@@ -2,7 +2,7 @@ package Cath::Gemma::Executor;
 
 =head1 NAME
 
-Cath::Gemma::Executor - TODOCUMENT
+Cath::Gemma::Executor - Execute a Cath::Gemma::Compute::WorkBatchList of batches in some way
 
 =cut
 

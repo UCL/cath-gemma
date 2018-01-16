@@ -1,9 +1,5 @@
 package Cath::Gemma;
 
-use 5.006;
-use strict;
-use warnings;
-
 =head1 NAME
 
 Cath::Gemma - The great new Cath::Gemma!
@@ -13,6 +9,10 @@ Cath::Gemma - The great new Cath::Gemma!
 Version 0.01
 
 =cut
+
+use 5.006;
+use strict;
+use warnings;
 
 our $VERSION = '0.01';
 

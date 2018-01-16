@@ -1,5 +1,11 @@
 package Cath::Gemma::Tree::Merge;
 
+=head1 NAME
+
+Cath::Gemma::Tree::Merge - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

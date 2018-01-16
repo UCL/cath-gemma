@@ -1,5 +1,11 @@
 package Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder;
 
+=head1 NAME
+
+Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

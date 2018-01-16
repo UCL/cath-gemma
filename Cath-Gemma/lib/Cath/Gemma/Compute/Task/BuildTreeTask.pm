@@ -1,5 +1,11 @@
 package Cath::Gemma::Compute::Task::BuildTreeTask;
 
+=head1 NAME
+
+Cath::Gemma::Compute::Task::BuildTreeTask - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

@@ -1,5 +1,11 @@
 package Cath::Gemma::StartingClustersOfId;
 
+=head1 NAME
+
+Cath::Gemma::StartingClustersOfId - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

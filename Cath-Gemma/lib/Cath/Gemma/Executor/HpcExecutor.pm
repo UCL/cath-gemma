@@ -2,7 +2,7 @@ package Cath::Gemma::Executor::HpcExecutor;
 
 =head1 NAME
 
-Cath::Gemma::Executor::HpcExecutor - TODOCUMENT
+Cath::Gemma::Executor::HpcExecutor - Execute a Cath::Gemma::Compute::WorkBatchList in HPC batch scripts using an HpcRunner
 
 =cut
 

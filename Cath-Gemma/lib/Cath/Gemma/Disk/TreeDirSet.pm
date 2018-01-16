@@ -1,5 +1,11 @@
 package Cath::Gemma::Disk::TreeDirSet;
 
+=head1 NAME
+
+Cath::Gemma::Disk::TreeDirSet - A bunch of directories, like GemmaDirSet plus a directory for trees
+
+=cut
+
 use strict;
 use warnings;
 

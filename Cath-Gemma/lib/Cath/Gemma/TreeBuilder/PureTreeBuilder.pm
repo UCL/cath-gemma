@@ -1,5 +1,11 @@
 package Cath::Gemma::TreeBuilder::PureTreeBuilder;
 
+=head1 NAME
+
+Cath::Gemma::TreeBuilder::PureTreeBuilder - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

@@ -2,7 +2,7 @@ package Cath::Gemma::Test::TestImpl;
 
 =head1 NAME
 
-Cath::Gemma::Test - TODOCUMENT
+Cath::Gemma::Test::TestImpl - TODOCUMENT
 
 =cut
 

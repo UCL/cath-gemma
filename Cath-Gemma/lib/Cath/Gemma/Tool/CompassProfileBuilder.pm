@@ -1,5 +1,11 @@
 package Cath::Gemma::Tool::CompassProfileBuilder;
 
+=head1 NAME
+
+Cath::Gemma::Tool::CompassProfileBuilder - Build a COMPASS profile file
+
+=cut
+
 use strict;
 use warnings;
 

@@ -1,5 +1,11 @@
 package Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder;
 
+=head1 NAME
+
+Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

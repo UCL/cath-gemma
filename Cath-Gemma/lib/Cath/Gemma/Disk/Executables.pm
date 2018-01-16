@@ -1,5 +1,16 @@
 package Cath::Gemma::Disk::Executables;
 
+=head1 NAME
+
+Cath::Gemma::Disk::Executables - Prepare align/profile-scan executables in a temporary directory that gets automatically cleaned up
+
+This allows the executables to be copied into some fast storage (eg /dev/shm) so they can be run very quickly
+without needing to repeatedly access the originals (which may be on a networked drive)
+
+TODOCUMENT - Are there issues with this not always getting cleaned up
+
+=cut
+
 use strict;
 use warnings;
 

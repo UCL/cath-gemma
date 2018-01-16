@@ -1,5 +1,11 @@
 package Cath::Gemma::Disk::GemmaDirSet;
 
+=head1 NAME
+
+Cath::Gemma::Disk::GemmaDirSet - A bunch of directories, like ProfileDirSet plus a directory for scans
+
+=cut
+
 use strict;
 use warnings;
 

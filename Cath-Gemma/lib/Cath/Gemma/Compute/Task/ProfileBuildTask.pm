@@ -1,5 +1,11 @@
 package Cath::Gemma::Compute::Task::ProfileBuildTask;
 
+=head1 NAME
+
+Cath::Gemma::Compute::Task::ProfileBuildTask - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

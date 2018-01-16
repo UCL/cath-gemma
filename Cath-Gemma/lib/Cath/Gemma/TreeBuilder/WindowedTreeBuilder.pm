@@ -1,5 +1,11 @@
 package Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
 
+=head1 NAME
+
+Cath::Gemma::TreeBuilder::WindowedTreeBuilder - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

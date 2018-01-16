@@ -1,5 +1,11 @@
 package Cath::Gemma::Tool::Aligner;
 
+=head1 NAME
+
+Cath::Gemma::Tool::Aligner - Perform an alignment of starting clusters' sequences and save the results in a file
+
+=cut
+
 use strict;
 use warnings;
 

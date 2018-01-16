@@ -2,7 +2,7 @@ package Cath::Gemma::Tree::MergeBundler;
 
 =head1 NAME
 
-Cath::Gemma::Compute::Task - TODOCUMENT
+Cath::Gemma::Tree::MergeBundler- TODOCUMENT
 
 =cut
 

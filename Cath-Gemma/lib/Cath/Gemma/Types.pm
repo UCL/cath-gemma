@@ -2,7 +2,7 @@ package Cath::Gemma::Types;
 
 =head1 NAME
 
-Cath::Gemma::Types - TODOCUMENT
+Cath::Gemma::Types - The (Moo-compatible) types used throughout the Cath::Gemma code
 
 =cut
 

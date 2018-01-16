@@ -1,5 +1,11 @@
 package Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler;
 
+=head1 NAME
+
+Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

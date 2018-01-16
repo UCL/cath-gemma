@@ -1,5 +1,11 @@
 package Cath::Gemma::Scan::ScansDataFactory;
 
+=head1 NAME
+
+Cath::Gemma::Scan::ScansDataFactory - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

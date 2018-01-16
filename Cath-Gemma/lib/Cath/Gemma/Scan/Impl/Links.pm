@@ -1,5 +1,11 @@
 package Cath::Gemma::Scan::Impl::Links;
 
+=head1 NAME
+
+Cath::Gemma::Scan::Impl::Links - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

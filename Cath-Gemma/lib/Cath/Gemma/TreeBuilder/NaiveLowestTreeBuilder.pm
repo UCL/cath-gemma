@@ -1,5 +1,11 @@
 package Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
 
+=head1 NAME
+
+Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder - TODOCUMENT
+
+=cut
+
 use strict;
 use warnings;
 

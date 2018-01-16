@@ -2,7 +2,7 @@ package Cath::Gemma::Executor::HpcRunner::HpcSgeRunner;
 
 =head1 NAME
 
-Cath::Gemma::Executor::HpcRunner::HpcSgeRunner - TODOCUMENT
+Cath::Gemma::Executor::HpcRunner::HpcSgeRunner - Submit an real HPC job to run the the HPC script
 
 =cut
 

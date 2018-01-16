@@ -7,7 +7,7 @@
 Within `lib` :
 
 ~~~
-└── Cath::Gemma                                                       TODOCUMENT
+└── Cath::Gemma                                                       The great new Cath::Gemma!
     ├── (Compute)
     │   ├── Cath::Gemma::Compute::Task                                TODOCUMENT
     │   │   ├── Cath::Gemma::Compute::Task::BuildTreeTask             TODOCUMENT
@@ -19,11 +19,11 @@ Within `lib` :
     │   ├── Cath::Gemma::Compute::WorkBatchList                       TODOCUMENT
     │   └── Cath::Gemma::Compute::WorkBatch                           TODOCUMENT
     ├── (Disk)
-    │   ├── Cath::Gemma::Disk::BaseDirAndProject                      TODOCUMENT
-    │   ├── Cath::Gemma::Disk::Executables                            TODOCUMENT
-    │   ├── Cath::Gemma::Disk::GemmaDirSet                            TODOCUMENT
-    │   ├── Cath::Gemma::Disk::ProfileDirSet                          TODOCUMENT
-    │   └── Cath::Gemma::Disk::TreeDirSet                             TODOCUMENT
+    │   ├── Cath::Gemma::Disk::BaseDirAndProject                      Store a base directory for files and optionally a sub-project
+    │   ├── Cath::Gemma::Disk::Executables                            Prepare align/profile-scan executables in a temporary directory that gets automatically cleaned up
+    │   ├── Cath::Gemma::Disk::GemmaDirSet                            A bunch of directories, like ProfileDirSet plus a directory for scans
+    │   ├── Cath::Gemma::Disk::ProfileDirSet                          A bunch of directories ( 'starting_cluster_dir', 'aln_dir' and 'prof_dir;) relating to profiles
+    │   └── Cath::Gemma::Disk::TreeDirSet                             A bunch of directories, like GemmaDirSet plus a directory for trees
     ├── Cath::Gemma::Executor                                         Execute a Cath::Gemma::Compute::WorkBatchList of batches in some way
     │   ├── Cath::Gemma::Executor::ConfessExecutor                    Confess (ie die with stack-trace) on any attempt to call execute()
     │   ├── Cath::Gemma::Executor::HpcExecutor                        Execute a Cath::Gemma::Compute::WorkBatchList in HPC batch scripts using an HpcRunner
@@ -40,9 +40,9 @@ Within `lib` :
     │   └── Cath::Gemma::Scan::ScansData                              TODOCUMENT
     ├── Cath::Gemma::StartingClustersOfId                             TODOCUMENT
     ├── (Tool)
-    │   ├── Cath::Gemma::Tool::Aligner                                TODOCUMENT
-    │   ├── Cath::Gemma::Tool::CompassProfileBuilder                  TODOCUMENT
-    │   └── Cath::Gemma::Tool::CompassScanner                         TODOCUMENT
+    │   ├── Cath::Gemma::Tool::Aligner                                Perform an alignment of starting clusters' sequences and save the results in a file
+    │   ├── Cath::Gemma::Tool::CompassProfileBuilder                  Build a COMPASS profile file
+    │   └── Cath::Gemma::Tool::CompassScanner                         Scan COMPASS profiles against libraries of others and store the results in a file
     ├── (Tree)
     │   ├── Cath::Gemma::Tree::MergeBundler                           TODOCUMENT
     │   │   ├── Cath::Gemma::Tree::MergeBundler::RnnMergeBundler      TODOCUMENT
@@ -57,7 +57,7 @@ Within `lib` :
     │   ├── Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder            TODOCUMENT
     │   ├── Cath::Gemma::TreeBuilder::PureTreeBuilder                 TODOCUMENT
     │   └── Cath::Gemma::TreeBuilder::WindowedTreeBuilder             TODOCUMENT
-    ├── Cath::Gemma::Types                                            TODOCUMENT
+    ├── Cath::Gemma::Types                                            The (Moo-compatible) types used throughout the Cath::Gemma code
     └── Cath::Gemma::Util                                             TODOCUMENT
 ~~~
 
