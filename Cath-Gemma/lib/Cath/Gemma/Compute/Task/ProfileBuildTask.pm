@@ -73,7 +73,7 @@ has starting_cluster_lists => (
 		num_steps     => 'count',
 		step_of_index => 'get',
 	},
-	required    => 1,
+	default     => sub { []; }
 );
 
 # !!!!!!!!! PLACED BELOW THE ATTRIBUTES THAT ARE USED TO SATISFY THIS ROLE !!!!!!!!!
@@ -88,7 +88,7 @@ TODOCUMENT
 has compass_profile_build_type => (
 	is       => 'ro',
 	isa      => CathGemmaCompassProfileType,
-	required => 1,
+	default  => sub { default_compass_profile_build_type(); }
 );
 
 =head2 id
