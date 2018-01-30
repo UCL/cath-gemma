@@ -43,7 +43,6 @@ our @EXPORT = qw/
 	id_of_clusters
 	make_atomic_write_file
 	mergee_is_starting_cluster
-	min_time_seconds
 	prof_file_of_prof_dir_and_aln_file
 	prof_file_of_prof_dir_and_cluster_id
 	raw_sequences_filename_of_starting_clusters
@@ -87,7 +86,6 @@ sub time_fn {
 	my $result = $operation->( @$arguments );
 	return {
 		duration => Time::Seconds->new( tv_interval( $t0, [ gettimeofday() ] ) ),
-		duration => tv_interval( $t0, [ gettimeofday() ] ),
 		result   => $result,
 	};
 }
@@ -182,18 +180,6 @@ TODOCUMENT
 sub mergee_is_starting_cluster {
 	my $mergee = shift;
 	return ! ref( $mergee );
-}
-
-=head2 min_time_seconds
-
-TODOCUMENT
-
-=cut
-
-sub min_time_seconds {
-	return Time::Seconds->new( min(
-		map { $ARG->seconds(); } @ARG
-	) );
 }
 
 =head2 batch_into_n

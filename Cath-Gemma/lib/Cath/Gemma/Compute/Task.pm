@@ -214,10 +214,12 @@ sub batch_up {
 
 	my $prev_appendee;
 	if ( $prev_batch_opt ) {
-		my $capped_prev_batch_time = min_time_seconds(
+
+		my $capped_prev_batch_time = min(
 			$prev_batch_opt->estimate_time_to_execute(),
 			$estimate_duration_per_batch
 		);
+
 		my $start_and_num_steps = $do_one->(
 			$self,
 			$estimate_duration_per_batch - $capped_prev_batch_time,
@@ -227,7 +229,7 @@ sub batch_up {
 			$prev_appendee = $self->make_batch_of_indices( @$start_and_num_steps );
 		}
 
-		# my $capped_prev_batch_time = min_time_seconds(
+		# my $capped_prev_batch_time = min(
 		# 	$prev_batch_opt->estimate_time_to_execute(),
 		# 	$estimate_duration_per_batch
 		# );
