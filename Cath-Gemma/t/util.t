@@ -5,9 +5,11 @@ use warnings;
 
 # Core
 use FindBin;
+use List::Util  qw/ min    /;
+use Time::HiRes qw/ usleep /;
 
 # Core (test)
-use Test::More tests => 5;
+use Test::More tests => 8;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -17,6 +19,24 @@ use Time::Seconds;
 
 # Cath::Gemma
 use Cath::Gemma::Util;
+
+subtest 'time_fn() works ok' => sub {
+	my $a = time_fn( sub { my $val = shift; usleep( 100 ); return $val; }, 'oooh' );
+
+	is    ( $a->{ result   },  'oooh',                        'Takes arguments and returns result'    );
+	isa_ok( $a->{ duration },  'Time::Seconds',               'Returns a Time::Seconds duration'      );
+	ok    ( $a->{ duration } >= Time::Seconds->new( 0.0001 ), 'Sleeping 0.1 ms takes at least 0.1 ms' );
+	ok    ( $a->{ duration } <  Time::Seconds->new( 0.001  ), 'Sleeping 0.1 ms takes less than 1 ms'  );
+};
+
+subtest 'mergee_is_starting_cluster() works ok' => sub {
+	ok(   mergee_is_starting_cluster(   0      ), '0 is a starting cluster' );
+	ok( ! mergee_is_starting_cluster( [ 0, 1 ] ), '[ 0, 1 ] is not a starting cluster' );
+};
+
+subtest 'batch_into_n() works ok' => sub {
+	is_deeply( [ batch_into_n( 3, 1, 2, 3, 4, 5, 6, 7, 8 ) ], [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8 ] ], 'Batching 1..8 into threes works as expected' );
+};
 
 subtest 'evalue_window_ceiling() / evalue_window_floor()' => sub {
 	is( evalue_window_ceiling( 1.2e-15 ), 1e-10, 'evalue_window_ceiling() calculates correctly' );
