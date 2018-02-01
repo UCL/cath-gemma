@@ -179,7 +179,7 @@ sub execute {
 		$batch_files_file->spew( join( "\n", @batch_files ) . "\n" );
 
 		# TODO: Move this hard-coded script name elsewhere
-		my $execute_batch_script = path( "$FindBin::Bin" )->child( 'execute_work_batch.pl' ) . "";
+		my $execute_batch_script = path( "$FindBin::Bin" )->parent()->child( 'script' )->child( 'execute_work_batch.pl' )->realpath() . "";
 
 		my $num_batches = scalar( @$group_batches );
 

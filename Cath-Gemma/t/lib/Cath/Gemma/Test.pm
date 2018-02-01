@@ -21,6 +21,10 @@ our @EXPORT = qw/
 	bootstrap_is_on
 	cath_test_tempdir
 	file_matches
+	profile_dir_set_of_superfamily
+	test_data_dir
+	test_superfamily_data_dir
+	test_superfamily_starting_cluster_dir
 	/;
 
 # Test
@@ -84,6 +88,59 @@ sub file_matches {
 		$expected_file->slurp(),
 		$assertion,
 	);
+}
+
+=head2 profile_dir_set_of_superfamily
+
+Get the test data ProfileDirSet corresponding to the specified superfamily ID
+
+=cut
+sub profile_dir_set_of_superfamily {
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir(
+		test_superfamily_data_dir( $superfamily )
+	);
+}
+
+=head2 test_data_dir
+
+Get the test data directory (t/data)
+
+=cut
+
+sub test_data_dir {
+	state $check = compile();
+	$check->( @ARG );
+
+	return path( $FindBin::Bin )->parent()->child( 't' )->child( 'data' )->realpath();
+}
+
+=head2 test_superfamily_data_dir
+
+Get the test data sub-directory corresponding to the specified superfamily ID
+
+=cut
+
+sub test_superfamily_data_dir {
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return test_data_dir()->child( $superfamily );
+}
+
+=head2 test_superfamily_starting_cluster_dir
+
+Get the test data starting cluster sub-directory corresponding to the specified superfamily ID
+
+=cut
+
+sub test_superfamily_starting_cluster_dir{
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return profile_dir_set_of_superfamily( $superfamily )->starting_cluster_dir();
 }
 
 1;

@@ -12,10 +12,10 @@ use strict;
 use warnings;
 
 # Core
-use English             qw/ -no_match_vars                               /;
-use List::Util          qw/ sum0                                         /;
-use Storable            qw/ freeze thaw                                  /;
-use Storable            qw/ thaw                                         /;
+use English             qw/ -no_match_vars                                      /;
+use List::Util          qw/ sum0                                                /;
+use Storable            qw/ freeze thaw                                         /;
+use Storable            qw/ thaw                                                /;
 use v5.10;
 
 # Moo
@@ -25,11 +25,11 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Log::Log4perl::Tiny qw/ :easy                                        /;
+use Log::Log4perl::Tiny qw/ :easy                                               /;
 use Path::Tiny;
-use Type::Params        qw/ compile Invocant                             /;
-use Types::Path::Tiny   qw/ Path                                         /;
-use Types::Standard     qw/ ArrayRef ClassName Object Optional Str Tuple /;
+use Type::Params        qw/ compile Invocant                                    /;
+use Types::Path::Tiny   qw/ Path                                                /;
+use Types::Standard     qw/ ArrayRef ClassName Object Optional slurpy Str Tuple /;
 
 # Cath::Gemma
 use Cath::Gemma::Compute::Task::BuildTreeTask;
@@ -464,6 +464,23 @@ sub make_work_batch_of_query_scs_and_match_scs_list {
 			)->remove_already_present(),
 		] ),
 	)->remove_empty_tasks();
+}
+
+=head2 make_from_profile_build_task_ctor_args
+
+Make a WorkBatch containing one ProfileBuildTask, built from the specified ctor arguments
+
+The arguments must include dir_set, which must specify a Cath::Gemma::Disk::ProfileDirSet
+
+=cut
+
+sub make_from_profile_build_task_ctor_args {
+	state $check = compile( ClassName, slurpy ArrayRef, );
+	my ( $class, $other_args ) = $check->( @ARG );
+
+	return Cath::Gemma::Compute::WorkBatch->new(
+		profile_tasks => [ Cath::Gemma::Compute::Task::ProfileBuildTask->new( @$other_args ) ]
+	);
 }
 
 1;

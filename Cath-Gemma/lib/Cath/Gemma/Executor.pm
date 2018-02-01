@@ -23,6 +23,7 @@ use Types::Standard   qw/ ArrayRef Object /;
 
 # Cath::Gemma
 use Cath::Gemma::Types qw/
+	CathGemmaComputeWorkBatch
 	CathGemmaComputeWorkBatchList
 	CathGemmaExecSync
 /;
@@ -39,6 +40,8 @@ requires 'execute';
 
 TODOCUMENT
 
+TODO: Rename execute to execute_batch_list
+
 =cut
 
 before execute => sub {
@@ -49,5 +52,21 @@ before execute => sub {
 	# use Carp qw/ cluck /;
 	# cluck "\n\n\n****** In Executor::execute, num_batches is : " . $ARG[ 1 ]->num_batches();
 };
+
+=head2 execute_batch
+
+TODOCUMENT
+
+=cut
+
+sub execute_batch {
+	state $check = compile( Object, CathGemmaComputeWorkBatch, CathGemmaExecSync );
+	my ( $self, $work_batch, $exec_sync ) = $check->( @ARG );
+
+	$self->execute(
+		Cath::Gemma::Compute::WorkBatchList->new( batches => [ $work_batch ] ),
+		$exec_sync
+	);
+}
 
 1;

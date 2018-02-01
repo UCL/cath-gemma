@@ -49,7 +49,7 @@ TODOCUMENT
 has dir_set  => (
 	is       => 'ro',
 	isa      => CathGemmaDiskProfileDirSet,
-	default  => sub { Cath::Gemma::Disk::ProfileDirSet->new(); },
+	# default  => sub { Cath::Gemma::Disk::ProfileDirSet->new(); },
 	handles  => [ qw/
 		aln_dir
 		prof_dir
