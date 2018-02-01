@@ -5,7 +5,7 @@ for word in "$@"; do
 	this_cmnd="$this_cmnd \"$word\"";
 done
 echo "To repeat this run, use:"
-echo $this_cmnd
+echo "/bin/bash -c 'SGE_TASK_ID=$SGE_TASK_ID $this_cmnd'"
 echo
 
 if [ "$#" -ne 2 ]; then
