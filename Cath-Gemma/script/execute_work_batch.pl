@@ -25,6 +25,7 @@ use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
 # Cath::Gemma
 use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Disk::Executables;
+use TimeSecondsToJson;
 
 Log::Log4perl->easy_init( {
 	level => $DEBUG,
