@@ -13,7 +13,7 @@ use warnings;
 use Carp                qw/ confess        /;
 use Data::Dumper;
 use English             qw/ -no_match_vars /;
-use List::Util          qw/ any max        /;
+use List::Util          qw/ any max min    /;
 
 # Moo
 use Moo;
@@ -58,9 +58,16 @@ sub run_job_array {
 	my $submit_host = _get_submit_host();
 
 	my $memy_req                   = '15G';
-	my $duration_in_seconds        = max(
-		$max_est_time + $max_est_time + $max_est_time + $max_est_time,
-		Time::Seconds->new ( 21600 ) # 6 hours
+
+	# Clam time between 6 hours and 72 hours
+	# (legion rejects jobs longer than 72 hours with:
+	#  `Unable to run job: Rejected by policyjsv Reason:Unable to find a policy compliant place to run job`)
+	my $duration_in_seconds        = min(
+		max(
+			$max_est_time + $max_est_time + $max_est_time + $max_est_time,
+			Time::Seconds->new( 21600 ) # 6 hours in seconds
+		),
+		Time::Seconds->new( 259200 ) # 72 hours in seconds
 	);
 	my $time_req                   = time_seconds_to_sge_string( $duration_in_seconds );
 	my $default_resources          = [
