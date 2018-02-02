@@ -9,7 +9,7 @@ use FindBin;
 use v5.10;
 
 # Core (test)
-use Test::More tests => 12;
+use Test::More tests => 15;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -40,6 +40,8 @@ use Cath::Gemma::Types qw/
 Log::Log4perl->easy_init( {
 	level => $WARN,
 } );
+
+my $superfamily = '1.20.5.200';
 
 =head2 check_sub_if_die
 
@@ -86,7 +88,7 @@ sub test_build_profile {
 	my $aln_dir         = Path::Tiny->tempdir( CLEANUP => 1 );
 	my $prof_dir        = Path::Tiny->tempdir( CLEANUP => 1 );
 	my $profile_dir_set = Cath::Gemma::Disk::ProfileDirSet->new(
-		starting_cluster_dir => test_superfamily_starting_cluster_dir( '1.20.5.200' ),
+		starting_cluster_dir => test_superfamily_starting_cluster_dir( $superfamily ),
 		aln_dir              => $aln_dir,
 		prof_dir             => $prof_dir,
 	);
@@ -110,12 +112,12 @@ sub test_build_profile {
 	if ( ! $should_die ) {
 		file_matches(
 			$prof_dir                                ->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.mk_compass_db.prof' ),
-			test_superfamily_aln_dir ( '1.20.5.200' )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.mk_compass_db.prof' ),
+			test_superfamily_aln_dir ( $superfamily )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.mk_compass_db.prof' ),
 			'Built profile file matches expected'
 		);
 		file_matches(
 			$aln_dir                                 ->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.faa'                ),
-			test_superfamily_prof_dir( '1.20.5.200' )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.faa'                ),
+			test_superfamily_prof_dir( $superfamily )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.faa'                ),
 			'Built alignment file matches expected'
 		);
 	}
@@ -134,7 +136,7 @@ sub test_scan_profile {
 	# Prepare directories for building a profile
 	my $scan_dir      = Path::Tiny->tempdir( CLEANUP => 1 );
 	my $gemma_dir_set = Cath::Gemma::Disk::GemmaDirSet->new(
-		profile_dir_set => profile_dir_set_of_superfamily( '1.20.5.200' ),
+		profile_dir_set => profile_dir_set_of_superfamily( $superfamily ),
 		scan_dir        => $scan_dir,
 	);
 
@@ -157,10 +159,56 @@ sub test_scan_profile {
 	if ( ! $should_die ) {
 		my $scan_basename = '1.l1st_37693cfc748049e45d87b8c7d8b9aacd.mk_compass_db.scan';
 		file_matches(
-			$scan_dir                                 ->child( $scan_basename ),
-			test_superfamily_scan_dir ( '1.20.5.200' )->child( $scan_basename ),
+			$scan_dir                                ->child( $scan_basename ),
+			test_superfamily_scan_dir( $superfamily )->child( $scan_basename ),
 			'Scan results file matches expected'
 		);
+	}
+}
+
+=head2 test_build_tree
+
+Test that the specified executor can build a tree
+
+=cut
+
+sub test_build_tree {
+	state $check = compile( CathGemmaExecutor, Bool );
+	my ( $executor, $should_die ) = $check->( @ARG );
+
+	# Prepare directories for building a profile
+	my $tree_dir     = Path::Tiny->tempdir( CLEANUP => 1 );
+	my $tree_dir_set = Cath::Gemma::Disk::TreeDirSet->new(
+		gemma_dir_set => gemma_dir_set_of_superfamily( $superfamily ),
+		tree_dir      => $tree_dir,
+	);
+
+	# Try building a profile, handling whether the executor should confess
+	check_sub_if_die(
+		sub {
+			my $exec_sync = 'always_wait_for_complete';
+			$executor->execute_batch(
+				Cath::Gemma::Compute::WorkBatch->make_from_build_tree_task_ctor_args(
+					dir_set                    => $tree_dir_set,
+					starting_cluster_lists     => [ [ 1, 2, 3, 4 ] ],
+					tree_builder               => Cath::Gemma::TreeBuilder::WindowedTreeBuilder->new(),
+				),
+				$exec_sync
+			);
+		},
+		$should_die
+	);
+
+	# Check that the alignment and profile were built
+	if ( ! $should_die ) {
+		foreach my $tree_basename ( qw/ 1.faa 2.faa 3.faa 4.faa 5.faa 6.faa 7.faa tree.newick tree.trace / ) {
+			my $tree_subdir   = 'simple_ordering.mk_compass_db.windowed';
+			file_matches(
+				$tree_dir                                ->child( $tree_subdir )->child( $tree_basename ),
+				test_superfamily_tree_dir( $superfamily )->child( $tree_subdir )->child( $tree_basename ),
+				'Scan results file matches expected'
+			);
+		}
 	}
 }
 
@@ -192,9 +240,9 @@ foreach my $executor_details (
 		$executor,
 		( ( $executor_name =~ /confess/i ) || 0 );
 
-	# subtest
-	# 	$executor_name . ' can build a profile correctly',
-	# 	\&test_build_profile,
-	# 	$executor,
-	# 	( ( $executor_name =~ /confess/i ) || 0 );
+	subtest
+		$executor_name . ' can build a tree correctly',
+		\&test_build_tree,
+		$executor,
+		( ( $executor_name =~ /confess/i ) || 0 );
 }

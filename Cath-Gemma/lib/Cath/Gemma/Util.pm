@@ -31,6 +31,7 @@ our @EXPORT = qw/
 	combine_starting_cluster_names
 	compass_profile_suffix
 	compass_scan_suffix
+	default_clusts_ordering
 	default_compass_profile_build_type
 	default_temp_dir
 	evalue_window_ceiling
@@ -489,6 +490,16 @@ TODOCUMENT
 
 sub compass_scan_suffix {
 	return '.scan';
+}
+
+=head2 default_clusts_ordering
+
+Return the default clusts_ordering value
+
+=cut
+
+sub default_clusts_ordering {
+	return 'simple_ordering';
 }
 
 =head2 alignment_profile_suffix

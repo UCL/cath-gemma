@@ -139,5 +139,20 @@ sub make_tree_dir_set_of_base_dir_and_project {
 	);
 }
 
+=head2 make_tree_dir_set_of_base_dir
+
+Make a TreeDirSet based on the specified base directory
+
+=cut
+
+sub make_tree_dir_set_of_base_dir {
+	state $check = compile( Invocant, Path );
+	my ( $proto, $base_dir ) = $check->( @ARG );
+	return Cath::Gemma::Disk::TreeDirSet->new(
+		gemma_dir_set => Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir(
+			$base_dir
+		)
+	);
+}
 
 1;

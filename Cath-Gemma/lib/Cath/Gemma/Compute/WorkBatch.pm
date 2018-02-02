@@ -500,4 +500,24 @@ sub make_from_profile_scan_task_ctor_args {
 	);
 }
 
+=head2 make_from_build_tree_task_ctor_args
+
+Make a WorkBatch containing one BuildTreeTask, built from the specified ctor arguments
+
+The arguments must include:
+ * dir_set, which must specify a Cath::Gemma::Disk::CathGemmaDiskTreeDirSet
+ * starting_cluster_lists
+ * tree_builder
+
+=cut
+
+sub make_from_build_tree_task_ctor_args {
+	state $check = compile( ClassName, slurpy ArrayRef, );
+	my ( $class, $other_args ) = $check->( @ARG );
+
+	return Cath::Gemma::Compute::WorkBatch->new(
+		treebuild_tasks => [ Cath::Gemma::Compute::Task::BuildTreeTask->new( @$other_args ) ]
+	);
+}
+
 1;

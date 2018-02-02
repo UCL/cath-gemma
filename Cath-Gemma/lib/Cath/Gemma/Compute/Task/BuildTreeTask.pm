@@ -108,6 +108,7 @@ TODOCUMENT
 has compass_profile_build_type =>(
 	is       => 'ro',
 	isa      => CathGemmaCompassProfileType,
+	default  => sub { default_compass_profile_build_type(); },
 	required => 1,
 );
 
@@ -120,6 +121,7 @@ TODOCUMENT
 has clusts_ordering =>(
 	is       => 'ro',
 	isa      => Optional[CathGemmaNodeOrdering],
+	default  => sub { default_clusts_ordering(); },
 	required => 1,
 );
 
@@ -368,7 +370,8 @@ sub execute_task {
 		? Cath::Gemma::Executor::HpcExecutor->new(
 			submission_dir => $sge_dir,
 		)
-		: $self # This mustn't be a dclone of LocalExecutor because then there'll be multiple CathGemmaDiskExecutables managing the lifetime of the same executables
+		: Cath::Gemma::Executor::LocalExecutor->new()
+		# : $self # This mustn't be a dclone of LocalExecutor because then there'll be multiple CathGemmaDiskExecutables managing the lifetime of the same executables
 	);
 
 

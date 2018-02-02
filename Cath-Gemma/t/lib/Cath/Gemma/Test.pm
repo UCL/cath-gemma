@@ -29,6 +29,8 @@ our @EXPORT = qw/
 	test_superfamily_prof_dir
 	test_superfamily_scan_dir
 	test_superfamily_starting_cluster_dir
+	test_superfamily_tree_dir
+	tree_dir_set_of_superfamily
 	/;
 
 # Test
@@ -200,6 +202,34 @@ sub test_superfamily_starting_cluster_dir {
 	my ( $superfamily ) = $check->( @ARG );
 
 	return profile_dir_set_of_superfamily( $superfamily )->starting_cluster_dir();
+}
+
+=head2 test_superfamily_tree_dir
+
+Get the test data tree sub-directory corresponding to the specified superfamily ID
+
+=cut
+
+sub test_superfamily_tree_dir {
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return tree_dir_set_of_superfamily( $superfamily )->tree_dir();
+}
+
+=head2 tree_dir_set_of_superfamily
+
+Get the test data TreeDirSet corresponding to the specified superfamily ID
+
+=cut
+
+sub tree_dir_set_of_superfamily {
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return Cath::Gemma::Disk::TreeDirSet->make_tree_dir_set_of_base_dir(
+		test_superfamily_data_dir( $superfamily )
+	);
 }
 
 1;
