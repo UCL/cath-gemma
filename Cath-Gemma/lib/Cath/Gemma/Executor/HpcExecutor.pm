@@ -64,10 +64,10 @@ has hpc_mode => (
 	default  => sub {
 		my $running_on_sge = guess_if_running_on_sge();
 		if ( $running_on_sge ) {
-			INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will use qsub';
+			INFO __PACKAGE__ . ' has deduced this is genuinely running in an SGE environment and so will submit job scripts via qsub';
 		}
 		else {
-			INFO __PACKAGE__ . ' has deduced this is not actually running on SGE and so will construct HPC job scripts and then run them itself';
+			INFO __PACKAGE__ . ' has deduced this isn\'t running in an SGE environment and so will run job scripts itself';
 		}
 		( $running_on_sge ? 'hpc_sge' : 'hpc_local' );
 	}
