@@ -9,7 +9,7 @@ use FindBin;
 use v5.10;
 
 # Core (test)
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -27,7 +27,7 @@ my $data_base_dir         = path( $FindBin::Bin )->child( '/data/3.30.70.1470/' 
 my $starting_clusters_dir = $data_base_dir->child( 'starting_clusters' );
 my $scans_dir             = $data_base_dir->child( 'scans'             );
 
-my $windowed_bundler = Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler->new();
+my $windowed_bundler = new_ok( 'Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler' );
 
 my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_dir_and_starting_clusters_dir(
 	$scans_dir,

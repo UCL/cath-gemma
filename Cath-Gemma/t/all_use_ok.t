@@ -7,58 +7,59 @@ use warnings;
 use FindBin;
 
 # Core (test)
-use Test::More tests => 46;
+use Test::More tests => 47;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # To generate updated list (under tcsh), you can use:
 #
-#     find lib -iname '*.pm' | sed 's#/#::#g' | env LC_ALL=C sort -uf | sed "s#\.pm#' );#g" | sed "s#^lib::#use_ok( '#g" | column -t
+#     find lib -iname '*.pm' | sed 's#/#::#g' | env LC_ALL=C sort -uf | sed "s#\.pm#' ) }#g" | sed "s#^lib::#BEGIN{ use_ok( '#g" | column -t
 
-use_ok( 'Cath::Gemma'                                           );
-use_ok( 'Cath::Gemma::Compute::Task'                            );
-use_ok( 'Cath::Gemma::Compute::Task::BuildTreeTask'             );
-use_ok( 'Cath::Gemma::Compute::Task::ProfileBuildTask'          );
-use_ok( 'Cath::Gemma::Compute::Task::ProfileScanTask'           );
-use_ok( 'Cath::Gemma::Compute::TaskThreadPooler'                );
-use_ok( 'Cath::Gemma::Compute::WorkBatch'                       );
-use_ok( 'Cath::Gemma::Compute::WorkBatcher'                     );
-use_ok( 'Cath::Gemma::Compute::WorkBatcherState'                );
-use_ok( 'Cath::Gemma::Compute::WorkBatchList'                   );
-use_ok( 'Cath::Gemma::Disk::BaseDirAndProject'                  );
-use_ok( 'Cath::Gemma::Disk::Executables'                        );
-use_ok( 'Cath::Gemma::Disk::GemmaDirSet'                        );
-use_ok( 'Cath::Gemma::Disk::ProfileDirSet'                      );
-use_ok( 'Cath::Gemma::Disk::TreeDirSet'                         );
-use_ok( 'Cath::Gemma::Executor'                                 );
-use_ok( 'Cath::Gemma::Executor::ConfessExecutor'                );
-use_ok( 'Cath::Gemma::Executor::HpcExecutor'                    );
-use_ok( 'Cath::Gemma::Executor::HpcRunner'                      );
-use_ok( 'Cath::Gemma::Executor::HpcRunner::HpcLocalRunner'      );
-use_ok( 'Cath::Gemma::Executor::HpcRunner::HpcSgeRunner'        );
-use_ok( 'Cath::Gemma::Executor::LocalExecutor'                  );
-use_ok( 'Cath::Gemma::Scan::Impl::LinkList'                     );
-use_ok( 'Cath::Gemma::Scan::Impl::Links'                        );
-use_ok( 'Cath::Gemma::Scan::ScanData'                           );
-use_ok( 'Cath::Gemma::Scan::ScansData'                          );
-use_ok( 'Cath::Gemma::Scan::ScansDataFactory'                   );
-use_ok( 'Cath::Gemma::StartingClustersOfId'                     );
-use_ok( 'Cath::Gemma::Tool::Aligner'                            );
-use_ok( 'Cath::Gemma::Tool::CompassProfileBuilder'              );
-use_ok( 'Cath::Gemma::Tool::CompassScanner'                     );
-use_ok( 'Cath::Gemma::Tree::Merge'                              );
-use_ok( 'Cath::Gemma::Tree::MergeBundler'                       );
-use_ok( 'Cath::Gemma::Tree::MergeBundler::RnnMergeBundler'      );
-use_ok( 'Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler'   );
-use_ok( 'Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler' );
-use_ok( 'Cath::Gemma::Tree::MergeList'                          );
-use_ok( 'Cath::Gemma::TreeBuilder'                              );
-use_ok( 'Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder'     );
-use_ok( 'Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder'      );
-use_ok( 'Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder'  );
-use_ok( 'Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder'        );
-use_ok( 'Cath::Gemma::TreeBuilder::PureTreeBuilder'             );
-use_ok( 'Cath::Gemma::TreeBuilder::WindowedTreeBuilder'         );
-use_ok( 'Cath::Gemma::Types'                                    );
-use_ok( 'Cath::Gemma::Util'                                     );
+BEGIN{  use_ok(  'Cath::Gemma'                                            )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::Task'                             )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::Task::BuildTreeTask'              )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::Task::ProfileBuildTask'           )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::Task::ProfileScanTask'            )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::TaskThreadPooler'                 )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::WorkBatch'                        )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::WorkBatcher'                      )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::WorkBatcherState'                 )  }
+BEGIN{  use_ok(  'Cath::Gemma::Compute::WorkBatchList'                    )  }
+BEGIN{  use_ok(  'Cath::Gemma::Disk::BaseDirAndProject'                   )  }
+BEGIN{  use_ok(  'Cath::Gemma::Disk::Executables'                         )  }
+BEGIN{  use_ok(  'Cath::Gemma::Disk::GemmaDirSet'                         )  }
+BEGIN{  use_ok(  'Cath::Gemma::Disk::ProfileDirSet'                       )  }
+BEGIN{  use_ok(  'Cath::Gemma::Disk::TreeDirSet'                          )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor'                                  )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::ConfessExecutor'                 )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::HpcExecutor'                     )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::HpcRunner'                       )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::HpcRunner::HpcLocalRunner'       )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::HpcRunner::HpcSgeRunner'         )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::LocalExecutor'                   )  }
+BEGIN{  use_ok(  'Cath::Gemma::Scan::Impl::LinkList'                      )  }
+BEGIN{  use_ok(  'Cath::Gemma::Scan::Impl::Links'                         )  }
+BEGIN{  use_ok(  'Cath::Gemma::Scan::ScanData'                            )  }
+BEGIN{  use_ok(  'Cath::Gemma::Scan::ScansData'                           )  }
+BEGIN{  use_ok(  'Cath::Gemma::Scan::ScansDataFactory'                    )  }
+BEGIN{  use_ok(  'Cath::Gemma::StartingClustersOfId'                      )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tool::Aligner'                             )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tool::CompassProfileBuilder'               )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tool::CompassScanner'                      )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tree::Merge'                               )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tree::MergeBundler'                        )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tree::MergeBundler::RnnMergeBundler'       )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler'    )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler'  )  }
+BEGIN{  use_ok(  'Cath::Gemma::Tree::MergeList'                           )  }
+BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder'                               )  }
+BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder'      )  }
+BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder'       )  }
+BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder'   )  }
+BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder'         )  }
+BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::PureTreeBuilder'              )  }
+BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::WindowedTreeBuilder'          )  }
+BEGIN{  use_ok(  'Cath::Gemma::Types'                                     )  }
+BEGIN{  use_ok(  'Cath::Gemma::Util'                                      )  }
+BEGIN{  use_ok(  'TimeSecondsToJson'                                      )  }

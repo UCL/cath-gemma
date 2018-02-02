@@ -22,6 +22,6 @@ use Path::Tiny;
 # my $test_basename   = path( $PROGRAM_NAME )->basename( '.t' );
 my $data_dir        = path( 'data' );
 
-use_ok( 'Cath::Gemma::Compute::WorkBatch' );
+BEGIN{ use_ok( 'Cath::Gemma::Compute::WorkBatch' ) }
 
 # done_testing();

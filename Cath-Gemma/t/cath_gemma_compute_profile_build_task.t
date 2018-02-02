@@ -25,7 +25,7 @@ use Cath::Gemma::Util;
 # my $test_basename   = path( $PROGRAM_NAME )->basename( '.t' );
 my $data_dir        = path( 'data' );
 
-use_ok( 'Cath::Gemma::Compute::Task::ProfileBuildTask' );
+BEGIN{ use_ok( 'Cath::Gemma::Compute::Task::ProfileBuildTask' ) }
 
 my $starting_cluster_dir = $data_dir->child( 'starting_clusters' );
 

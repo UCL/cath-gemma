@@ -12,7 +12,7 @@ use Test::More tests => 7;
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
-use_ok( 'Cath::Gemma::Scan::Impl::LinkList' );
+BEGIN { use_ok( 'Cath::Gemma::Scan::Impl::LinkList' ) }
 
 sub make_example_link_list_data {
 	return [
