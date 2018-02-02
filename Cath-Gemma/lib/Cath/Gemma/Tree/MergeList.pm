@@ -554,7 +554,7 @@ sub later_scans {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering //= default_clusts_ordering();
 
 	my %clusters = map { ( $ARG, 1 ) } @{ $self->starting_clusters() };
 	my $merges = $self->merges();

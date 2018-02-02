@@ -97,7 +97,7 @@ sub mergee_a_id {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering //= default_clusts_ordering();
 
 	return $self->mergee_a_is_starting_cluster()
 		? $self->mergee_a()
@@ -127,7 +127,7 @@ sub mergee_b_id {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering //= default_clusts_ordering();
 
 	return $self->mergee_b_is_starting_cluster()
 		? $self->mergee_b()
@@ -146,7 +146,7 @@ sub starting_clusters_a {
 
 	no warnings 'recursion';
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering //= default_clusts_ordering();
 
 	return $self->mergee_a_is_starting_cluster()
 		? [ $self->mergee_a() ]
@@ -165,7 +165,7 @@ sub starting_clusters_b {
 
 	no warnings 'recursion';
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering //= default_clusts_ordering();
 
 	return $self->mergee_b_is_starting_cluster()
 		? [ $self->mergee_b() ]
@@ -182,7 +182,7 @@ sub starting_nodes {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering //= default_clusts_ordering();
 
 	# confess ' ';
 	no warnings 'recursion';
@@ -208,7 +208,7 @@ sub id {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering //= default_clusts_ordering();
 
 	return id_of_clusters( $self->starting_nodes( $clusts_ordering ) );
 }

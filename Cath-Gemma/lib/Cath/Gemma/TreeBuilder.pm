@@ -67,7 +67,7 @@ around build_tree => sub {
 	state $check = compile( Object, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType], Optional[CathGemmaNodeOrdering] );
 	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering            //= 'simple_ordering';
+	$clusts_ordering            //= default_clusts_ordering();
 	$compass_profile_build_type //= default_compass_profile_build_type();
 
 	my $pre_work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
