@@ -21,9 +21,13 @@ our @EXPORT = qw/
 	bootstrap_is_on
 	cath_test_tempdir
 	file_matches
+	gemma_dir_set_of_superfamily
 	profile_dir_set_of_superfamily
 	test_data_dir
+	test_superfamily_aln_dir
 	test_superfamily_data_dir
+	test_superfamily_prof_dir
+	test_superfamily_scan_dir
 	test_superfamily_starting_cluster_dir
 	/;
 
@@ -90,11 +94,27 @@ sub file_matches {
 	);
 }
 
+=head2 gemma_dir_set_of_superfamily
+
+Get the test data GemmaDirSet corresponding to the specified superfamily ID
+
+=cut
+
+sub gemma_dir_set_of_superfamily {
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir(
+		test_superfamily_data_dir( $superfamily )
+	);
+}
+
 =head2 profile_dir_set_of_superfamily
 
 Get the test data ProfileDirSet corresponding to the specified superfamily ID
 
 =cut
+
 sub profile_dir_set_of_superfamily {
 	state $check = compile( Str );
 	my ( $superfamily ) = $check->( @ARG );
@@ -117,6 +137,19 @@ sub test_data_dir {
 	return path( $FindBin::Bin )->parent()->child( 't' )->child( 'data' )->realpath();
 }
 
+=head2 test_superfamily_aln_dir
+
+Get the test data alignment sub-directory corresponding to the specified superfamily ID
+
+=cut
+
+sub test_superfamily_aln_dir {
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return profile_dir_set_of_superfamily( $superfamily )->aln_dir();
+}
+
 =head2 test_superfamily_data_dir
 
 Get the test data sub-directory corresponding to the specified superfamily ID
@@ -130,13 +163,39 @@ sub test_superfamily_data_dir {
 	return test_data_dir()->child( $superfamily );
 }
 
+=head2 test_superfamily_prof_dir
+
+Get the test data profile sub-directory corresponding to the specified superfamily ID
+
+=cut
+
+sub test_superfamily_prof_dir {
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return profile_dir_set_of_superfamily( $superfamily )->prof_dir();
+}
+
+=head2 test_superfamily_scan_dir
+
+Get the test data scan sub-directory corresponding to the specified superfamily ID
+
+=cut
+
+sub test_superfamily_scan_dir {
+	state $check = compile( Str );
+	my ( $superfamily ) = $check->( @ARG );
+
+	return gemma_dir_set_of_superfamily( $superfamily )->scan_dir();
+}
+
 =head2 test_superfamily_starting_cluster_dir
 
 Get the test data starting cluster sub-directory corresponding to the specified superfamily ID
 
 =cut
 
-sub test_superfamily_starting_cluster_dir{
+sub test_superfamily_starting_cluster_dir {
 	state $check = compile( Str );
 	my ( $superfamily ) = $check->( @ARG );
 

@@ -90,6 +90,7 @@ has compass_profile_build_type => (
 	is       => 'ro',
 	isa      => CathGemmaCompassProfileType,
 	required => 1,
+	default  => sub { default_compass_profile_build_type(); },
 );
 
 # =head2 id
@@ -134,8 +135,8 @@ sub id {
 		$self->compass_profile_build_type(),
 		map {
 			(
-				id_of_clusters( $ARG->[ 0 ] ),
-				id_of_clusters( $ARG->[ 1 ] ),
+				id_of_clusters( [ $ARG->[ 0 ] ] ),
+				id_of_clusters(   $ARG->[ 1 ]   ),
 			);
 		} @{ $self->clust_and_clust_list_pairs() }
 	] );

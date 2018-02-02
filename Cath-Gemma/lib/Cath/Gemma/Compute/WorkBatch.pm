@@ -483,4 +483,21 @@ sub make_from_profile_build_task_ctor_args {
 	);
 }
 
+=head2 make_from_profile_scan_task_ctor_args
+
+Make a WorkBatch containing one ProfileScanTask, built from the specified ctor arguments
+
+The arguments must include dir_set, which must specify a Cath::Gemma::Disk::CathGemmaDiskGemmaDirSet
+
+=cut
+
+sub make_from_profile_scan_task_ctor_args {
+	state $check = compile( ClassName, slurpy ArrayRef, );
+	my ( $class, $other_args ) = $check->( @ARG );
+
+	return Cath::Gemma::Compute::WorkBatch->new(
+		scan_tasks => [ Cath::Gemma::Compute::Task::ProfileScanTask->new( @$other_args ) ]
+	);
+}
+
 1;
