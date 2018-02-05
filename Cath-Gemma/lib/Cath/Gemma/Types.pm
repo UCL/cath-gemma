@@ -12,7 +12,7 @@ use Type::Library
 		CathGemmaCompassProfileType
 		CathGemmaComputeBatchingPolicy
 		CathGemmaExecSync
-		CathGemmaHpcMode
+		CathGemmaSpawnMode
 		CathGemmaNodeOrdering
 
 		CathGemmaComputeTaskBuildTreeTask
@@ -58,9 +58,9 @@ enum       CathGemmaExecSync, [ qw/
 	permit_async_launch
 / ];
 
-enum       CathGemmaHpcMode, [ qw/
-	hpc_local
-	hpc_sge
+enum       CathGemmaSpawnMode, [ qw/
+	spawn_hpc_sge
+	spawn_local
 / ];
 
 enum       CathGemmaNodeOrdering,        [ qw/

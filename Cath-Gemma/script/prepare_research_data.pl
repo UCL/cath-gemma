@@ -140,7 +140,7 @@ my $executor =
 				DIR      => $submission_dir_pattern->parent(),
 				CLEANUP  => 0,
 			),
-			# hpc_mode => 'hpc_sge',
+			# hpc_mode => 'spawn_hpc_sge',
 		);
 
 if ( 0 ) {

@@ -33,7 +33,7 @@ use Cath::Gemma::Executor::SpawnLocalRunner;
 use Cath::Gemma::Types qw/
 	CathGemmaComputeWorkBatcher
 	CathGemmaExecutorSpawnRunner
-	CathGemmaHpcMode
+	CathGemmaSpawnMode
 	/;
 use Cath::Gemma::Util;
 
@@ -59,7 +59,7 @@ TODOCUMENT
 
 has hpc_mode => (
 	is       => 'ro',
-	isa      => CathGemmaHpcMode,
+	isa      => CathGemmaSpawnMode,
 	required => 1,
 	default  => sub {
 		my $running_on_sge = guess_if_running_on_sge();
@@ -69,7 +69,7 @@ has hpc_mode => (
 		else {
 			INFO __PACKAGE__ . ' has deduced this isn\'t running in an SGE environment and so will run job scripts itself';
 		}
-		( $running_on_sge ? 'hpc_sge' : 'hpc_local' );
+		( $running_on_sge ? 'spawn_hpc_sge' : 'spawn_local' );
 	}
 );
 
@@ -106,10 +106,10 @@ sub _build__runner {
 	my $self = shift;
 	my $val = $self->hpc_mode();
 	switch ( $val ) {
-		case 'hpc_local' { return Cath::Gemma::Executor::SpawnLocalRunner ->new(); }
-		case 'hpc_sge'   { return Cath::Gemma::Executor::SpawnHpcSgeRunner->new(); }
+		case 'spawn_hpc_sge' { return Cath::Gemma::Executor::SpawnHpcSgeRunner->new(); }
+		case 'spawn_local'   { return Cath::Gemma::Executor::SpawnLocalRunner ->new(); }
 	}
-	confess 'Could not recognise CathGemmaHpcMode value ' . $self->hpc_mode();
+	confess 'Could not recognise CathGemmaSpawnMode value ' . $self->hpc_mode();
 }
 
 =head2 execute

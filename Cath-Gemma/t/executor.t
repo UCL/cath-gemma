@@ -217,7 +217,7 @@ foreach my $executor_details (
                             [ 'Cath::Gemma::Executor::ConfessExecutor'      ],
                             [ 'Cath::Gemma::Executor::SpawnExecutor', [
                             	submission_dir => Path::Tiny->tempdir( CLEANUP  => 1 ),
-                            	hpc_mode => 'hpc_local'
+                            	hpc_mode       => 'spawn_local'
                             ] ],
                             [ 'Cath::Gemma::Executor::DirectExecutor'        ],
                             ) {
