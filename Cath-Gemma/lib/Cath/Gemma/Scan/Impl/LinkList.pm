@@ -104,7 +104,7 @@ sub get_laid_out_scores {
 	pop @other_scores;
 	foreach my $link ( @{ $self->_links_data() } ) {
 		my ( $other_index, $other_score ) = @$link;
-		@other_scores[ $other_index ] = $other_score;
+		$other_scores[ $other_index ] = $other_score;
 	}
 	return \@other_scores;
 }
