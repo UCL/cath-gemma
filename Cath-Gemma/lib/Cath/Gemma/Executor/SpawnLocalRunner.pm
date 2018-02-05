@@ -1,8 +1,8 @@
-package Cath::Gemma::Executor::HpcRunner::HpcLocalRunner;
+package Cath::Gemma::Executor::SpawnLocalRunner;
 
 =head1 NAME
 
-Cath::Gemma::Executor::HpcRunner::HpcLocalRunner - Run an HPC batch script by simulate an HPC environment locally (useful for devel/debug)
+Cath::Gemma::Executor::SpawnLocalRunner - Run an HPC batch script by simulate an HPC environment locally (useful for devel/debug)
 
 =cut
 
@@ -25,7 +25,7 @@ use Log::Log4perl::Tiny qw/ :easy          /;
 use Types::Path::Tiny   qw/ Path           /;
 use Types::Standard     qw/ Int            /;
 
-with ( 'Cath::Gemma::Executor::HpcRunner' );
+with ( 'Cath::Gemma::Executor::SpawnRunner' );
 
 =head2 _patch_job_id_and_task_id_into_file_pattern
 
@@ -55,7 +55,7 @@ sub run_job_array {
 	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps, $job_args ) = @ARG;
 
 	# use Carp qw/ cluck /;
-	# cluck "\n\n\n****** In HpcLocalRunner::run_job_array";
+	# cluck "\n\n\n****** In SpawnLocalRunner::run_job_array";
 
 	if ( $num_batches < 0 ) {
 		confess 'Cannot perform a job with negative number of batches : ' . $num_batches;
@@ -83,7 +83,7 @@ sub run_job_array {
 		$job_stdout_file->spew( $run_stdout );
 
 		if ( $run_exit != 0 ) {
-			WARN 'HpcLocalRunner job finished with non-zero return code ' . $run_exit . ' - see ' . join( ', ', $job_stderr_file, $job_stdout_file );
+			WARN 'SpawnLocalRunner job finished with non-zero return code ' . $run_exit . ' - see ' . join( ', ', $job_stderr_file, $job_stdout_file );
 		}
 	}
 	return; # To ensure this returns undef (otherwise returns '' - perhaps due to Moo wrappers?)

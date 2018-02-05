@@ -33,11 +33,11 @@ BEGIN{  use_ok(  'Cath::Gemma::Disk::ProfileDirSet'                       )  }
 BEGIN{  use_ok(  'Cath::Gemma::Disk::TreeDirSet'                          )  }
 BEGIN{  use_ok(  'Cath::Gemma::Executor'                                  )  }
 BEGIN{  use_ok(  'Cath::Gemma::Executor::ConfessExecutor'                 )  }
-BEGIN{  use_ok(  'Cath::Gemma::Executor::HpcExecutor'                     )  }
-BEGIN{  use_ok(  'Cath::Gemma::Executor::HpcRunner'                       )  }
-BEGIN{  use_ok(  'Cath::Gemma::Executor::HpcRunner::HpcLocalRunner'       )  }
-BEGIN{  use_ok(  'Cath::Gemma::Executor::HpcRunner::HpcSgeRunner'         )  }
-BEGIN{  use_ok(  'Cath::Gemma::Executor::LocalExecutor'                   )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::DirectExecutor'                  )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::SpawnExecutor'                   )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::SpawnHpcSgeRunner'               )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::SpawnLocalRunner'                )  }
+BEGIN{  use_ok(  'Cath::Gemma::Executor::SpawnRunner'                     )  }
 BEGIN{  use_ok(  'Cath::Gemma::Scan::Impl::LinkList'                      )  }
 BEGIN{  use_ok(  'Cath::Gemma::Scan::Impl::Links'                         )  }
 BEGIN{  use_ok(  'Cath::Gemma::Scan::ScanData'                            )  }

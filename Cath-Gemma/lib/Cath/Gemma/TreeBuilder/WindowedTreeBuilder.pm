@@ -22,7 +22,7 @@ use List::MoreUtils     qw/ first_index    /;
 use Log::Log4perl::Tiny qw/ :easy          /;
 
 # Cath::Gemma
-use Cath::Gemma::Executor::LocalExecutor;
+use Cath::Gemma::Executor::DirectExecutor;
 use Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler;
 
 with ( 'Cath::Gemma::TreeBuilder' );
@@ -71,7 +71,7 @@ sub build_tree {
 	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
 
 	# TODONOW: Sort this out
-	my $local_executor = Cath::Gemma::Executor::LocalExecutor->new();
+	my $local_executor = Cath::Gemma::Executor::DirectExecutor->new();
 
 	my $really_bad_score = 100000000;
 	my %scores;

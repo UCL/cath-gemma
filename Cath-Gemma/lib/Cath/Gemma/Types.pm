@@ -24,7 +24,7 @@ use Type::Library
 		CathGemmaDiskGemmaDirSet
 		CathGemmaDiskProfileDirSet
 		CathGemmaDiskTreeDirSet
-		CathGemmaExecutorHpcRunner
+		CathGemmaExecutorSpawnRunner
 		CathGemmaScanScanData
 		CathGemmaScanScansData
 		CathGemmaStartingClustersOfId
@@ -90,7 +90,7 @@ class_type CathGemmaTreeMergeList,               { class => "Cath::Gemma::Tree::
 
 role_type  CathGemmaComputeTask,                 { role  => "Cath::Gemma::Compute::Task"                   };
 role_type  CathGemmaExecutor,                    { role  => "Cath::Gemma::Executor"                        };
-role_type  CathGemmaExecutorHpcRunner,           { role  => "Cath::Gemma::Executor::HpcRunner"             };
+role_type  CathGemmaExecutorSpawnRunner,         { role  => "Cath::Gemma::Executor::SpawnRunner"           };
 role_type  CathGemmaTreeBuilder,                 { role  => "Cath::Gemma::TreeBuilder"                     };
 
 class_type TimeSeconds,                          { class => "Time::Seconds"                                };

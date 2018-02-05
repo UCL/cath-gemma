@@ -23,8 +23,8 @@ use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
 # Cath::Gemma
 use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Disk::ProfileDirSet;
-use Cath::Gemma::Executor::HpcExecutor; # ***** TEMPORARY (use factory) *****
-use Cath::Gemma::Executor::LocalExecutor; # ***** TEMPORARY (use factory) *****
+use Cath::Gemma::Executor::DirectExecutor; # ***** TEMPORARY (use factory) *****
+use Cath::Gemma::Executor::SpawnExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
@@ -62,10 +62,10 @@ if ( ! -d $output_dir ) {
 
 my $executor =
 	$local
-		? Cath::Gemma::Executor::LocalExecutor->new(
+		? Cath::Gemma::Executor::DirectExecutor->new(
 			max_num_threads => $max_num_threads,
 		)
-		: Cath::Gemma::Executor::HpcExecutor->new(
+		: Cath::Gemma::Executor::SpawnExecutor->new(
 			submission_dir  => path( $submit_dir_name ),
 		);
 

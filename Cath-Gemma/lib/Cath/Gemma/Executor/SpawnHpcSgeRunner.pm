@@ -1,8 +1,8 @@
-package Cath::Gemma::Executor::HpcRunner::HpcSgeRunner;
+package Cath::Gemma::Executor::SpawnHpcSgeRunner;
 
 =head1 NAME
 
-Cath::Gemma::Executor::HpcRunner::HpcSgeRunner - Submit an real HPC job to run the the HPC script
+Cath::Gemma::Executor::SpawnHpcSgeRunner - Submit an real HPC job to run the the HPC script
 
 =cut
 
@@ -40,7 +40,7 @@ sub _get_submit_host {
 }
 
 
-with ( 'Cath::Gemma::Executor::HpcRunner' );
+with ( 'Cath::Gemma::Executor::SpawnRunner' );
 
 =head2 run_job_array
 

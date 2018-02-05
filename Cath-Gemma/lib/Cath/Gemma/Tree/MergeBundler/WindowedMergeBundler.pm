@@ -34,7 +34,7 @@ use strictures 1;
 # use Cath::Gemma::Disk::ProfileDirSet;
 # use Cath::Gemma::Tool::CompassProfileBuilder;
 
-# use Cath::Gemma::Executor::LocalExecutor;
+# use Cath::Gemma::Executor::DirectExecutor;
 # use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 # use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
 # use Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder;

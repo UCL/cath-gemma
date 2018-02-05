@@ -1,8 +1,8 @@
-package Cath::Gemma::Executor::LocalExecutor;
+package Cath::Gemma::Executor::DirectExecutor;
 
 =head1 NAME
 
-Cath::Gemma::Executor::LocalExecutor - Execute a Cath::Gemma::Compute::WorkBatchList locally (ie directly)
+Cath::Gemma::Executor::DirectExecutor - Execute a Cath::Gemma::Compute::WorkBatchList locally (ie directly)
 
 =cut
 

@@ -1,8 +1,8 @@
-package Cath::Gemma::Executor::HpcRunner;
+package Cath::Gemma::Executor::SpawnRunner;
 
 =head1 NAME
 
-Cath::Gemma::Executor::HpcRunner - Actually run an HPC batch script (wrapping script/execute_work_batch.pl) for HpcExecutor in some ways
+Cath::Gemma::Executor::SpawnRunner - Actually run an HPC batch script (wrapping script/execute_work_batch.pl) for SpawnExecutor in some ways
 
 =cut
 

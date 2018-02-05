@@ -28,7 +28,7 @@ use Path::Tiny;
 use Types::Standard     qw/ ArrayRef Object Optional Str /;
 
 # Cath::Gemma
-use Cath::Gemma::Executor::LocalExecutor;
+use Cath::Gemma::Executor::DirectExecutor;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder;
@@ -359,19 +359,19 @@ sub execute_task {
 		$sge_dir = $ENV{ SGE_STDERR_PATH }
 			? path( $ENV{ SGE_STDERR_PATH } )->realpath()->parent()
 			: path( cwd() );
-		INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with an HpcExecutor (running in ' . $sge_dir . ')';
+		INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with an SpawnExecutor (running in ' . $sge_dir . ')';
 	}
 	else {
-		INFO __PACKAGE__ . ' has deduced this is not running on SGE and launch child jobs with a LocalExecutor';
+		INFO __PACKAGE__ . ' has deduced this is not running on SGE and launch child jobs with a DirectExecutor';
 	}
 	# TODO: Sort out this directory - maybe make a child dir in the current submit dir
 	my $child_executor = (
 		$running_on_sge
-		? Cath::Gemma::Executor::HpcExecutor->new(
+		? Cath::Gemma::Executor::SpawnExecutor->new(
 			submission_dir => $sge_dir,
 		)
-		: Cath::Gemma::Executor::LocalExecutor->new()
-		# : $self # This mustn't be a dclone of LocalExecutor because then there'll be multiple CathGemmaDiskExecutables managing the lifetime of the same executables
+		: Cath::Gemma::Executor::DirectExecutor->new()
+		# : $self # This mustn't be a dclone of DirectExecutor because then there'll be multiple CathGemmaDiskExecutables managing the lifetime of the same executables
 	);
 
 

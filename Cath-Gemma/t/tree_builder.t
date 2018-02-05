@@ -25,7 +25,7 @@ use lib path( $FindBin::Bin . '/lib' )->realpath()->stringify();
 
 # Cath::Gemma
 use Cath::Gemma::Disk::GemmaDirSet;
-use Cath::Gemma::Executor::LocalExecutor;
+use Cath::Gemma::Executor::DirectExecutor;
 
 # Cath::Gemma Test
 use Cath::Gemma::Test;
@@ -44,7 +44,7 @@ BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::WindowedTreeBuilder'        ) }
 my $superfamily                = '3.30.70.1470';
 my $data_base_dir              = path( $FindBin::Bin )->child( '/data' )->child( $superfamily )->realpath();
 my $tracefiles_dir             = $data_base_dir->child( 'tracefiles' );
-my $executor                   = Cath::Gemma::Executor::LocalExecutor->new();
+my $executor                   = Cath::Gemma::Executor::DirectExecutor->new();
 my $gemma_dir_set              = Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir( $data_base_dir );
 my $starting_clusters          = $gemma_dir_set->get_starting_clusters();
 

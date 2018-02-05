@@ -215,11 +215,11 @@ sub test_build_tree {
 # Test each of the Executors
 foreach my $executor_details (
                             [ 'Cath::Gemma::Executor::ConfessExecutor'      ],
-                            [ 'Cath::Gemma::Executor::HpcExecutor', [
+                            [ 'Cath::Gemma::Executor::SpawnExecutor', [
                             	submission_dir => Path::Tiny->tempdir( CLEANUP  => 1 ),
                             	hpc_mode => 'hpc_local'
                             ] ],
-                            [ 'Cath::Gemma::Executor::LocalExecutor'        ],
+                            [ 'Cath::Gemma::Executor::DirectExecutor'        ],
                             ) {
 	my ( $executor_name, $executor_args ) = @$executor_details;
 

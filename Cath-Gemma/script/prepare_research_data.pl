@@ -33,8 +33,8 @@ use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Compute::WorkBatchList;
 use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Disk::TreeDirSet;
-use Cath::Gemma::Executor::HpcExecutor; # ***** TEMPORARY (use factory) *****
-use Cath::Gemma::Executor::LocalExecutor; # ***** TEMPORARY (use factory) *****
+use Cath::Gemma::Executor::DirectExecutor; # ***** TEMPORARY (use factory) *****
+use Cath::Gemma::Executor::SpawnExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Tool::Aligner;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Tool::CompassScanner;
@@ -131,10 +131,10 @@ my @projects = grep( ! /^#/, split( /\n+/, $projects_list_data ) );
 
 my $executor =
 	$local
-		? Cath::Gemma::Executor::LocalExecutor->new(
+		? Cath::Gemma::Executor::DirectExecutor->new(
 			max_num_threads => $max_num_threads,
 		)
-		: Cath::Gemma::Executor::HpcExecutor->new(
+		: Cath::Gemma::Executor::SpawnExecutor->new(
 			submission_dir  => Path::Tiny->tempdir(
 				TEMPLATE => $submission_dir_pattern->basename(),
 				DIR      => $submission_dir_pattern->parent(),
