@@ -78,13 +78,17 @@ SELECT
   c.sequence_md5 || '/' || c.resolved AS domain_id,
   s.aa_sequence                       AS sequence
 FROM
-  $tablespace.CATH_DOMAIN_PREDICTIONS c
+  $tablespace.CATH_DOMAIN_PREDICTIONS_EXTRA c
 INNER JOIN
-  $tablespace.SEQUENCES               s ON c.sequence_md5 = s.sequence_md5
+  $tablespace.SEQUENCES_EXTRA         s ON c.sequence_md5 = s.sequence_md5
 INNER JOIN
   $tablespace.UNIPROT_PRIM_ACC        u ON c.sequence_md5 = u.sequence_md5
 WHERE
   c.superfamily = ?
+	AND
+	s.source = 'uniref90'
+	AND 
+	c.independent_evalue < 0.001
 _SQL
 	my $sequences_for_superfamily_sth = $dbh->prepare( $sequences_for_superfamily_sql )
 		or die "! Error: failed to prepare statement: " . $dbh->err;
