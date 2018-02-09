@@ -8,7 +8,7 @@ use Carp                qw/ confess        /;
 use Cwd;
 use English             qw/ -no_match_vars /;
 use FindBin;
-use Sys::Hostname; # ***** TEMPORARY *****
+use Sys::Hostname;
 use v5.10;
 
 # Find non-core external lib directory using FindBin
@@ -33,7 +33,7 @@ Log::Log4perl->easy_init( {
 	level => $DEBUG,
 } );
 
-WARN "Starting $PROGRAM_NAME on ".hostname;
+INFO 'Starting $PROGRAM_NAME on ' . hostname;
 
 state $check = compile( Path );
 my ( $batch_file ) = $check->( @ARGV );
