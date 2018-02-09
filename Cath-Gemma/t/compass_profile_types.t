@@ -82,12 +82,16 @@ SKIP: {
 	);
 }
 
-cmp_compass_profile_type_against_file(
-	'Building a COMPASS model with type "compass_wp_dummy_2nd" generates the expected file',
-	'compass_wp_dummy_2nd',
-	$alignment_file,
-	$compass_prof_types_dir->child( '1.10.150.120__1767.compass_wp_dummy_2nd.prof' ),
-);
+SKIP: {
+	# Skip this because compass_wp_dummy_2nd can give different results when run identically on different machines (eg kingkong)
+	skip 'compass_wp_dummy_2nd can give different results when run identically on different machines', 1;
+	cmp_compass_profile_type_against_file(
+		'Building a COMPASS model with type "compass_wp_dummy_2nd" generates the expected file',
+		'compass_wp_dummy_2nd',
+		$alignment_file,
+		$compass_prof_types_dir->child( '1.10.150.120__1767.compass_wp_dummy_2nd.prof' ),
+	);
+}
 
 cmp_compass_profile_type_against_file(
 	'Building a COMPASS model with type "mk_compass_db" generates the expected file',
