@@ -71,6 +71,8 @@ around build_tree => sub {
 	$clusts_ordering            //= default_clusts_ordering();
 	$compass_profile_build_type //= default_compass_profile_build_type();
 
+	DEBUG 'About to determine what steps if any are required to prepare all-vs-all scan results of the starting clusters';
+
 	my $pre_work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 		batches => [ Cath::Gemma::Compute::WorkBatch->new(
 			# Build alignments and profiles for...
@@ -104,6 +106,9 @@ around build_tree => sub {
 			. $pre_work_batch_list->estimate_time_to_execute()
 			. ' seconds';
 		$executor->execute( $pre_work_batch_list, 'always_wait_for_complete' );
+	}
+	else {
+		DEBUG 'No steps required.'
 	}
 
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_gemma_dir_set(

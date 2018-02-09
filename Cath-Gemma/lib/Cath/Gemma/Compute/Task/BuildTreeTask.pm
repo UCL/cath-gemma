@@ -377,6 +377,11 @@ sub execute_task {
 
 			# Ensure that all alignments have been built for a tree
 			# (which may not be true if the tree was built under a naive method)
+			INFO 'After having built a tree from '
+				. scalar( @$starting_clusters )
+				. ' starting cluster(s), (beginning with '
+				. join( ', ', @$starting_clusters[ 0 .. min( 20, $#$starting_clusters ) ] )
+				. ')... now ensuring that all alignments for the tree are present...';
 			$tree->ensure_all_alignments(
 				$clusts_ordering,
 				$exes, # TODO: probably worth working out
