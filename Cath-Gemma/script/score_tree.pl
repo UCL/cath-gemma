@@ -60,11 +60,13 @@ if ( ! -d $output_dir ) {
 # my $trace_files_dir = path( '/cath/people2/ucbcdal/dfx_funfam2013_data/projects/gene3d_12/clustering_output' );
 # /cath/people2/ucbctnl/GeMMA/v4_0_0/starting_clusters/
 
+my $direct_executor = Cath::Gemma::Executor::DirectExecutor->new(
+	max_num_threads => $max_num_threads,
+);
+
 my $executor =
 	$local
-		? Cath::Gemma::Executor::DirectExecutor->new(
-			max_num_threads => $max_num_threads,
-		)
+		? $direct_executor
 		: Cath::Gemma::Executor::SpawnExecutor->new(
 			submission_dir  => path( $submit_dir_name ),
 		);
@@ -117,6 +119,7 @@ foreach my $project ( @project_list ) {
 				warn "About to compute $flavour\n";
 
 				my $tree = $tree_builder->build_tree(
+					$direct_executor->exes(),
 					$executor,
 					$starting_clusters,
 					$gemma_dir_set,
@@ -130,7 +133,7 @@ foreach my $project ( @project_list ) {
 				# (which may not be true if the tree was built under a naive method)
 				$tree->ensure_all_alignments(
 					$clusts_ordering,
-					$executor->exes(), # TODO: Fix this appalling violation of OO principles
+					$direct_executor->exes(),
 					$gemma_dir_set->profile_dir_set(),
 				);
 

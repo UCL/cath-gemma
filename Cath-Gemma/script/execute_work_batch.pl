@@ -5,6 +5,7 @@ use warnings;
 
 # Core
 use Carp                qw/ confess        /;
+use Cwd;
 use English             qw/ -no_match_vars /;
 use FindBin;
 use Sys::Hostname; # ***** TEMPORARY *****
@@ -25,6 +26,7 @@ use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
 # Cath::Gemma
 use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Disk::Executables;
+use Cath::Gemma::Executor::SpawnExecutor;
 use TimeSecondsToJson;
 
 Log::Log4perl->easy_init( {
@@ -42,12 +44,17 @@ if ( ! -s $batch_file ) {
 
 INFO "Processing batch file $batch_file";
 
-my $exes = Cath::Gemma::Disk::Executables->new()
-	or confess "Unable to create new Cath::Gemma::Disk::Executables";;
-
+my $sge_submission_dir = Path::Tiny->tempdir(
+	CLEANUP => 0,
+	DIR     => $ENV{ SGE_STDERR_PATH }
+	           ? path( $ENV{ SGE_STDERR_PATH } )->realpath()->parent()
+	           : path( cwd() ),
+);
+INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with an SpawnExecutor (running in ' . $sge_submission_dir . ')';
 my $result = Cath::Gemma::Compute::WorkBatch->execute_from_file(
 	$batch_file,
-	$exes,
+	Cath::Gemma::Disk::Executables->new(),
+	Cath::Gemma::Executor::SpawnExecutor->new( submission_dir => $sge_submission_dir ),
 );
 
 # Consider using Tree::Simple::VisitorFactory (or Data::Traverse or Data::Visitor?) if this breaks

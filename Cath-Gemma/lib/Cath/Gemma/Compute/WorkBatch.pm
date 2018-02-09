@@ -43,6 +43,7 @@ use Cath::Gemma::Types qw/
 	CathGemmaComputeWorkBatch
 	CathGemmaDiskExecutables
 	CathGemmaDiskGemmaDirSet
+	CathGemmaExecutor
 	/;
 use Cath::Gemma::Util;
 
@@ -315,8 +316,8 @@ TODOCUMENT
 =cut
 
 sub execute_task {
-	state $check = compile( Object, CathGemmaDiskExecutables );
-	my ( $self, $exes ) = $check->( @ARG );
+	state $check = compile( Object, CathGemmaDiskExecutables, CathGemmaExecutor );
+	my ( $self, $exes, $subtask_executor ) = $check->( @ARG );
 
 	INFO 'About to execute ' . scalar( @{ $self->profile_tasks  () } )
 	   . ' profile tasks, '  . scalar( @{ $self->scan_tasks     () } )
@@ -325,7 +326,7 @@ sub execute_task {
 
 	return [
 		map
-			{ $ARG->execute_task( $exes ); }
+			{ $ARG->execute_task( $exes, $subtask_executor ); }
 			(
 				@{ $self->profile_tasks  () },
 				@{ $self->scan_tasks     () },
@@ -409,8 +410,8 @@ TODOCUMENT
 =cut
 
 sub execute_from_file {
-	state $check = compile( Invocant, Path, CathGemmaDiskExecutables );
-	my ( $proto, $file, $exes ) = $check->( @ARG );
+	state $check = compile( Invocant, Path, CathGemmaDiskExecutables, CathGemmaExecutor );
+	my ( $proto, $file, $exes, $subtask_executor ) = $check->( @ARG );
 
 	# use Carp qw/ confess /;
 
@@ -424,7 +425,7 @@ sub execute_from_file {
 
 	# confess ' ';
 
-	return $proto->read_from_file( $file )->execute_task( $exes );
+	return $proto->read_from_file( $file )->execute_task( $exes, $subtask_executor );
 }
 
 =head2  make_work_batch_of_query_scs_and_match_scs_list

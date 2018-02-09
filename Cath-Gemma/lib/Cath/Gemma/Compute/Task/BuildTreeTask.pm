@@ -29,6 +29,7 @@ use Types::Standard     qw/ ArrayRef Object Optional Str /;
 
 # Cath::Gemma
 use Cath::Gemma::Executor::DirectExecutor;
+use Cath::Gemma::Executor::SpawnExecutor;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder;
@@ -342,7 +343,7 @@ TODOCUMENT
 =cut
 
 sub execute_task {
-	my ( $self, $exes ) = @ARG;
+	my ( $self, $exes, $subtask_executor ) = @ARG;
 
 	my $tree_builder               = $self->tree_builder();
 	my $tree_dir_set               = $self->dir_set();
@@ -351,29 +352,6 @@ sub execute_task {
 	my $tree_builder_name          = $tree_builder->name();
 	my $flavour_str                = join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name );
 	my $flavour_out_dir            = $self->tree_dir()->child( $flavour_str );
-
-	# TODONOW: find a better way of getting this
-	my $running_on_sge = guess_if_running_on_sge();
-	my $sge_dir;
-	if ( $running_on_sge ) {
-		$sge_dir = $ENV{ SGE_STDERR_PATH }
-			? path( $ENV{ SGE_STDERR_PATH } )->realpath()->parent()
-			: path( cwd() );
-		INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with an SpawnExecutor (running in ' . $sge_dir . ')';
-	}
-	else {
-		INFO __PACKAGE__ . ' has deduced this is not running on SGE and launch child jobs with a DirectExecutor';
-	}
-	# TODO: Sort out this directory - maybe make a child dir in the current submit dir
-	my $child_executor = (
-		$running_on_sge
-		? Cath::Gemma::Executor::SpawnExecutor->new(
-			submission_dir => $sge_dir,
-		)
-		: Cath::Gemma::Executor::DirectExecutor->new()
-		# : $self # This mustn't be a dclone of DirectExecutor because then there'll be multiple CathGemmaDiskExecutables managing the lifetime of the same executables
-	);
-
 
 	return [
 		map
@@ -387,7 +365,8 @@ sub execute_task {
 				. ')';
 
 			my $tree = $tree_builder->build_tree(
-				$child_executor,
+				$exes,
+				$subtask_executor,
 				$starting_clusters,
 				$tree_dir_set->gemma_dir_set(),
 				$compass_profile_build_type,
@@ -400,7 +379,10 @@ sub execute_task {
 			# (which may not be true if the tree was built under a naive method)
 			$tree->ensure_all_alignments(
 				$clusts_ordering,
-				$child_executor->exes(), # TODO: Fix this appalling violation of OO principles
+				$exes, # TODO: probably worth working out
+				       #       whether it makes more sense
+				       #       to pass the executor through
+				       #       to ensure_all_alignments()
 				$tree_dir_set->profile_dir_set(),
 			);
 

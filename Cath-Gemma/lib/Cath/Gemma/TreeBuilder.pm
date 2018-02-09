@@ -31,6 +31,7 @@ use Cath::Gemma::Scan::ScansDataFactory;
 use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::Types qw/
 	CathGemmaCompassProfileType
+	CathGemmaDiskExecutables
 	CathGemmaDiskGemmaDirSet
 	CathGemmaExecutor
 	CathGemmaNodeOrdering
@@ -64,8 +65,8 @@ around build_tree => sub {
 
 	require Cath::Gemma::Compute::WorkBatchList;
 
-	state $check = compile( Object, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType], Optional[CathGemmaNodeOrdering] );
-	my ( $self, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering ) = $check->( @ARG );
+	state $check = compile( Object, CathGemmaDiskExecutables, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType], Optional[CathGemmaNodeOrdering] );
+	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering ) = $check->( @ARG );
 
 	$clusts_ordering            //= default_clusts_ordering();
 	$compass_profile_build_type //= default_compass_profile_build_type();
@@ -111,11 +112,11 @@ around build_tree => sub {
 		$starting_clusters,
 	);
 
-	if ( scalar ( @ARG ) < 5 ) {
+	if ( scalar ( @ARG ) < 6 ) {
 		push @ARG, $compass_profile_build_type;
 	}
 
-	if ( scalar ( @ARG ) < 6 ) {
+	if ( scalar ( @ARG ) < 7 ) {
 		push @ARG, $clusts_ordering;
 	}
 

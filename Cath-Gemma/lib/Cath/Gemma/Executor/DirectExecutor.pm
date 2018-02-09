@@ -86,7 +86,7 @@ sub execute {
 			$self->max_num_threads(),
 			sub {
 				my $task = shift;
-				$task->execute_task( $self->exes() );
+				$task->execute_task( $self->exes(), $self );
 			},
 			[ map { [ $ARG ] } @split_build_tasks ]
 		);
@@ -96,7 +96,7 @@ sub execute {
 			$self->max_num_threads(),
 			sub {
 				my $task = shift;
-				$task->execute_task( $self->exes() );
+				$task->execute_task( $self->exes(), $self );
 			},
 			[ map { [ $ARG ] } @split_scan_tasks ]
 		);
@@ -106,7 +106,7 @@ sub execute {
 			$self->max_num_threads(),
 			sub {
 				my $task = shift;
-				$task->execute_task( $self->exes() );
+				$task->execute_task( $self->exes(), $self );
 			},
 			[ map { [ $ARG ] } @split_treebuild_tasks ]
 		);

@@ -168,7 +168,7 @@ TODOCUMENT
 =cut
 
 sub execute_task {
-	my ( $self, $exes ) = @ARG;
+	my ( $self, $exes, $subtask_executor ) = @ARG;
 
 	return [
 		map

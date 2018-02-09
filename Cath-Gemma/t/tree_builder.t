@@ -44,7 +44,7 @@ BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::WindowedTreeBuilder'        ) }
 my $superfamily                = '3.30.70.1470';
 my $data_base_dir              = path( $FindBin::Bin )->child( '/data' )->child( $superfamily )->realpath();
 my $tracefiles_dir             = $data_base_dir->child( 'tracefiles' );
-my $executor                   = Cath::Gemma::Executor::DirectExecutor->new();
+my $direct_executor            = Cath::Gemma::Executor::DirectExecutor->new();
 my $gemma_dir_set              = Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir( $data_base_dir );
 my $starting_clusters          = $gemma_dir_set->get_starting_clusters();
 
@@ -58,7 +58,8 @@ my $test_tree_builder_fn = sub {
 
 	# Build a tree and write it to a tempfile
 	my $merge_list   = $tree_builder->build_tree(
-		$executor,
+		$direct_executor->exes(),
+		$direct_executor,
 		$starting_clusters,
 		$gemma_dir_set,
 	);

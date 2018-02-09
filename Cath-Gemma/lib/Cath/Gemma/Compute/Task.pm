@@ -30,6 +30,7 @@ use Cath::Gemma::Types  qw/
 	CathGemmaComputeBatchingPolicy
 	CathGemmaComputeWorkBatch
 	CathGemmaDiskExecutables
+	CathGemmaExecutor
 	TimeSeconds
 /;
 use Cath::Gemma::Util;
@@ -177,8 +178,8 @@ TODOCUMENT
 =cut
 
 before execute_task => sub {
-	state $check = compile( Object, CathGemmaDiskExecutables );
-	my ( $self, $exes ) = $check->( @ARG );
+	state $check = compile( Object, CathGemmaDiskExecutables, CathGemmaExecutor );
+	my ( $self ) = $check->( @ARG );
 
 	if ( ! $self->dir_set()->assert_is_set() ) {
 		warn "Cannot execute_task() without all directories configured";
