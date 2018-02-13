@@ -4,9 +4,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp    qw/ confess        /;
-use English qw/ -no_match_vars /;
-use feature qw/ say            /;
+use Carp                qw/ confess        /;
+use English             qw/ -no_match_vars /;
+use feature             qw/ say            /;
 use FindBin;
 use Getopt::Long;
 use Pod::Usage;
@@ -15,6 +15,7 @@ use Pod::Usage;
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
 
 # Find Gemma lib directory using FindBin (and tidy using Path::Tiny)
@@ -115,7 +116,7 @@ foreach my $project ( @project_list ) {
 				my $tree_builder_name  = $tree_builder->name();
 				my $flavour            = join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name );
 
-				warn "About to compute $flavour\n";
+				WARN 'About to compute flavour ' . $flavour;
 
 				my $tree_dir_set = Cath::Gemma::Disk::TreeDirSet->new(
 					gemma_dir_set => $gemma_dir_set,

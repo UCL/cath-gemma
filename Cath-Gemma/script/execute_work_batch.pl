@@ -33,7 +33,7 @@ Log::Log4perl->easy_init( {
 	level => $DEBUG,
 } );
 
-INFO 'Starting $PROGRAM_NAME on ' . hostname;
+INFO 'Starting ' . $PROGRAM_NAME . ' on machine ' . hostname;
 
 state $check = compile( Path );
 my ( $batch_file ) = $check->( @ARGV );
@@ -50,7 +50,7 @@ my $sge_submission_dir = Path::Tiny->tempdir(
 	           ? path( $ENV{ SGE_STDERR_PATH } )->realpath()->parent()
 	           : path( cwd() ),
 );
-INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with an SpawnExecutor (running in ' . $sge_submission_dir . ')';
+INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with a SpawnExecutor (running in ' . $sge_submission_dir . ')';
 my $result = Cath::Gemma::Compute::WorkBatch->execute_from_file(
 	$batch_file,
 	Cath::Gemma::Disk::Executables->new(),
