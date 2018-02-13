@@ -45,10 +45,11 @@ if ( ! -s $batch_file ) {
 INFO "Processing batch file $batch_file";
 
 my $sge_submission_dir = Path::Tiny->tempdir(
-	CLEANUP => 0,
-	DIR     => $ENV{ SGE_STDERR_PATH }
-	           ? path( $ENV{ SGE_STDERR_PATH } )->realpath()->parent()
-	           : path( cwd() ),
+	CLEANUP  => 0,
+	DIR      => $ENV{ SGE_STDERR_PATH }
+	            ? path( $ENV{ SGE_STDERR_PATH } )->realpath()->parent()
+	            : path( cwd() ),
+	TEMPLATE => 'subtask_XXXXXXXXXX',
 );
 INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with a SpawnExecutor (running in ' . $sge_submission_dir . ')';
 my $result = Cath::Gemma::Compute::WorkBatch->execute_from_file(
