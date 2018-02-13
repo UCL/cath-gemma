@@ -35,6 +35,8 @@ use Cath::Gemma::Types  qw/
 	CathGemmaDiskExecutables
 	CathGemmaDiskGemmaDirSet
 	CathGemmaDiskProfileDirSet
+	CathGemmaExecSync
+	CathGemmaExecutor
 	CathGemmaNodeOrdering
 	CathGemmaTreeMerge
 /;
@@ -595,23 +597,54 @@ sub later_scan_lists {
 	]
 }
 
+
+=head2 starting_cluster_lists_for_all_alignments
+
+Get all lists of starting clusters association with all the starting-clusters and merge nodes of this MergeList
+
+=cut
+
+sub starting_cluster_lists_for_all_alignments {
+	state $check = compile( Object, CathGemmaNodeOrdering );
+	my ( $self, $clusts_ordering ) = $check->( @ARG );
+
+	# Generate lists of starting clusters for:
+	return [
+		# Each of the starting clusters (in a list by itself)
+		( map { [ $ARG ]                                 ; } ( @{ $self->starting_clusters() } ) ),
+		# Each of the the merge nodes
+		( map { $ARG->starting_nodes( $clusts_ordering ) ; } ( @{ $self->merges()            } ) ),
+	];
+}
+
+
 =head2 ensure_all_alignments
 
-TODOCUMENT
+Ensure all the alignments associated with the starting-clusters and merge nodes of the MergeList are present
+
+$profile_dir_set specified the source file directories and the destination directory
+$clusts_ordering specifies the ordering of the starting clusters within the alignments to be ensured-present
+
+$exes, $executor and $exec_sync specify the detail of executing any alignment that
+
+TODO: improve this so that it doesn't execute any batches if all the alignments are already present
 
 =cut
 
 sub ensure_all_alignments {
-	state $check = compile( Object, CathGemmaNodeOrdering, CathGemmaDiskExecutables, CathGemmaDiskProfileDirSet );
-	my ( $self, $clusts_ordering, $exes, $profile_dir_set ) = $check->( @ARG );
+	state $check = compile( Object, CathGemmaNodeOrdering, CathGemmaDiskExecutables, CathGemmaExecutor, CathGemmaDiskProfileDirSet, Optional[CathGemmaExecSync] );
+	my ( $self, $clusts_ordering, $exes, $executor, $profile_dir_set, $exec_sync ) = $check->( @ARG );
 
-	foreach my $starting_cluster ( @{ $self->starting_clusters() } ) {
-		Cath::Gemma::Tool::Aligner->make_alignment_file( $exes, [ $starting_cluster ], $profile_dir_set );
-	}
+	$exec_sync //= 'permit_async_launch';
 
-	foreach my $merge ( @{ $self->merges() } ) {
-		Cath::Gemma::Tool::Aligner->make_alignment_file( $exes, $merge->starting_nodes( $clusts_ordering ), $profile_dir_set );
-	}
+	$executor->execute_batch(
+		Cath::Gemma::Compute::WorkBatch->make_from_profile_build_task_ctor_args(
+			dir_set                => $profile_dir_set,
+			skip_profile_build     => 1,
+			starting_cluster_lists => $self->starting_cluster_lists_for_all_alignments( $clusts_ordering ),
+		),
+		$exec_sync
+	);
 }
 
 =head2 archive_in_dir

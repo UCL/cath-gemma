@@ -10,22 +10,22 @@ use strict;
 use warnings;
 
 # Core
-use Carp                qw/ confess                  /;
-use English             qw/ -no_match_vars           /;
-use File::Copy          qw/ copy move                /;
+use Carp                qw/ confess                              /;
+use English             qw/ -no_match_vars                       /;
+use File::Copy          qw/ copy move                            /;
 use FindBin;
-use Time::HiRes         qw/ gettimeofday tv_interval /;
+use Time::HiRes         qw/ gettimeofday tv_interval             /;
 use v5.10;
 
 # Non-core (local)
-use Capture::Tiny       qw/ capture                  /;
-use Cwd::Guard          qw/ cwd_guard                /;
-use Log::Log4perl::Tiny qw/ :easy                    /;
+use Capture::Tiny       qw/ capture                              /;
+use Cwd::Guard          qw/ cwd_guard                            /;
+use Log::Log4perl::Tiny qw/ :easy                                /;
 use Path::Tiny;
 use Try::Tiny;
-use Type::Params        qw/ compile                  /;
-use Types::Path::Tiny   qw/ Path                     /;
-use Types::Standard     qw/ ArrayRef ClassName Str   /;
+use Type::Params        qw/ compile                              /;
+use Types::Path::Tiny   qw/ Path                                 /;
+use Types::Standard     qw/ ArrayRef Bool ClassName Optional Str /;
 
 # Cath::Gemma
 use Cath::Gemma::Tool::Aligner;
@@ -218,8 +218,10 @@ TODOCUMENT
 =cut
 
 sub build_alignment_and_compass_profile {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, CathGemmaCompassProfileType );
-	my ( $class, $exes, $starting_clusters, $profile_dir_set, $compass_profile_build_type ) = $check->( @ARG );
+	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, CathGemmaCompassProfileType, Optional[Bool] );
+	my ( $class, $exes, $starting_clusters, $profile_dir_set, $compass_profile_build_type, $skip_profile_build ) = $check->( @ARG );
+
+	$skip_profile_build //= 0;
 
 	my $aln_file = $profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters );
 	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $exes->tmp_dir() );
@@ -236,12 +238,15 @@ sub build_alignment_and_compass_profile {
 		);
 
 	my $built_aln_file   = $alignment_result->{ out_filename  };
-	my $profile_result   = Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile(
-		$exes,
-		$built_aln_file,
-		$profile_dir_set,
-		$compass_profile_build_type,
-	);
+	my $profile_result   = {};
+	if ( ! $skip_profile_build ) {
+		$profile_result = Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile(
+			$exes,
+			$built_aln_file,
+			$profile_dir_set,
+			$compass_profile_build_type,
+		);
+	}
 
 	if ( "$built_aln_file" ne "$aln_file" ) {
 		my $aln_atomic_file   = File::AtomicWrite->new( { file => "$aln_file" } );

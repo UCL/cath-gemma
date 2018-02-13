@@ -10,9 +10,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp               qw/ confess                 /;
-use English            qw/ -no_match_vars          /;
-use List::Util         qw/ any min                 /;
+use Carp               qw/ confess                       /;
+use English            qw/ -no_match_vars                /;
+use List::Util         qw/ any min                       /;
 use v5.10;
 
 # Moo
@@ -22,12 +22,12 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Log::Log4perl::Tiny qw/ :easy                   /;
+use Log::Log4perl::Tiny qw/ :easy                        /;
 use Object::Util;
 use Path::Tiny;
-use Type::Params        qw/ compile Invocant        /;
-use Types::Path::Tiny   qw/ Path                    /;
-use Types::Standard     qw/ ArrayRef Int Object Str /;
+use Type::Params        qw/ compile Invocant             /;
+use Types::Path::Tiny   qw/ Path                         /;
+use Types::Standard     qw/ ArrayRef Bool Int Object Str /;
 
 # Cath::Gemma
 use Cath::Gemma::Disk::ProfileDirSet;
@@ -89,6 +89,21 @@ has compass_profile_build_type => (
 	is       => 'ro',
 	isa      => CathGemmaCompassProfileType,
 	default  => sub { default_compass_profile_build_type(); }
+);
+
+=head2 skip_profile_build
+
+Whether to skip the profile build and just build the alignment
+
+This can be useful for ensuring all alignments are present at the end of a tree build
+(because some tree-building methods might not have built all profiles)
+
+=cut
+
+has skip_profile_build => (
+	is       => 'ro',
+	isa      => Bool,
+	default  => sub { 0; }
 );
 
 =head2 id
@@ -184,6 +199,7 @@ sub execute_task {
 				$starting_clusters,
 				$self->dir_set(),
 				$self->compass_profile_build_type(),
+				$self->skip_profile_build(),
 			);
 		}
 		@{ $self->starting_cluster_lists() },

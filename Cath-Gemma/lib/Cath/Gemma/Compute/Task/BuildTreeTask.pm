@@ -350,8 +350,7 @@ sub execute_task {
 	my $compass_profile_build_type = $self->compass_profile_build_type();
 	my $clusts_ordering            = $self->clusts_ordering();
 	my $tree_builder_name          = $tree_builder->name();
-	my $flavour_str                = join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name );
-	my $flavour_out_dir            = $self->tree_dir()->child( $flavour_str );
+	my $tree_out_dir               = $self->tree_dir()->child( join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name ) );
 
 	return [
 		map
@@ -373,8 +372,6 @@ sub execute_task {
 				$clusts_ordering,
 			);
 
-			# $tree->rescore( $tree_dir_set, $clusts_ordering );
-
 			# Ensure that all alignments have been built for a tree
 			# (which may not be true if the tree was built under a naive method)
 			INFO 'After having built a tree from '
@@ -384,18 +381,22 @@ sub execute_task {
 				. ')... now ensuring that all alignments for the tree are present...';
 			$tree->ensure_all_alignments(
 				$clusts_ordering,
-				$exes, # TODO: probably worth working out
-				       #       whether it makes more sense
-				       #       to pass the executor through
-				       #       to ensure_all_alignments()
+				$exes,
+				$subtask_executor,
 				$tree_dir_set->profile_dir_set(),
 			);
 
+			INFO 'Archiving a tree built from '
+				. scalar( @$starting_clusters )
+				. ' starting cluster(s), (beginning with '
+				. join( ', ', @$starting_clusters[ 0 .. min( 20, $#$starting_clusters ) ] )
+				. ')... in directory '
+				. $tree_out_dir;
 			$tree->archive_in_dir(
 				'tree',
 				$clusts_ordering,
 				$tree_dir_set->aln_dir(),
-				$flavour_out_dir,
+				$tree_out_dir,
 			);
 
 			Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(

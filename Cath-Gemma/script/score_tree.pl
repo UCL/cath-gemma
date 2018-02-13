@@ -114,36 +114,26 @@ foreach my $project ( @project_list ) {
 
 				my $tree_builder_name  = $tree_builder->name();
 				my $flavour            = join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name );
-				my $flavour_out_dir    = $project_out_dir->child( $flavour );
 
 				warn "About to compute $flavour\n";
 
-				my $tree = $tree_builder->build_tree(
+				my $tree_dir_set = Cath::Gemma::Disk::TreeDirSet->new(
+					gemma_dir_set => $gemma_dir_set,
+					tree_dir      => $project_out_dir->child( $flavour ),
+				);
+
+				Cath::Gemma::Compute::Task::BuildTreeTask->new(
+					dir_set                    => $tree_dir_set,
+					starting_cluster_lists     => $starting_clusters,
+					tree_builder               => $tree_builder,
+					compass_profile_build_type => $compass_profile_build_type,
+					clusts_ordering            => $clusts_ordering,
+				)->execute_task(
 					$direct_executor->exes(),
-					$executor,
-					$starting_clusters,
-					$gemma_dir_set,
-					$compass_profile_build_type,
-					$clusts_ordering,
+					$executor
 				);
 
-				# $tree->rescore( $gemma_dir_set, $clusts_ordering );
-
-				# Ensure that all alignments have been built for a tree
-				# (which may not be true if the tree was built under a naive method)
-				$tree->ensure_all_alignments(
-					$clusts_ordering,
-					$direct_executor->exes(),
-					$gemma_dir_set->profile_dir_set(),
-				);
-
-				$tree->archive_in_dir(
-					$project,
-					$clusts_ordering,
-					$gemma_dir_set->aln_dir(),
-					$flavour_out_dir,
-				);
-				say ( 'geom mean for    ' . $flavour . ' : ' . $tree  ->geometric_mean_score( 1e-300 ) );
+				# say ( 'geom mean for    ' . $flavour . ' : ' . $tree  ->geometric_mean_score( 1e-300 ) );
 
 			}
 		}
