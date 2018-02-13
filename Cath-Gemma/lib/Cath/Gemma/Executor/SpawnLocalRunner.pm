@@ -21,7 +21,9 @@ use strictures 1;
 
 # Non-core (local)
 use Capture::Tiny       qw/ capture        /;
+use File::chdir;
 use Log::Log4perl::Tiny qw/ :easy          /;
+use Path::Tiny;
 use Types::Path::Tiny   qw/ Path           /;
 use Types::Standard     qw/ Int            /;
 
@@ -56,6 +58,9 @@ sub run_job_array {
 
 	# use Carp qw/ cluck /;
 	# cluck "\n\n\n****** In SpawnLocalRunner::run_job_array";
+
+	# Temporarily chdir to the job directory for the duration of the rest of this subroutine
+	local $CWD = path( $stderr_file_pattern )->realpath->parent();
 
 	if ( $num_batches < 0 ) {
 		confess 'Cannot perform a job with negative number of batches : ' . $num_batches;

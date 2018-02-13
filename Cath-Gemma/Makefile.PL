@@ -18,6 +18,7 @@ WriteMakefile(
         'Capture::Tiny'           => 0,
         'Cwd::Guard'              => 0,
         'File::AtomicWrite'       => 0,
+        'File::chdir'             => 0,
         'File::Which'             => 0,
         'JSON::MaybeXS'           => 0,
         'List::MoreUtils'         => 0,
