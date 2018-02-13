@@ -155,6 +155,12 @@ To check all scripts compile:
 find script -iname '*.pl' | sort | xargs -I VAR perl -c VAR
 ~~~
 
+Run the all-modules-compile test on any Perl file changes:
+
+~~~
+lsp:     aliased to find script lib t -iname "*.pm" -o -iname "*.pl" -o -name "*.t" | sort -u | entr -cs 'prove -l t/all_use_ok.t |& head -n 30'
+~~~
+
 To check all modules compile:
 
 ~~~
