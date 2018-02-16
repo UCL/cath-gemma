@@ -34,10 +34,10 @@ subtest 'example_1.20.5.200' => sub {
 		$tree->starting_clusters(),
 	);
 
-	my $id_and_score_a = $scans_data->ids_and_score_of_lowest_score();
-	is( $id_and_score_a->[ 0 ], '1',        'Highest score in data involves starting cluster 1' );
-	is( $id_and_score_a->[ 1 ], '2',        'Highest score in data involves starting cluster 2' );
-	is( $id_and_score_a->[ 2 ], '2.47e-15', 'Highest score in data has score 2.47e-15'          );
+	my $id_and_score_a = $scans_data->ids_and_score_of_lowest_score_result();
+	is( $id_and_score_a->[ 0 ], '1',        'Lowest score in data involves starting cluster 1' );
+	is( $id_and_score_a->[ 1 ], '2',        'Lowest score in data involves starting cluster 2' );
+	is( $id_and_score_a->[ 2 ], '2.47e-15', 'Lowest score in data has score 2.47e-15'          );
 
 	my $premerge_scans_data = dclone( $scans_data );
 	my $merge_1_2_dry_run   = $scans_data->no_op_merge_pair( qw/ 1 2 / );
@@ -48,10 +48,10 @@ subtest 'example_1.20.5.200' => sub {
 	my $merge_1_2_real = $scans_data->merge_pair_without_new_scores( qw/ 1 2 / );
 	is_deeply( $merge_1_2_real, $expected_merge_1_2, 'this other test' );
 
-	my $id_and_score_b = $scans_data->ids_and_score_of_lowest_score();
-	is( $id_and_score_b->[ 0 ], '3',        'Highest score in data involves starting cluster 3' );
-	is( $id_and_score_b->[ 1 ], '4',        'Highest score in data involves starting cluster 4' );
-	is( $id_and_score_b->[ 2 ], '5.19e-09', 'Highest score in data has score 5.19e-09'          );
+	my $id_and_score_b = $scans_data->ids_and_score_of_lowest_score_result();
+	is( $id_and_score_b->[ 0 ], '3',        'Lowest score in data involves starting cluster 3' );
+	is( $id_and_score_b->[ 1 ], '4',        'Lowest score in data involves starting cluster 4' );
+	is( $id_and_score_b->[ 2 ], '5.19e-09', 'Lowest score in data has score 5.19e-09'          );
 };
 
 subtest 'toy_data' => sub {
@@ -72,9 +72,7 @@ subtest 'toy_data' => sub {
 		}
 	);
 
-	is_deeply(
-		$scans_data->get_id_and_score_of_lowest_score_of_id( '1', { '2' => 1 } ),
-		[ '3', 5.0 ],
-		'Respects $excluded_ids, even if an excluded ID gets the same score as the answer and comes earlier',
-	);
+	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( '1' ), [ '2', 5.0 ], 'gets correct lowest result' );
+	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( '2' ), [ '1', 5.0 ], 'gets correct lowest result' );
+	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( '3' ), [ '1', 5.0 ], 'gets correct lowest result' );
 };

@@ -10,7 +10,7 @@ use List::Util qw/ max            /;
 use Storable   qw/ dclone         /;
 
 # Core (test)
-use Test::More tests => 15;
+use Test::More tests => 14;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -155,12 +155,6 @@ subtest 'get_id_and_score_of_lowest_score_of_id__works' => sub {
 	is_deeply(       $scans_data->get_id_and_score_of_lowest_score_of_id( 'item_3'                  ), [ 'item_4', 3.0 ] );
 	is_deeply(       $scans_data->get_id_and_score_of_lowest_score_of_id( 'item_4'                  ), [ 'item_1', 1.0 ] );
 	dies_ok  ( sub { $scans_data->get_id_and_score_of_lowest_score_of_id( 'combi'                   ) }, 'Dies on request for lowest score of absent node' );
-
-	is_deeply(       $scans_data->get_id_and_score_of_lowest_score_of_id( 'item_1', { item_4 => 1 } ), [ 'item_2', 5.0 ] );
-	is_deeply(       $scans_data->get_id_and_score_of_lowest_score_of_id( 'item_2', { item_4 => 1 } ), [ 'item_1', 5.0 ] );
-	is_deeply(       $scans_data->get_id_and_score_of_lowest_score_of_id( 'item_3', { item_4 => 1 } ), [ 'item_1', 5.0 ] );
-	is_deeply(       $scans_data->get_id_and_score_of_lowest_score_of_id( 'item_4', { item_1 => 1 } ), [ 'item_2', 2.0 ] );
-	dies_ok  ( sub { $scans_data->get_id_and_score_of_lowest_score_of_id( 'combi',  { item_4 => 1 } ) }, 'Dies on request for lowest score of absent node' );
 };
 
 subtest 'get_id_and_score_of_lowest_score_of_id__works_after_merge' => sub {
@@ -186,19 +180,4 @@ subtest 'get_id_and_score_of_lowest_score_of_id__returns_undef_inf_if_no_scores'
 	my $scans_data = Cath::Gemma::Scan::Impl::Links->new();
 	$scans_data->add_separate_starting_clusters( [ 'item_1', 'item_2' ] );
 	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( 'item_1' ), [ undef, 'inf' ], 'Returns [ undef, inf ] on request for lowest score of node with no scores' );
-};
-
-# This test covers a fixed bug that a binary search was performed on a sorted array of numbers
-# that was sorted with the default (`cmp`) sort rather than the numeric sort
-subtest 'excludes_ids_correctly' => sub {
-	my $scans_data = Cath::Gemma::Scan::Impl::Links->new();
-	$scans_data->add_separate_starting_clusters( [ qw/ n_00 n_01 n_02 n_03 n_04 n_05 n_06 n_07 n_08 n_09 n_10 n_11 n_12 / ] );
-	# use Data::Dumper;
-	# my @ex_ids = $scans_data->
-	# warn Dumper( $scans_data-> );
-	$scans_data->add_scan_entry( 'n_02', 'n_09', 1.0 );
-	$scans_data->add_scan_entry( 'n_02', 'n_10', 1.0 );
-	# is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( 'n_02', {            n_10 => 1 } ), [ undef, 'inf' ], 'Returns [ undef, inf ] on request for lowest score of node with no scores' );
-	# is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( 'n_02', { n_09 => 1            } ), [ undef, 'inf' ], 'Returns [ undef, inf ] on request for lowest score of node with no scores' );
-	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( 'n_02', { n_09 => 1, n_10 => 1 } ), [ undef, 'inf' ], 'Returns [ undef, inf ] on request for lowest score of node with no scores' );
 };

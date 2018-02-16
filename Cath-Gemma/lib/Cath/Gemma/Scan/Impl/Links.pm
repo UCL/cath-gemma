@@ -22,6 +22,8 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
+use List::UtilsBy       qw/ min_by                                                                     /;
+use Log::Log4perl::Tiny qw/ :easy                                                                      /;
 use Type::Params        qw/ compile                                                                    /;
 use Types::Standard     qw/ ArrayRef ClassName CodeRef HashRef Int Maybe Num Object Optional Str Tuple /;
 
@@ -84,6 +86,7 @@ has _links_data => (
 	default     => sub { []; },
 	handles_via => 'Array',
 	handles     => {
+		_num_link_lists => 'count',
 		_get_links_data => 'get',
 		_set_links_data => 'set',
 	},
@@ -123,6 +126,23 @@ sub _ensure_index_of_id {
 		$self->_set_links_data  ( $new_index, Cath::Gemma::Scan::Impl::LinkList->new() );
 	}
 	return $self->_get_index_of_id( $id );
+}
+
+=head2 _active_indices
+
+TODOCUMENT
+
+=cut
+
+sub _active_indices {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return [
+		grep {
+			defined( $self->_get_id_of_index( $ARG ) );
+		} ( 0 .. ( $self->_num_indices() - 1 ) )
+	];
 }
 
 =head2 get_score_between
@@ -208,6 +228,68 @@ sub remove {
 	return $self;
 }
 
+=head2 indices_and_score_of_lowest_score_result
+
+TODOCUMENT
+
+Returns: [ index1, index2, score ] for the best result (where index1 and index2 are sorted numerically,
+which gives consistency but probably isn't what you want)
+
+=cut
+
+sub indices_and_score_of_lowest_score_result {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	# If there are fewer than two entries then log a debug message and return an empty result
+	if ( $self->count() < 2 ) {
+		DEBUG "Cannot find ids_and_score_of_lowest_score_result() in this ScansData because count is " . $self->count();
+		return [];
+	}
+
+	# Return the result with the lowest score
+	# (where undef is compared as 'inf' so it will be treated as worse than all other scores)
+	my $result = min_by {
+		my $result = $ARG;
+		$result->[ 2 ] // 'inf';
+	}
+	map {
+		# Get the link from $id with the best score
+		my $index = $ARG;
+		my ( $other_index, $score ) = @{ $self->get_index_and_score_of_lowest_score_of_index( $index ) };
+		[ $index, $other_index, $score ];
+	} @{ $self->_active_indices() };
+
+	# bob
+	return [
+		( sort { $a <=> $b } ( $result->[ 0 ], $result->[ 1 ] ) ),
+		$result->[ -1 ]
+	];
+}
+
+=head2 ids_and_score_of_lowest_score_result
+
+TODOCUMENT
+
+Returns: [ id1, id2, score ] for the best result (where id1 and id2 have been ordered with cluster_name_spaceship_sort)
+
+=cut
+
+sub ids_and_score_of_lowest_score_result {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $result = $self->indices_and_score_of_lowest_score_result();
+
+	return [
+		cluster_name_spaceship_sort(
+			$self->_get_id_of_index( $result->[ 0 ] ),
+			$self->_get_id_of_index( $result->[ 1 ] ),
+		),
+		$result->[ -1 ]
+	];
+}
+
 =head2 merge_pair
 
 TODOCUMENT
@@ -251,7 +333,7 @@ sub merge_pair {
 	} ( 0..$#$other_scores1 );
 
 	my $index = $self->_ensure_index_of_id( $merged_node_id );
-	$self->_set_links_data( $index, Cath::Gemma::Scan::Impl::LinkList->make_link_list( \@new_clust_scores ) );
+	$self->_set_links_data( $index, Cath::Gemma::Scan::Impl::LinkList->make_list( \@new_clust_scores ) );
 	foreach my $new_clust_score ( @new_clust_scores ) {
 		my ( $other_index, $other_score ) = @$new_clust_score;
 		$self->_get_links_data( $other_index )->add_scan_entry( $index, $other_score );
@@ -263,15 +345,44 @@ sub merge_pair {
 	return $self;
 }
 
-=head2 get_id_and_score_of_lowest_score_of_id
+
+=head2 get_index_and_score_of_lowest_score_of_index
 
 TODOCUMENT
 
 =cut
 
+sub get_index_and_score_of_lowest_score_of_index {
+	state $check = compile( Object, Int );
+	my ( $self, $index ) = $check->( @ARG );
+
+	# Check this is large enough
+	if ( $self->count() < 2 ) {
+		use Data::Dumper;
+		confess 'Cannot get index and score of lowest score of index when there are fewer than two items that are linked ' . Dumper( $self ) . ' ';
+	}
+
+	# Get *a copy of* the lowest score link from that index
+	# (use a copy so that it can be modified without altering the original data)
+	return dclone(
+		$self
+			->_get_links_data( $index )
+			->get_idx_and_score_of_lowest_score_of_id( $self->_id_of_index() )
+	);
+}
+
+
+=head2 get_id_and_score_of_lowest_score_of_id
+
+TODOCUMENT
+
+TODONOW: is this used?
+
+=cut
+
 sub get_id_and_score_of_lowest_score_of_id {
-	state $check = compile( Object, Str, Optional[HashRef] );
-	my ( $self, $id, $excluded_ids ) = $check->( @ARG );
+	state $check = compile( Object, Str );
+	my ( $self, $id ) = $check->( @ARG );
 
 	# Check this is large enough
 	if ( $self->count() < 2 ) {
@@ -279,18 +390,9 @@ sub get_id_and_score_of_lowest_score_of_id {
 		confess 'Cannot get ID and score of lowest score of ID when there are fewer than two items that are linked ' . Dumper( $self ) . ' ';
 	}
 
-	# Make an array of sorted indices corresponding to the excluded IDs
-	$excluded_ids //= {};
-	my @excluded_indices = sort { $a <=> $b } map { $self->_get_index_of_id( $ARG ); } keys( %$excluded_ids );
-
-
-	# Get the index of the id in question and then get *a copy of* the lowest score link from that index
-	# (use a copy so that it can be modified without altering the original data)
-	my $index       = $self->_get_index_of_id( $id );
-	my $best_result = dclone(
-		$self
-			->_get_links_data( $index )
-			->get_idx_and_score_of_lowest_score_of_id( $self->_id_of_index(), \@excluded_indices )
+	# Get the index of the id in question and then get (a copy of) the lowest score link from that index
+	my $best_result = $self->get_index_and_score_of_lowest_score_of_index(
+		$self->_get_index_of_id( $id )
 	);
 
 	# If the link isn't a null link, change its index back to an ID
@@ -299,6 +401,140 @@ sub get_id_and_score_of_lowest_score_of_id {
 	}
 
 	return $best_result;
+}
+
+=head2 indices_and_score_results_below_eq_cutoff_for_active_index
+
+TODOCUMENT
+
+=cut
+
+sub indices_and_score_results_below_eq_cutoff_for_active_index {
+	state $check = compile( Object, Num, Int );
+	my ( $self, $cutoff, $active_link_list_idx ) = $check->( @ARG );
+
+	# Check index is active
+	if ( ! defined( $self->_get_id_of_index( $ARG ) ) ) {
+		confess 'indices_and_score_results_below_eq_cutoff_for_active_index() called with inactive index';
+	}
+
+	# use Carp qw/ confess /;
+	# use Data::Dumper;
+	
+	# confess Dumper( $bob );
+
+	# For each of the index-and-score results below the specified cutoff in the specified LinkList,
+	# add in the index of the link list and order the two indices
+	return [
+		map {
+			[
+				( sort { $a <=> $b } ( $active_link_list_idx, $ARG->[ 0 ] ) ),
+				$ARG->[ 1 ],
+			];
+		} @{ $self->_get_links_data( $active_link_list_idx )->all_index_and_score_results_below_eq_cutoff(
+			$self->_id_of_index(),
+			$cutoff
+		) }
+	];
+}
+
+=head2 all_indices_and_score_results_below_eq_cutoff
+
+TODOCUMENT
+
+=cut
+
+sub all_indices_and_score_results_below_eq_cutoff {
+	state $check = compile( Object, Num );
+	my ( $self, $cutoff ) = $check->( @ARG );
+
+	return [
+		map {
+			@{ $self->indices_and_score_results_below_eq_cutoff_for_active_index( $cutoff, $ARG ) };
+		} @{ $self->_active_indices() }
+	];
+}
+
+=head2 ids_and_score_of_lowest_score_window
+
+TODOCUMENT
+
+TODO: This could be made more efficient: it doesn't have to find the results
+      within the window in order (as at present), it could just find all
+      the results in the window and then sort them at the end
+
+=cut
+
+sub ids_and_score_of_lowest_score_window {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my ( $index1, $index2, $score ) = @{ $self->indices_and_score_of_lowest_score_result() };
+
+	if ( ! defined( $score ) ) {
+		confess ' ';
+	}
+
+	my $score_cutoff = evalue_window_ceiling( $score );
+
+	my @initial_results = sort {
+		( $a->[ 2 ] <=> $b->[ 2 ] )
+		||
+		( $a->[ 0 ] <=> $b->[ 0 ] )
+		||
+		( $a->[ 1 ] <=> $b->[ 1 ] )
+	} @{ $self->all_indices_and_score_results_below_eq_cutoff( $score_cutoff ) };
+
+	# my $index_of_399 = $self->_get_index_of_id( '399' );
+	# my $index_of_402 = $self->_get_index_of_id( '402' );
+
+	my %indices_seen_before;
+	my @results;
+	foreach my $result ( @initial_results ) {
+
+		# if ( $idx1 == $index_of_399)
+
+		my ( $idx1, $idx2 ) = @$result;
+		if ( ! defined( $indices_seen_before{ $idx1 } ) && ! defined( $indices_seen_before{ $idx2 } ) ) {
+			push @results, $result;
+			$indices_seen_before{ $idx1 } = 1;
+			$indices_seen_before{ $idx2 } = 1;
+		}
+	}
+
+	return [
+		map {
+			[
+				$self->_get_id_of_index( $ARG->[ 0 ] ),
+				$self->_get_id_of_index( $ARG->[ 1 ] ),
+				$ARG->[ 2 ],
+			];
+		} @results
+	];
+
+	# my @indices_of_duplicates = grep {
+	# 	my $ARG;
+	# }
+
+	# } ( 1 .. $#$results );
+
+	# foreach my $reverse_index ( reverse( @indices_of_duplicates ) ) {
+	# 	splice( @results, $reverse_index, 1 );
+	# }
+
+
+	# my $next_result_in_window = $self->ids_and_score_of_lowest_score_result( $score_cutoff );
+
+	# my %excluded_ids = ( $index1 => 1, $index2 => 1 );
+	# while ( my $next_result_in_window = $self->ids_and_score_of_lowest_score_result( [ $score_cutoff, \%excluded_ids ] ) ) {
+	# 	push @results, $next_result_in_window;
+	# 	# use Data::Dumper;
+	# 	my ( $next_id1, $next_id2, $next_score ) = @$next_result_in_window;
+	# 	$excluded_ids{ $next_result_in_window->[ 0 ] } = 1;
+	# 	$excluded_ids{ $next_result_in_window->[ 1 ] } = 1;
+	# }
+
+	# return \@results;
 }
 
 =head2 new_from_score_of_id_of_id

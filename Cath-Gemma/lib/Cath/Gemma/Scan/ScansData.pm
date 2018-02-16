@@ -24,6 +24,7 @@ use strictures 1;
 
 # Non-core (local)
 use List::MoreUtils     qw/ first_value                                                             /;
+use List::UtilsBy       qw/ min_by                                                                  /;
 use Log::Log4perl::Tiny qw/ :easy                                                                   /;
 use Type::Params        qw/ compile                                                                 /;
 use Types::Standard     qw/ ArrayRef ClassName CodeRef HashRef Num Tuple Object Optional slurpy Str /;
@@ -74,6 +75,8 @@ has _links_data => (
 		get_id_and_score_of_lowest_score_of_id
 		get_score_between
 		ids
+		ids_and_score_of_lowest_score_result
+		ids_and_score_of_lowest_score_window
 	/ ],
 );
 
@@ -141,43 +144,6 @@ sub add_scan_data {
 	}
 }
 
-=head2 ids_and_score_of_lowest_score
-
-TODOCUMENT
-
-=cut
-
-sub ids_and_score_of_lowest_score {
-	state $check = compile( Object, Optional[Tuple[Num,HashRef]] );
-	my ( $self, $extras ) = $check->( @ARG );
-
-	my ( $window_cutoff, $excluded_ids ) = @{ $extras // [] };
-
-	if ( $self->count() < 2 ) {
-		DEBUG "Cannot find ids_and_score_of_lowest_score() in this ScansData because count is " . $self->count();
-		return [];
-	}
-
-	# my $links_data = $self->_links_data();
-	my @result;
-	foreach my $id ( @{ $self->sorted_ids() } ) {
-		if ( ! defined( $excluded_ids->{ $id } ) ) {
-			my ( $other_id, $score ) = @{ $self->get_id_and_score_of_lowest_score_of_id( $id, $excluded_ids ) };
-			if ( defined( $window_cutoff ) && ( ! defined( $score) || $score > $window_cutoff ) ) {
-				next;
-			}
-			if ( scalar( @result ) == 0 || ( defined( $score ) && ( ! defined( $result[ 2 ] ) || $score < $result[ 2 ] ) ) ) {
-				@result = (
-					cluster_name_spaceship_sort( $id, $other_id ),
-					$score
-				);
-			}
-		}
-	}
-
-	return ( scalar( @result ) > 0 ) ? \@result : undef;
-}
-
 =head2 ids_and_score_of_lowest_score_or_arbitrary
 
 TODOCUMENT
@@ -185,53 +151,17 @@ TODOCUMENT
 =cut
 
 sub ids_and_score_of_lowest_score_or_arbitrary {
-	state $check = compile( Object, Optional[Tuple[Num,HashRef]] );
-	my ( $self, @extras ) = $check->( @ARG );
-
-	my $result = $self->ids_and_score_of_lowest_score( @extras );
-	if ( ! defined( $result ) ) {
-		DEBUG "Returning from ids_and_score_of_lowest_score_or_arbitrary() with arbitrary result due to there being no usable scores between clusters";
-		my $sorted_ids = $self->sorted_ids();
-		return [ $sorted_ids->[ 0 ], $sorted_ids->[ 1 ], "inf" ];
-	}
-	return $result;
-}
-
-
-=head2 ids_and_score_of_lowest_score_window
-
-TODOCUMENT
-
-TODO: This could be made more efficient: it doesn't have to find the results
-      within the window in order (as at present), it could just find all
-      the results in the window and then sort them at the end
-
-=cut
-
-sub ids_and_score_of_lowest_score_window {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	my ( $id1, $id2, $score ) = @{ $self->ids_and_score_of_lowest_score() };
-
-	if ( ! defined( $score ) ) {
-		confess ' ';
+	my $result = $self->ids_and_score_of_lowest_score_result();
+	if ( defined( $result ) ) {
+		return $result;
 	}
 
-	my $evalue_cutoff = evalue_window_ceiling( $score );
-
-	my @results = ( [ $id1, $id2, $score ] );
-
-	my %excluded_ids = ( $id1 => 1, $id2 => 1 );
-	while ( my $next_result_in_window = $self->ids_and_score_of_lowest_score( [ $evalue_cutoff, \%excluded_ids ] ) ) {
-		push @results, $next_result_in_window;
-		# use Data::Dumper;
-		my ( $next_id1, $next_id2, $next_score ) = @$next_result_in_window;
-		$excluded_ids{ $next_result_in_window->[ 0 ] } = 1;
-		$excluded_ids{ $next_result_in_window->[ 1 ] } = 1;
-	}
-
-	return \@results;
+	DEBUG "Returning from ids_and_score_of_lowest_score_or_arbitrary() with arbitrary result due to there being no usable scores between clusters";
+	my $sorted_ids = $self->sorted_ids();
+	return [ $sorted_ids->[ 0 ], $sorted_ids->[ 1 ], "inf" ];
 }
 
 =head2 merge_pair
