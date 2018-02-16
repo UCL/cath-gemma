@@ -9,16 +9,23 @@ use List::Util  qw/ min    /;
 use Time::HiRes qw/ usleep /;
 
 # Core (test)
-use Test::More tests => 21;
+use Test::More tests => 22;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
+use Path::Tiny;
 use Time::Seconds;
+
+# Find Cath::Gemma::Test lib directory using FindBin (and tidy using Path::Tiny)
+use lib path( $FindBin::Bin . '/lib' )->realpath()->stringify();
 
 # Cath::Gemma
 use Cath::Gemma::Util;
+
+# Cath::Gemma Test
+use Cath::Gemma::Test;
 
 subtest 'time_fn() works ok' => sub {
 	my $a = time_fn( sub { my $val = shift; usleep( 100 ); return $val; }, 'oooh' );
@@ -57,6 +64,16 @@ subtest 'combine_starting_cluster_names()' => sub {
 	is_deeply(
 		combine_starting_cluster_names( [ qw/ clst_101 clst_99 / ], [ qw/ clst_100 clst_98 / ],                    ),
 		[ qw/ clst_98  clst_99 clst_100 clst_101 / ]
+	);
+};
+
+subtest 'get_starting_clusters_of_starting_cluster_dir' => sub {
+	my $geoff = get_starting_clusters_of_starting_cluster_dir( test_superfamily_starting_cluster_dir( '1.20.5.200' ) );
+
+	is_deeply(
+		get_starting_clusters_of_starting_cluster_dir( test_superfamily_starting_cluster_dir( '1.20.5.200' ) ),
+		[ 1, 2, 3, 4 ],
+		'get_starting_clusters_of_starting_cluster_dir() returns as expected'
 	);
 };
 

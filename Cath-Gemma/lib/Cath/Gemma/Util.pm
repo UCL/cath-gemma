@@ -281,7 +281,8 @@ sub generic_id_of_clusters {
 
 =head2 get_starting_clusters_of_starting_cluster_dir
 
-TODOCUMENT
+Get a list of the starting clusters in the specified directory
+sorted according to `cluster_name_spaceship_sort()`
 
 =cut
 

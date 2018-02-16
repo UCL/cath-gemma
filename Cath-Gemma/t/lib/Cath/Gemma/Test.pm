@@ -43,6 +43,9 @@ use Type::Params      qw/ compile        /;
 use Types::Path::Tiny qw/ Path           /;
 use Types::Standard   qw/ Str            /;
 
+# Gemma
+use Cath::Gemma::Disk::ProfileDirSet;
+
 # Cath Test
 use Cath::Gemma::Test::TestImpl;
 
