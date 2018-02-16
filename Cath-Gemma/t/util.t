@@ -9,7 +9,7 @@ use List::Util  qw/ min    /;
 use Time::HiRes qw/ usleep /;
 
 # Core (test)
-use Test::More tests => 11;
+use Test::More tests => 17;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -38,11 +38,6 @@ subtest 'batch_into_n() works ok' => sub {
 	is_deeply( [ batch_into_n( 3, 1, 2, 3, 4, 5, 6, 7, 8 ) ], [ [ 1, 2, 3 ], [ 4, 5, 6 ], [ 7, 8 ] ], 'Batching 1..8 into threes works as expected' );
 };
 
-subtest 'evalue_window_ceiling() / evalue_window_floor()' => sub {
-	is( evalue_window_ceiling( 1.2e-15 ), 1e-10, 'evalue_window_ceiling() calculates correctly' );
-	is( evalue_window_floor  ( 1.2e-15 ), 1e-20, 'evalue_window_floor  () calculates correctly' );
-};
-
 subtest 'cluster_name_spaceship_sort()' => sub {
 	my @src_names          = ( qw/ clst_12 clst_10 clst_2 clst_99 clst_101 clst_102 clst_11 clst_100 clst_1 / );
 	my @sorted_clust_names = cluster_name_spaceship_sort( @src_names );
@@ -62,6 +57,47 @@ subtest 'combine_starting_cluster_names()' => sub {
 	is_deeply(
 		combine_starting_cluster_names( [ qw/ clst_101 clst_99 / ], [ qw/ clst_100 clst_98 / ],                    ),
 		[ qw/ clst_98  clst_99 clst_100 clst_101 / ]
+	);
+};
+
+subtest 'evalue_window_ceiling() / evalue_window_floor()' => sub {
+	is( evalue_window_ceiling( 1.2e-15 ), 1e-10, 'evalue_window_ceiling() calculates correctly' );
+	is( evalue_window_floor  ( 1.2e-15 ), 1e-20, 'evalue_window_floor  () calculates correctly' );
+};
+
+subtest 'compass_scan_suffix' => sub {
+	is( compass_scan_suffix(), '.scan', 'compass_scan_suffix() returns as expected' );
+};
+
+subtest 'default_clusts_ordering' => sub {
+	is( default_clusts_ordering(), 'simple_ordering', 'default_clusts_ordering() returns as expected' );
+};
+
+subtest 'alignment_profile_suffix' => sub {
+	is( alignment_profile_suffix(), '.faa', 'alignment_profile_suffix() returns as expected' );
+};
+
+subtest 'alignment_filebasename_of_starting_clusters' => sub {
+	is(
+		alignment_filebasename_of_starting_clusters( [ 'my_clust_1', 'my_clust_2' ] ),
+		'n0de_4501c47c831144d7311bbdf6da7f5d84.faa',
+		'alignment_filebasename_of_starting_clusters() returns as expected'
+	);
+};
+
+subtest 'prof_file_of_prof_dir_and_aln_file' => sub {
+	is(
+		prof_file_of_prof_dir_and_aln_file( '/tmp', '/some/other/dir/my_clust_1.faa', default_compass_profile_build_type() ),
+		'/tmp/my_clust_1.mk_compass_db.prof',
+		'prof_file_of_prof_dir_and_aln_file() returns as expected'
+	);
+};
+
+subtest 'prof_file_of_prof_dir_and_cluster_id' => sub {
+	is(
+		prof_file_of_prof_dir_and_cluster_id( '/tmp', 'my_clust_1', default_compass_profile_build_type() ),
+		'/tmp/my_clust_1.mk_compass_db.prof',
+		'prof_file_of_prof_dir_and_cluster_id() returns as expected'
 	);
 };
 

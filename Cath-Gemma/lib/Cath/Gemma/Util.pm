@@ -458,7 +458,8 @@ sub default_temp_dir {
 
 =head2 evalue_window_ceiling
 
-TODOCUMENT
+Return the ceiling of the relevant evalue window (where the edges of each window are integer powers of 10^10)
+(ie evalue_window_ceiling( 1.2e-15 ) is 1e-10)
 
 =cut
 
@@ -471,7 +472,8 @@ sub evalue_window_ceiling {
 
 =head2 evalue_window_floor
 
-TODOCUMENT
+Return the floor of the relevant evalue window (where the edges of each window are integer powers of 10^10)
+(ie evalue_window_floor( 1.2e-15 ) is 1e-20)
 
 =cut
 
@@ -484,7 +486,7 @@ sub evalue_window_floor {
 
 =head2 compass_scan_suffix
 
-TODOCUMENT
+Return the filename suffix to use for scan results files
 
 =cut
 
@@ -504,7 +506,7 @@ sub default_clusts_ordering {
 
 =head2 alignment_profile_suffix
 
-TODOCUMENT
+Return the filename suffix to use for alignment files
 
 =cut
 
@@ -514,7 +516,7 @@ sub alignment_profile_suffix {
 
 =head2 alignment_filebasename_of_starting_clusters
 
-TODOCUMENT
+Get the basename of the file in which the alignment should be stored for the specified starting clusters
 
 =cut
 
@@ -525,7 +527,8 @@ sub alignment_filebasename_of_starting_clusters {
 
 =head2 prof_file_of_prof_dir_and_aln_file
 
-TODOCUMENT
+Return the filename of the file in which the profile should be stored for the specified profile directory,
+corresponding alignment file and compass_profile_build_type
 
 =cut
 
@@ -542,7 +545,8 @@ sub prof_file_of_prof_dir_and_aln_file {
 
 =head2 prof_file_of_prof_dir_and_cluster_id
 
-TODOCUMENT
+Return the filename of the file in which the profile should be stored for the specified profile directory,
+cluster ID and compass_profile_build_type
 
 =cut
 
@@ -567,7 +571,7 @@ sub raw_sequences_filename_of_starting_clusters {
 =head2 scan_filebasename_of_cluster_ids
 
 Get the basename of the file in which the scan results should be stored for the specified query IDs,
-match IDs and $compass_profile_build_type
+match IDs and compass_profile_build_type
 
 =cut
 
