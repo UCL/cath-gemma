@@ -9,7 +9,7 @@ use List::Util  qw/ min    /;
 use Time::HiRes qw/ usleep /;
 
 # Core (test)
-use Test::More tests => 9;
+use Test::More tests => 11;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -65,11 +65,20 @@ subtest 'combine_starting_cluster_names()' => sub {
 	);
 };
 
-subtest 'unique_by_hashing()' => sub {
-	is_deeply( [ unique_by_hashing( 0                ) ], [ 0    ], 'unique_by_hashing() is correct on: 0'                );
-	is_deeply( [ unique_by_hashing( 0, 0, 0          ) ], [ 0    ], 'unique_by_hashing() is correct on: 0, 0, 0'          );
-	is_deeply( [ unique_by_hashing( 1, 2             ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2'             );
-	is_deeply( [ unique_by_hashing( 1, 2, 2, 1, 2, 1 ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2, 2, 1, 2, 1' );
+subtest 'raw_sequences_filename_of_starting_clusters' => sub {
+	is(
+		raw_sequences_filename_of_starting_clusters( [ 'my_clust_1', 'my_clust_2' ] ),
+		'n0de_4501c47c831144d7311bbdf6da7f5d84.fa',
+		'raw_sequences_filename_of_starting_clusters() returns as expected'
+	);
+};
+
+subtest 'scan_filebasename_of_cluster_ids' => sub {
+	is(
+		scan_filebasename_of_cluster_ids( [ 'my_query' ], [ 'my_match_1', 'my_match_2' ], default_compass_profile_build_type(), ),
+		'my_query.l1st_0fefca17cea83290bf5f9fa57c6f18c8.mk_compass_db.scan',
+		'scan_filebasename_of_cluster_ids() returns as expected'
+	);
 };
 
 subtest 'scan_filename_of_dir_and_cluster_ids' => sub {
@@ -101,4 +110,11 @@ subtest 'time_seconds_to_sge_string()' => sub {
 		'00:02:00',
 		'time_seconds_to_sge_string() is correct on 1 minute + 1 minute'
 	);
+};
+
+subtest 'unique_by_hashing()' => sub {
+	is_deeply( [ unique_by_hashing( 0                ) ], [ 0    ], 'unique_by_hashing() is correct on: 0'                );
+	is_deeply( [ unique_by_hashing( 0, 0, 0          ) ], [ 0    ], 'unique_by_hashing() is correct on: 0, 0, 0'          );
+	is_deeply( [ unique_by_hashing( 1, 2             ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2'             );
+	is_deeply( [ unique_by_hashing( 1, 2, 2, 1, 2, 1 ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2, 2, 1, 2, 1' );
 };

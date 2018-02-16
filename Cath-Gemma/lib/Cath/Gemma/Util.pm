@@ -555,7 +555,7 @@ sub prof_file_of_prof_dir_and_cluster_id {
 
 =head2 raw_sequences_filename_of_starting_clusters
 
-TODOCUMENT
+Return the basename of the file in which the raw sequences for the specified starting clusters should be stored
 
 =cut
 
@@ -566,7 +566,8 @@ sub raw_sequences_filename_of_starting_clusters {
 
 =head2 scan_filebasename_of_cluster_ids
 
-TODOCUMENT
+Get the basename of the file in which the scan results should be stored for the specified query IDs,
+match IDs and $compass_profile_build_type
 
 =cut
 
