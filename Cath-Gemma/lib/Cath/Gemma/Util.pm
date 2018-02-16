@@ -39,8 +39,6 @@ our @EXPORT = qw/
 	generic_id_of_clusters
 	get_starting_clusters_of_starting_cluster_dir
 	guess_if_running_on_sge
-	has_seg_exes
-	has_sge_enviroment_variables
 	id_of_clusters
 	make_atomic_write_file
 	mergee_is_starting_cluster
@@ -314,48 +312,59 @@ sub get_starting_clusters_of_starting_cluster_dir {
 
 =head2 guess_if_running_on_sge
 
-TODOCUMENT
+Guess whether the code is currently running in an SGE environment
 
 =cut
 
 sub guess_if_running_on_sge {
-	my $has_sge_enviroment_variables = has_sge_enviroment_variables();
-	my $has_seg_exes                 = has_seg_exes();
+	my $has_sge_enviroment_variables = _has_sge_enviroment_variables();
+	my $has_seg_exes                 = _has_seg_exes();
 
 	if ( $has_sge_enviroment_variables != $has_seg_exes ) {
 		confess
-			'Contradictory data about whether running on SGE : has_sge_enviroment_variables is '
+			'Contradictory data about whether running on SGE : _has_sge_enviroment_variables is '
 			. ( $has_sge_enviroment_variables // 'undef' )
-			. ' but has_seg_exes is '
+			. ' but _has_seg_exes is '
 			. ( $has_seg_exes // 'undef' )
 			. ' ';
 	}
 	return ( $has_seg_exes )
 }
 
-=head2 has_seg_exes
+=head2 _has_seg_exes
 
-TODOCUMENT
+Private implementation function
+
+Return whether a few key SGE executables are visible by `which()`
 
 =cut
 
-sub has_seg_exes {
+sub _has_seg_exes {
 	return all { which( $ARG ) } ( qw/ qalter qconf qdel qrsh qstat qsub / );
 }
 
-=head2 has_sge_enviroment_variables
+=head2 _has_sge_enviroment_variables
 
-TODOCUMENT
+Private implementation function
+
+Return whether all of a few key SGE environment variables are defined
 
 =cut
 
-sub has_sge_enviroment_variables {
+sub _has_sge_enviroment_variables {
 	return all { defined( $ENV{ $ARG } ); } ( qw/ SGE_ROOT SGE_ARCH SGE_CELL / );
 }
 
 =head2 make_atomic_write_file
 
-TODOCUMENT
+Call the File::AtomicWrite constructor with the parameters in the specified (reference to) hash
+
+Provide a descriptive filename template as the default (which can still be overridden)
+containing the hostname and process ID to help with traceability
+
+This was partly motivated by some indications that there might be clashes between concurrent threads.
+The combination of hostname and process ID should make that impossible.
+Further, this performs a check that the new filename doesn't already exist with a non-zero size.
 
 =cut
 
