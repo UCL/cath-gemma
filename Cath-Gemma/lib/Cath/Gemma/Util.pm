@@ -389,7 +389,11 @@ sub make_atomic_write_file {
 
 =head2 id_of_clusters
 
-TODOCUMENT
+This calculates an ID for a non-empty node list in a way that leaves
+individual nodes' IDs alone but makes clear when there is a list of nodes
+
+TODOCUMENT: What's the reason for 'n0de_' - to do with the cluster names
+            having distinctive patterns and getting sorted correctly.
 
 =cut
 
@@ -407,13 +411,19 @@ sub id_of_clusters {
 }
 
 
-=head2 id_of_nodelist
+=head2 _id_of_nodelist
 
-TODOCUMENT
+Private implementation function.
+
+This calculates an ID for a non-empty node list in a way that leaves
+individual nodes' IDs alone but makes clear when there is a list of nodes
+
+TODOCUMENT: What's the reason for 'l1st_' - to do with the cluster names
+            having distinctive patterns and getting sorted correctly.
 
 =cut
 
-sub id_of_nodelist {
+sub _id_of_nodelist {
 	my $clusters = shift;
 	if ( scalar( @$clusters ) == 0 ) {
 		confess "Cannot calculate an ID for an empty list of clusters";
@@ -427,7 +437,7 @@ sub id_of_nodelist {
 
 =head2 compass_profile_suffix
 
-TODOCUMENT
+Return the default suffix for a COMPASS profile file
 
 =cut
 
@@ -437,7 +447,15 @@ sub compass_profile_suffix {
 
 =head2 default_compass_profile_build_type
 
-TODOCUMENT
+Return the default compass_profile_build_type
+
+The previous DFX code was using an earlier version of the COMPASS code
+which sometimes gave inconsistent results on different machines and which
+sometimes gave inconsistent results depending on whether a model was built
+as the first or second of a pair (with a dummy as the other).
+
+In this work, we've performed a comparison of results and agreed that we're
+all happy to move to mk_compass_db which avoids these issues.
 
 =cut
 
@@ -448,7 +466,12 @@ sub default_compass_profile_build_type {
 
 =head2 default_temp_dir
 
-TODOCUMENT
+Return the default temporary directory to use as a scratch space
+
+IMPORTANT: This currently uses /dev/shm which treats the memory as a disk.
+This should keep stuff very fast. However it does mean that code must:
+ * avoid putting really large amounts of stuff in there
+ * ensure it cleans up after itself
 
 =cut
 
@@ -580,9 +603,9 @@ sub scan_filebasename_of_cluster_ids {
 	my ( $query_cluster_ids, $match_cluster_ids, $compass_profile_build_type ) = $check->( @ARG );
 
 	return
-		  id_of_nodelist( $query_cluster_ids )
+		  _id_of_nodelist( $query_cluster_ids )
 		. '.'
-		. id_of_nodelist( $match_cluster_ids )
+		. _id_of_nodelist( $match_cluster_ids )
 		. '.'
 		. $compass_profile_build_type
 		. '.scan';

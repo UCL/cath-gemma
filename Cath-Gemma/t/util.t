@@ -9,7 +9,7 @@ use List::Util  qw/ min    /;
 use Time::HiRes qw/ usleep /;
 
 # Core (test)
-use Test::More tests => 17;
+use Test::More tests => 21;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -58,6 +58,22 @@ subtest 'combine_starting_cluster_names()' => sub {
 		combine_starting_cluster_names( [ qw/ clst_101 clst_99 / ], [ qw/ clst_100 clst_98 / ],                    ),
 		[ qw/ clst_98  clst_99 clst_100 clst_101 / ]
 	);
+};
+
+subtest 'id_of_clusters' => sub {
+	is( id_of_clusters( [ 'my_clust_1', 'my_clust_2' ] ), 'n0de_4501c47c831144d7311bbdf6da7f5d84', 'id_of_clusters() returns as expected' );
+};
+
+subtest 'compass_profile_suffix' => sub {
+	is( compass_profile_suffix(), '.prof', 'compass_profile_suffix() returns as expected' );
+};
+
+subtest 'default_compass_profile_build_type' => sub {
+	is( default_compass_profile_build_type(), 'mk_compass_db', 'default_compass_profile_build_type() returns as expected' );
+};
+
+subtest 'default_temp_dir' => sub {
+	is( default_temp_dir(), '/dev/shm', 'default_temp_dir() returns as expected' );
 };
 
 subtest 'evalue_window_ceiling() / evalue_window_floor()' => sub {
