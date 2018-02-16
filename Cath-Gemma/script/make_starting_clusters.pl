@@ -105,7 +105,11 @@ undef @cluster_lines;
 undef $cluster_contents;
 
 # Remove clusters without GO annotations
-INFO "Removing clusters without suitable GO annotations";
+if ( scalar( @new_clusters ) == 0 ) {
+	WARN 'There are no clusters at this point in the processing!!';
+}
+
+INFO 'Removing clusters without suitable GO annotations (...starting with ' . scalar( @new_clusters ) . ' clusters)';
 my @del_indices = grep {
 	my $clust_idx = $ARG;
 	none { exists( $id_with_go{ $ARG } ) } @{ $new_clusters[ $clust_idx ] };
@@ -113,6 +117,10 @@ my @del_indices = grep {
 
 foreach my $reverse_index ( reverse( @del_indices ) ) {
 	splice( @new_clusters, $reverse_index, 1 );
+}
+INFO 'After removing clusters without suitable GO annotations, there are now ' . scalar( @new_clusters ) . ' clusters';
+if ( scalar( @new_clusters ) == 0 ) {
+	WARN '!!!! There are no clusters at this point in the processing !!!!';
 }
 
 # Read the sequences
