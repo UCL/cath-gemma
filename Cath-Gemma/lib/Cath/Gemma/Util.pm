@@ -585,7 +585,8 @@ sub scan_filebasename_of_cluster_ids {
 
 =head2 scan_filename_of_dir_and_cluster_ids
 
-TODOCUMENT
+Get the filename in which the scan results should be stored for the specified directory, query IDs,
+match IDs and $compass_profile_build_type
 
 =cut
 
@@ -600,7 +601,8 @@ sub scan_filename_of_dir_and_cluster_ids {
 
 =head2 time_seconds_to_sge_string
 
-TODOCUMENT
+Return a string summarising the specified Time::Seconds value in a format
+usable in SGE compute clusters (eg an hour is '01:00:00')
 
 =cut
 
@@ -622,7 +624,11 @@ sub time_seconds_to_sge_string {
 
 =head2 unique_by_hashing
 
-TODOCUMENT
+Return (a reference to) an array of the uniqued (and sorted) values in the specified
+(reference to) array
+
+TODOCUMENT: why is this needed above using `uniq( sort() )` (with `uniq()`
+from List::Util)?
 
 =cut
 

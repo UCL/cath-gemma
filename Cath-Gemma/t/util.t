@@ -9,7 +9,7 @@ use List::Util  qw/ min    /;
 use Time::HiRes qw/ usleep /;
 
 # Core (test)
-use Test::More tests => 8;
+use Test::More tests => 9;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -70,6 +70,14 @@ subtest 'unique_by_hashing()' => sub {
 	is_deeply( [ unique_by_hashing( 0, 0, 0          ) ], [ 0    ], 'unique_by_hashing() is correct on: 0, 0, 0'          );
 	is_deeply( [ unique_by_hashing( 1, 2             ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2'             );
 	is_deeply( [ unique_by_hashing( 1, 2, 2, 1, 2, 1 ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2, 2, 1, 2, 1' );
+};
+
+subtest 'scan_filename_of_dir_and_cluster_ids' => sub {
+	is(
+		scan_filename_of_dir_and_cluster_ids( '/tmp', [ 'my_query' ], [ 'my_match_1', 'my_match_2' ], default_compass_profile_build_type(), ),
+		'/tmp/my_query.l1st_0fefca17cea83290bf5f9fa57c6f18c8.mk_compass_db.scan',
+		'scan_filename_of_dir_and_cluster_ids() returns as expected'
+	);
 };
 
 subtest 'time_seconds_to_sge_string()' => sub {
