@@ -98,10 +98,11 @@ sub build_compass_profile_in_dir {
 				my $tmp_list_file = Path::Tiny->tempfile( DIR => $exes->tmp_dir(), TEMPLATE => '.mk_compass_db.list.XXXXXXXXXXX', SUFFIX => '.txt', CLEANUP => 1 );
 				$tmp_list_file->spew( $aln_file->basename() . "\n" );
 
+				# Note, these commands used to include arguments `-g', '0.50001`, which were inherited from
+				# the DFX code. See the commit that introduces this comment for more info.
 				_run_compass_build(
 					[
 						'' . $exes->mk_compass_db(),
-						'-g', '0.50001',
 						'-i', ''.$tmp_list_file,
 						'-o', ''.$tmp_prof_absfile,
 					],
@@ -124,10 +125,11 @@ sub build_compass_profile_in_dir {
 				my $tmp_dummy_aln_absfile  = $tmp_dummy_aln_file->absolute();
 				my $tmp_dummy_prof_absfile = $tmp_dummy_prof_file->absolute();
 
+				# Note, these commands used to include arguments `-g', '0.50001`, which were inherited from
+				# the DFX code. See the commit that introduces this comment for more info.
 				_run_compass_build(
 					[
 						'' . $exes->compass_build(),
-						'-g', '0.50001',
 						(
 							( $compass_profile_build_type eq 'compass_wp_dummy_1st' )
 							? (
