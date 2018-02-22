@@ -25,6 +25,7 @@ use strictures 1;
 use List::MoreUtils     qw/ first_index                                                  /;
 use Log::Log4perl::Tiny qw/ :easy                                                        /;
 use Path::Tiny;
+use Scalar::Util        qw/ looks_like_number                                            /;
 use Type::Params        qw/ compile Invocant                                             /;
 use Types::Path::Tiny   qw/ Path                                                         /;
 use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional Str Tuple /;
@@ -259,7 +260,7 @@ sub _perform_action_on_trace_style_list {
 	state $check = compile( Object, CodeRef );
 	my ( $self, $action ) = $check->( @ARG );
 
-	my $max_id = max( @{ $self->starting_clusters() } );
+	my $max_id = max( grep { looks_like_number( $ARG ); } @{ $self->starting_clusters() }, 0 );
 	++$max_id;
 
 	my %file_nodename_of_node_id;
