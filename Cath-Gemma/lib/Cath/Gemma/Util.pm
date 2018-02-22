@@ -236,7 +236,7 @@ sub cluster_name_spaceship {
 
 =head2 cluster_name_spaceship_sort
 
-Perform a sort (with the same syntax & semantics as sort) except using the
+Perform a sort (with the same syntax & semantics as Perl's `sort()`) except using the
 cluster_name_spaceship as the sort criterion
 
 =cut
@@ -247,13 +247,16 @@ sub cluster_name_spaceship_sort {
 
 =head2 combine_starting_cluster_names
 
-TODOCUMENT
+Combine the two specified lists of starting clusters according to the specified
+CathGemmaNodeOrdering (which defaults to simple_ordering)
 
 =cut
 
 sub combine_starting_cluster_names {
 	state $check = compile( ArrayRef[Str], ArrayRef[Str], Optional[CathGemmaNodeOrdering] );
 	my ( $starting_clusters_a, $starting_clusters_b, $clusts_ordering ) = $check->( @ARG );
+
+	$clusts_ordering //= 'simple_ordering';
 
 	my $result = ( $clusts_ordering && ( $clusts_ordering eq 'tree_df_ordering' ) )
 		? [                              @$starting_clusters_a, @$starting_clusters_b   ]
@@ -264,7 +267,12 @@ sub combine_starting_cluster_names {
 
 =head2 generic_id_of_clusters
 
-TODOCUMENT
+Get the generic ID for the specified (reference to an) array of clusters
+
+If leave_singletons is specified and evaluates to true and there is a single
+input ID, then the result is that ID
+
+TODOCUMENT more clearly: the relationship between id_of_clusters() and generic_id_of_clusters()
 
 =cut
 
@@ -401,6 +409,8 @@ sub make_atomic_write_file {
 
 This calculates an ID for a non-empty node list in a way that leaves
 individual nodes' IDs alone but makes clear when there is a list of nodes
+
+TODOCUMENT more clearly: the relationship between id_of_clusters() and generic_id_of_clusters()
 
 TODOCUMENT: What's the reason for 'n0de_' - to do with the cluster names
             having distinctive patterns and getting sorted correctly.

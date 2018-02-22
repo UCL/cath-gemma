@@ -9,7 +9,7 @@ use List::Util  qw/ min    /;
 use Time::HiRes qw/ usleep /;
 
 # Core (test)
-use Test::More tests => 22;
+use Test::More tests => 26;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -17,6 +17,9 @@ use lib $FindBin::Bin . '/../extlib/lib/perl5';
 # Non-core (local)
 use Path::Tiny;
 use Time::Seconds;
+
+# Non-core (test) (local)
+use Test::Exception;
 
 # Find Cath::Gemma::Test lib directory using FindBin (and tidy using Path::Tiny)
 use lib path( $FindBin::Bin . '/lib' )->realpath()->stringify();
@@ -67,6 +70,22 @@ subtest 'combine_starting_cluster_names()' => sub {
 	);
 };
 
+subtest 'combine_starting_cluster_names' => sub {
+	is_deeply( combine_starting_cluster_names( [ 1, 3 ], [ 2, 4 ]                     ), [ 1, 2, 3, 4 ], 'combine_starting_cluster_names() returns as expected' );
+	is_deeply( combine_starting_cluster_names( [ 1, 3 ], [ 2, 4 ], 'simple_ordering'  ), [ 1, 2, 3, 4 ], 'combine_starting_cluster_names() returns as expected' );
+	is_deeply( combine_starting_cluster_names( [ 1, 3 ], [ 2, 4 ], 'tree_df_ordering' ), [ 1, 3, 2, 4 ], 'combine_starting_cluster_names() returns as expected' );
+};
+
+subtest 'generic_id_of_clusters' => sub {
+	is( generic_id_of_clusters( [ 'my_clust_1'               ]    ), 'becc8eb32454b8d75b45a2d745473026', 'generic_id_of_clusters() returns as expected' );
+	is( generic_id_of_clusters( [ 'my_clust_1'               ], 0 ), 'becc8eb32454b8d75b45a2d745473026', 'generic_id_of_clusters() returns as expected' );
+	is( generic_id_of_clusters( [ 'my_clust_1'               ], 1 ), 'my_clust_1',                       'generic_id_of_clusters() returns as expected' );
+
+	is( generic_id_of_clusters( [ 'my_clust_1', 'my_clust_2' ]    ), '4501c47c831144d7311bbdf6da7f5d84', 'generic_id_of_clusters() returns as expected' );
+	is( generic_id_of_clusters( [ 'my_clust_1', 'my_clust_2' ], 0 ), '4501c47c831144d7311bbdf6da7f5d84', 'generic_id_of_clusters() returns as expected' );
+	is( generic_id_of_clusters( [ 'my_clust_1', 'my_clust_2' ], 1 ), '4501c47c831144d7311bbdf6da7f5d84', 'generic_id_of_clusters() returns as expected' );
+};
+
 subtest 'get_starting_clusters_of_starting_cluster_dir' => sub {
 	my $geoff = get_starting_clusters_of_starting_cluster_dir( test_superfamily_starting_cluster_dir( '1.20.5.200' ) );
 
@@ -77,8 +96,70 @@ subtest 'get_starting_clusters_of_starting_cluster_dir' => sub {
 	);
 };
 
+subtest 'guess_if_running_on_sge' => sub {
+	lives_ok(
+		sub { guess_if_running_on_sge(); },
+		'guess_if_running_on_sge() does not die'
+	);
+};
+
+subtest 'make_atomic_write_file' => sub {
+	subtest 'does atomic writing for specified template' => sub {
+		# Get a non-existent temporary file
+		my $out_file = make_non_existent_temp_file();
+		ok( ! -e $out_file  );
+
+		# Create an atomic file and and write some data to it
+		my $atomic_file     = make_atomic_write_file( { file => "$out_file", template => '.atomic_template.XXXXXXXXXX' } );
+		my $atomic_filename = $atomic_file->filename();
+		path( $atomic_filename )->spew( 'test_string' );
+
+		# Check that the atomic file is non-empty and the destination file doesn't exist
+		ok(   -s $atomic_filename );
+		ok( ! -e $out_file        );
+
+		# Commit the atomic file
+		$atomic_file->commit();
+
+		# Check that the destination file is non-empty and the atomic file doesn't exist
+		# and the destination file's contents are correct
+		ok(   -s $out_file        );
+		ok( ! -e $atomic_filename );
+		file_matches( $out_file, test_data_dir()->child( 'atomic_write_file.expected' ), 'Atomic file has been created' );
+
+		# Clean up the files
+		if ( -e $atomic_filename ) { $atomic_filename->remove(); }
+		if ( -e $out_file        ) { $out_file       ->remove(); }
+	};
+
+	subtest 'no template' => sub {
+		my $out_file = Path::Tiny->tempfile();
+		my $atomic_file = make_atomic_write_file( { file => "$out_file" } );
+		my $atomic_filename = $atomic_file->filename();
+		like( $atomic_filename, qr/\.atmc_write\.host_.*\.pid_/, 'TODOC' );
+	};
+};
+
 subtest 'id_of_clusters' => sub {
-	is( id_of_clusters( [ 'my_clust_1', 'my_clust_2' ] ), 'n0de_4501c47c831144d7311bbdf6da7f5d84', 'id_of_clusters() returns as expected' );
+	dies_ok(
+		sub { id_of_clusters( [                            ] ); },
+		'id_of_clusters() dies as expected for zero ids'
+	);
+	is(
+		id_of_clusters( [ 'my_clust_1'               ] ),
+		'my_clust_1',
+		'id_of_clusters() returns as expected for one id'
+	);
+	is(
+		id_of_clusters( [ 'my_clust_1', 'my_clust_2' ] ),
+		'n0de_4501c47c831144d7311bbdf6da7f5d84',
+		'id_of_clusters() returns as expected for two ids'
+	);
+	is(
+		id_of_clusters( [ 'my_clust_1', 'my_clust_2', 'my_clust_3' ] ),
+		'n0de_b058f5b851e76e27506d4f7f1949d558',
+		'id_of_clusters() returns as expected for two ids'
+	);
 };
 
 subtest 'compass_profile_suffix' => sub {
@@ -147,6 +228,15 @@ subtest 'scan_filebasename_of_cluster_ids' => sub {
 		scan_filebasename_of_cluster_ids( [ 'my_query' ], [ 'my_match_1', 'my_match_2' ], default_compass_profile_build_type(), ),
 		'my_query.l1st_0fefca17cea83290bf5f9fa57c6f18c8.mk_compass_db.scan',
 		'scan_filebasename_of_cluster_ids() returns as expected'
+	);
+
+	dies_ok(
+		sub { scan_filebasename_of_cluster_ids( [            ], [ 'my_match_1', 'my_match_2' ], default_compass_profile_build_type(), ); },
+		'scan_filebasename_of_cluster_ids() dies as expected with empty query'
+	);
+	dies_ok(
+		sub { scan_filebasename_of_cluster_ids( [ 'my_query' ], [                            ], default_compass_profile_build_type(), ); },
+		'scan_filebasename_of_cluster_ids() dies as expected with empty match'
 	);
 };
 

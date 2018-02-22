@@ -22,6 +22,8 @@ our @EXPORT = qw/
 	cath_test_tempdir
 	file_matches
 	gemma_dir_set_of_superfamily
+	make_non_existent_temp_file
+	make_non_existent_temp_filename
 	profile_dir_set_of_superfamily
 	test_data_dir
 	test_superfamily_aln_dir
@@ -112,6 +114,29 @@ sub gemma_dir_set_of_superfamily {
 	return Cath::Gemma::Disk::GemmaDirSet->make_gemma_dir_set_of_base_dir(
 		test_superfamily_data_dir( $superfamily )
 	);
+}
+
+=head2 make_non_existent_temp_file
+
+Make a temporary file (Path::Tiny) that is *not* created by this function.
+This file won't auto-cleanup so the client is responsible for any necessary cleanup.
+
+=cut
+
+sub make_non_existent_temp_file {
+	return path( make_non_existent_temp_filename() );
+}
+
+=head2 make_non_existent_temp_filename
+
+Make a temporary filename string for a file that is *not* created by this function.
+This file won't auto-cleanup so the client is responsible for any necessary cleanup.
+
+=cut
+
+sub make_non_existent_temp_filename {
+	my $tempfile = Path::Tiny->tempfile( CLEANUP => 1 );
+	return "$tempfile";
 }
 
 =head2 profile_dir_set_of_superfamily
