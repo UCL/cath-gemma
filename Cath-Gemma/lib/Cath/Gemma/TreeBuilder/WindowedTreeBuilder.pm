@@ -84,7 +84,7 @@ sub build_tree {
 	while ( $scans_data->count() > 1 ) {
 		# my $ids_and_score_list = $scans_data->ids_and_score_of_lowest_score_window();
 
-		# Get a list of work and then, if it's non-empty, wait for it to be run in child jobs
+		# Get a list of work and then, if it's non-empty, wait for it to be run (potentially in child jobs)
 		my $work_batch_list = $merge_bundler->make_work_batch_list_of_query_scs_and_match_scs_list( $scans_data, $gemma_dir_set, $compass_profile_build_type );
 		DEBUG
 			'In '
