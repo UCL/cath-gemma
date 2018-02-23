@@ -43,6 +43,19 @@ sub make_simple_merge_list_with_non_numeric_ids {
 	] );
 }
 
+=head2 make_simple_merge_list_with_merge_node_ids
+
+Make a simple example MergeList with IDs that look like merge_node_ IDs
+
+=cut
+
+sub make_simple_merge_list_with_merge_node_ids {
+	return Cath::Gemma::Tree::MergeList->make_merge_list_from_simple_test_data( [
+		[ qw/ working_1   merge_node_4 /, 2.3 ],
+		[            -1, 'working_3'    , 5.6 ],
+	] );
+}
+
 subtest 'make_merge_list_from_simple_test_data()' => sub {
 	lives_ok( sub { make_simple_merge_list();                      }, 'making a simple MergeList does not die'                      );
 	lives_ok( sub { make_simple_merge_list_with_non_numeric_ids(); }, 'making a simple MergeList with non-numeric IDs does not die' );
@@ -64,12 +77,17 @@ subtest 'starting_clusters()' => sub {
 subtest 'to_tracefile_string()' => sub {
 	is(
 		make_simple_merge_list()->to_tracefile_string(),
-		"1	2	4	2.3\n4	3	5	5.6\n",
+		"1	2	merge_node_1	2.3\nmerge_node_1	3	merge_node_2	5.6\n",
 		'to_tracefile_string() works'
 	);
 	is(
 		make_simple_merge_list_with_non_numeric_ids()->to_tracefile_string(),
-		"working_1	working_2	1	2.3\n1	working_3	2	5.6\n",
+		"working_1	working_2	merge_node_1	2.3\nmerge_node_1	working_3	merge_node_2	5.6\n",
 		'to_tracefile_string() works with non-numeric IDs'
+	);
+	is(
+		make_simple_merge_list_with_merge_node_ids()->to_tracefile_string(),
+		"working_1	merge_node_4	merge_node_5	2.3\nmerge_node_5	working_3	merge_node_6	5.6\n",
+		'to_tracefile_string() works with merge-node IDs'
 	);
 };

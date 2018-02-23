@@ -260,16 +260,29 @@ sub _perform_action_on_trace_style_list {
 	state $check = compile( Object, CodeRef );
 	my ( $self, $action ) = $check->( @ARG );
 
-	my $max_id = max( grep { looks_like_number( $ARG ); } @{ $self->starting_clusters() }, 0 );
+	my $max_id = max(
+		map {
+			my $id = $ARG;
+			$id =~ s/^merge_node_(\d+)/$1/g;
+			$id;
+		}
+		grep {
+			my $id = $ARG;
+			my $matches_merge_node = ( $ARG =~ /^merge_node_(.+)$/ );
+			( $matches_merge_node && looks_like_number( $1 ) );
+		}
+		( @{ $self->starting_clusters() }, 'merge_node_0' )
+	);
 	++$max_id;
+	warn $max_id;
 
 	my %file_nodename_of_node_id;
 
 	foreach my $merge ( @{ $self->merges() } ) {
 		my $mergee_a_id = $file_nodename_of_node_id{ $merge->mergee_a_id() } // $merge->mergee_a();
 		my $mergee_b_id = $file_nodename_of_node_id{ $merge->mergee_b_id() } // $merge->mergee_b();
-		$action->( $mergee_a_id, $mergee_b_id, $max_id, $merge );
-		$file_nodename_of_node_id{ $merge->id() } = $max_id;
+		$action->( $mergee_a_id, $mergee_b_id, 'merge_node_' . $max_id, $merge );
+		$file_nodename_of_node_id{ $merge->id() } = 'merge_node_' . $max_id;
 		++$max_id;
 	}
 }
@@ -289,7 +302,7 @@ sub to_tracefile_string {
 
 	my $result_str = '';
 	$self->_perform_action_on_trace_style_list( sub {
-		state $check = compile( Str, Str, Int, CathGemmaTreeMerge );
+		state $check = compile( Str, Str, Str, CathGemmaTreeMerge );
 		my ( $mergee_a_id, $mergee_b_id, $new_id, $merge ) = $check->( @ARG );
 
 		$result_str .= (
@@ -612,7 +625,7 @@ sub archive_in_dir {
 
 
 	$self->_perform_action_on_trace_style_list( sub {
-		state $check = compile( Str, Str, Int, CathGemmaTreeMerge );
+		state $check = compile( Str, Str, Str, CathGemmaTreeMerge );
 		my ( $mergee_a_id, $mergee_b_id, $new_id, $merge ) = $check->( @ARG );
 
 		push @src_dest_aln_file_pairs, [
