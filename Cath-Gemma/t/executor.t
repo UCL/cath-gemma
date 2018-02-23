@@ -201,7 +201,7 @@ sub test_build_tree {
 
 	# Check that the alignment and profile were built
 	if ( ! $should_die ) {
-		foreach my $tree_basename ( qw/ 1.faa 2.faa 3.faa 4.faa 5.faa 6.faa 7.faa tree.newick tree.trace / ) {
+		foreach my $tree_basename ( qw/ 1.faa 2.faa 3.faa 4.faa merge_node_1.faa merge_node_2.faa merge_node_3.faa tree.newick tree.trace / ) {
 			my $tree_subdir   = 'simple_ordering.mk_compass_db.windowed';
 			file_matches(
 				$tree_dir                                ->child( $tree_subdir )->child( $tree_basename ),
