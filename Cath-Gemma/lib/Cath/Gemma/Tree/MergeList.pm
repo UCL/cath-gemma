@@ -274,7 +274,6 @@ sub _perform_action_on_trace_style_list {
 		( @{ $self->starting_clusters() }, 'merge_node_0' )
 	);
 	++$max_id;
-	warn $max_id;
 
 	my %file_nodename_of_node_id;
 
