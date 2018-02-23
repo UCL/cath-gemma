@@ -5,8 +5,8 @@ use warnings;
 
 # Core
 use FindBin;
-use List::Util  qw/ min    /;
-use Time::HiRes qw/ usleep /;
+use List::Util          qw/ min    /;
+use Time::HiRes         qw/ usleep /;
 
 # Core (test)
 use Test::More tests => 26;
@@ -15,6 +15,7 @@ use Test::More tests => 26;
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
 
 # Non-core (local)
+use Log::Log4perl::Tiny qw/ :easy  /;
 use Path::Tiny;
 use Time::Seconds;
 
@@ -30,6 +31,8 @@ use Cath::Gemma::Util;
 # Cath::Gemma Test
 use Cath::Gemma::Test;
 
+Log::Log4perl->easy_init( { level => $ERROR } );
+
 subtest 'time_fn() works ok' => sub {
 	my $a = time_fn( sub { my $val = shift; usleep( 100 ); return $val; }, 'oooh' );
 
@@ -38,6 +41,8 @@ subtest 'time_fn() works ok' => sub {
 	ok    ( $a->{ duration } >= Time::Seconds->new( 0.0001 ), 'Sleeping 0.1 ms takes at least 0.1 ms' );
 	ok    ( $a->{ duration } <  Time::Seconds->new( 0.001  ), 'Sleeping 0.1 ms takes less than 1 ms'  );
 };
+
+# run_and_time_filemaking_cmd() is tested in run_and_time_filemaking_cmd.t
 
 subtest 'mergee_is_starting_cluster() works ok' => sub {
 	ok(   mergee_is_starting_cluster(   0      ), '0 is a starting cluster' );
@@ -91,6 +96,11 @@ subtest 'get_starting_clusters_of_starting_cluster_dir' => sub {
 
 	is_deeply(
 		get_starting_clusters_of_starting_cluster_dir( test_superfamily_starting_cluster_dir( '1.20.5.200' ) ),
+		[ 1, 2, 3, 4 ],
+		'get_starting_clusters_of_starting_cluster_dir() returns as expected'
+	);
+	is_deeply(
+		get_starting_clusters_of_starting_cluster_dir( test_data_dir()->child( 'dir_with_starting_clusters_and_silly_files' ) ),
 		[ 1, 2, 3, 4 ],
 		'get_starting_clusters_of_starting_cluster_dir() returns as expected'
 	);

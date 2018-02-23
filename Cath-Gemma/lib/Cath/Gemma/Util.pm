@@ -258,7 +258,7 @@ sub combine_starting_cluster_names {
 
 	$clusts_ordering //= 'simple_ordering';
 
-	my $result = ( $clusts_ordering && ( $clusts_ordering eq 'tree_df_ordering' ) )
+	my $result = ( $clusts_ordering eq 'tree_df_ordering' )
 		? [                              @$starting_clusters_a, @$starting_clusters_b   ]
 		: [ cluster_name_spaceship_sort( @$starting_clusters_a, @$starting_clusters_b ) ];
 
