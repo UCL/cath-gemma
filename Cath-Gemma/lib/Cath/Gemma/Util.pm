@@ -73,7 +73,11 @@ use Cath::Gemma::Types qw/
 
 =head2 time_fn
 
-TODOCUMENT
+Time the duration of the specified function being called by the specified arguments
+
+The result is a hashref with keys-values:
+	duration => the duration as a Time::Seconds object
+	result   => the return value from the function call
 
 =cut
 
@@ -91,7 +95,11 @@ sub time_fn {
 
 =head2 run_and_time_filemaking_cmd
 
-TODOCUMENT
+Run and time the specified function.
+
+If an out_file is specified, make an atomic version of that file and pass that to the function.
+
+Use the specified name in any error messages
 
 =cut
 
@@ -103,14 +111,8 @@ sub run_and_time_filemaking_cmd {
 		sub {
 
 			if ( defined( $out_file ) ) {
-				# warn "Checking for output file \"$out_file\"";
 				if ( -s "$out_file" ) {
-					# warn "Returning...";
 					return { out_filename => $out_file };
-				}
-
-				if ( "$out_file" eq 'temporary_example_data/output/1.10.150.120/n0de_9e4d22ff9a44d049cefaa240aae7e01d.l1st_9557d2b7962844e9ccaf3c8f2e8d6ab7.scan' ) {
-					sleep 1000;
 				}
 
 				if ( -e $out_file ) {
@@ -132,7 +134,7 @@ sub run_and_time_filemaking_cmd {
 			my $result = time_fn( $operation, defined( $atomic_file ) ? ( $atomic_file ) : ( ) );
 
 			if ( ! defined( $result ) || ref( $result ) ne 'HASH' || ! defined( $result->{ result } ) || ref( $result->{ result } ) ne 'HASH' ) {
-				confess "ARGH";
+				confess "Invalid result returned by function passed to run_and_time_filemaking_cmd()";
 			}
 
 			if ( defined( $atomic_file ) ) {
