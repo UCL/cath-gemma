@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::TaskThreadPooler;
 
 =head1 NAME
 
-Cath::Gemma::Compute::TaskThreadPooler - TODOCUMENT
+Cath::Gemma::Compute::TaskThreadPooler - Execute code over an array, potentially using multiple threads
 
 =cut
 
@@ -22,7 +22,8 @@ use Types::Standard     qw/ ArrayRef CodeRef Int Str /;
 
 =head2 run_tasks
 
-TODOCUMENT
+Execute the specified CodeRef for each of the elements in the specified array of data.
+Use up to the specified number of threads to parallelise this work.
 
 =cut
 

@@ -105,7 +105,7 @@ around build_tree => sub {
 			. ' steps, estimated to take up to '
 			. $pre_work_batch_list->estimate_time_to_execute()
 			. ' seconds';
-		$executor->execute( $pre_work_batch_list, 'always_wait_for_complete' );
+		$executor->execute_batch_list( $pre_work_batch_list, 'always_wait_for_complete' );
 	}
 	else {
 		DEBUG 'No steps required.'

@@ -45,7 +45,7 @@ my $superfamily = '1.20.5.200';
 
 =head2 check_sub_if_die
 
-TODOCUMENT
+Perform the specified code and check that it dies iff it should die
 
 =cut
 

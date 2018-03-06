@@ -95,7 +95,7 @@ sub build_tree {
 			. $work_batch_list->estimate_time_to_execute()
 			. ' seconds';
 		if ( $work_batch_list->num_steps() > 0 ) {
-			$executor->execute( $work_batch_list, 'always_wait_for_complete' );
+			$executor->execute_batch_list( $work_batch_list, 'always_wait_for_complete' );
 		}
 
 		# Get a list of the merges
