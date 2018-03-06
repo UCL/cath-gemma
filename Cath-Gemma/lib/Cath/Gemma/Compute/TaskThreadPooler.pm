@@ -35,7 +35,6 @@ sub run_tasks {
 		},
 		sub {
 			my ( $id, $task_num ) = @ARG;
-			warn "\$id : $id, \$task_num : $task_num, \$num_threads : $num_threads";
 			$the_code->( @{ $data->[ $task_num ] } );
 		},
 		[ 0 .. $#$data ]
