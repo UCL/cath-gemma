@@ -24,7 +24,7 @@ use v5.10;
 
 our @EXPORT = qw/
 	alignment_filebasename_of_starting_clusters
-	alignment_profile_suffix
+	alignment_suffix
 	batch_into_n
 	cluster_name_spaceship
 	cluster_name_spaceship_sort
@@ -48,8 +48,9 @@ our @EXPORT = qw/
 	run_and_time_filemaking_cmd
 	scan_filebasename_of_cluster_ids
 	scan_filename_of_dir_and_cluster_ids
-	time_seconds_to_sge_string
+	sequences_suffix
 	time_fn
+	time_seconds_to_sge_string
 	unique_by_hashing
 	/;
 
@@ -549,14 +550,14 @@ sub default_clusts_ordering {
 	return 'simple_ordering';
 }
 
-=head2 alignment_profile_suffix
+=head2 alignment_suffix
 
 Return the filename suffix to use for alignment files
 
 =cut
 
-sub alignment_profile_suffix {
-	return '.faa';
+sub alignment_suffix {
+	return '.aln';
 }
 
 =head2 alignment_filebasename_of_starting_clusters
@@ -567,7 +568,7 @@ Get the basename of the file in which the alignment should be stored for the spe
 
 sub alignment_filebasename_of_starting_clusters {
 	my $starting_clusters = shift;
-	return id_of_clusters( $starting_clusters ) . alignment_profile_suffix();
+	return id_of_clusters( $starting_clusters ) . alignment_suffix();
 }
 
 =head2 prof_file_of_prof_dir_and_aln_file
@@ -583,7 +584,7 @@ sub prof_file_of_prof_dir_and_aln_file {
 
 	return prof_file_of_prof_dir_and_cluster_id(
 		$prof_dir,
-		$aln_file->basename( alignment_profile_suffix() ),
+		$aln_file->basename( alignment_suffix() ),
 		$compass_profile_build_type,
 	);
 }
@@ -647,7 +648,15 @@ sub scan_filename_of_dir_and_cluster_ids {
 	return $dir->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type ) );
 }
 
+=head2 sequences_suffix
 
+Return the filename suffix to use for files containing unaligned sequences
+
+=cut
+
+sub sequences_suffix {
+	return '.faa';
+}
 
 =head2 time_seconds_to_sge_string
 

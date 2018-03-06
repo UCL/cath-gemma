@@ -71,12 +71,12 @@ sub cmp_compass_profile_type_against_file {
 
 cmp_compass_profile_type_against_file(
 	'Fixes profile built by old COMPASS by removing superfluous line',
-	$build_compass_profile_dir->child( '3.20.20.120__2510.faa'  ),
+	$build_compass_profile_dir->child( '3.20.20.120__2510.aln'  ),
 	$build_compass_profile_dir->child( '3.20.20.120__2510.prof' ),
 );
 
 cmp_compass_profile_type_against_file(
 	'TODOCUMENT',
-	$build_compass_profile_dir->child( '3.20.20.120__6537.faa'  ),
+	$build_compass_profile_dir->child( '3.20.20.120__6537.aln'  ),
 	$build_compass_profile_dir->child( '3.20.20.120__6537.prof' ),
 );

@@ -197,21 +197,21 @@ subtest 'default_clusts_ordering' => sub {
 	is( default_clusts_ordering(), 'simple_ordering', 'default_clusts_ordering() returns as expected' );
 };
 
-subtest 'alignment_profile_suffix' => sub {
-	is( alignment_profile_suffix(), '.faa', 'alignment_profile_suffix() returns as expected' );
+subtest 'alignment_suffix' => sub {
+	is( alignment_suffix(), '.aln', 'alignment_suffix() returns as expected' );
 };
 
 subtest 'alignment_filebasename_of_starting_clusters' => sub {
 	is(
 		alignment_filebasename_of_starting_clusters( [ 'my_clust_1', 'my_clust_2' ] ),
-		'n0de_4501c47c831144d7311bbdf6da7f5d84.faa',
+		'n0de_4501c47c831144d7311bbdf6da7f5d84.aln',
 		'alignment_filebasename_of_starting_clusters() returns as expected'
 	);
 };
 
 subtest 'prof_file_of_prof_dir_and_aln_file' => sub {
 	is(
-		prof_file_of_prof_dir_and_aln_file( '/tmp', '/some/other/dir/my_clust_1.faa', default_compass_profile_build_type() ),
+		prof_file_of_prof_dir_and_aln_file( '/tmp', '/some/other/dir/my_clust_1.aln', default_compass_profile_build_type() ),
 		'/tmp/my_clust_1.mk_compass_db.prof',
 		'prof_file_of_prof_dir_and_aln_file() returns as expected'
 	);

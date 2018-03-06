@@ -618,7 +618,7 @@ sub archive_in_dir {
 		my $starting_cluster  = $ARG;
 		[
 			$aln_dir->child( alignment_filebasename_of_starting_clusters( [ $starting_cluster ] ) ),
-			$output_dir->child( $starting_cluster . alignment_profile_suffix() )
+			$output_dir->child( $starting_cluster . alignment_suffix() )
 		];
 	} @{ $self->starting_clusters() };
 
@@ -629,7 +629,7 @@ sub archive_in_dir {
 
 		push @src_dest_aln_file_pairs, [
 			$aln_dir->child( alignment_filebasename_of_starting_clusters( $merge->starting_nodes( $clusts_ordering ) ) ),
-			$output_dir->child( $new_id . alignment_profile_suffix() )
+			$output_dir->child( $new_id . alignment_suffix() )
 		];
 	} );
 

@@ -101,7 +101,7 @@ sub parse_from_raw_compass_scan_output_lines {
 	my $num_results = 0;
 
 	my ( @outputs, $prev_id1, $prev_id2 );
-	my $alignment_profile_suffix = alignment_profile_suffix();
+	my $alignment_suffix = alignment_suffix();
 	foreach my $compass_output_line ( @$compass_output_lines ) {
 		if ( $compass_output_line =~ /Irregular format in database/ ) {
 			confess 'Problem with COMPASS scan data : "' . $compass_output_line . '"';
@@ -113,7 +113,7 @@ sub parse_from_raw_compass_scan_output_lines {
 			$prev_id1 = $1;
 			$prev_id2 = $2;
 			foreach my $prev_id ( \$prev_id1, \$prev_id2 ) {
-				if ( $$prev_id =~ /^(.*\/)?(\w+)$alignment_profile_suffix$/ ) {
+				if ( $$prev_id =~ /^(.*\/)?(\w+)$alignment_suffix$/ ) {
 					$$prev_id = $2;
 				}
 				else {
