@@ -25,6 +25,7 @@ use strictures 1;
 use List::MoreUtils     qw/ first_index                                                  /;
 use Log::Log4perl::Tiny qw/ :easy                                                        /;
 use Path::Tiny;
+use Scalar::Util        qw/ looks_like_number                                            /;
 use Type::Params        qw/ compile Invocant                                             /;
 use Types::Path::Tiny   qw/ Path                                                         /;
 use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional Str Tuple /;
@@ -259,7 +260,19 @@ sub _perform_action_on_trace_style_list {
 	state $check = compile( Object, CodeRef );
 	my ( $self, $action ) = $check->( @ARG );
 
-	my $max_id = max( @{ $self->starting_clusters() } );
+	my $max_id = max(
+		map {
+			my $id = $ARG;
+			$id =~ s/^merge_node_(\d+)/$1/g;
+			$id;
+		}
+		grep {
+			my $id = $ARG;
+			my $matches_merge_node = ( $ARG =~ /^merge_node_(.+)$/ );
+			( $matches_merge_node && looks_like_number( $1 ) );
+		}
+		( @{ $self->starting_clusters() }, 'merge_node_0' )
+	);
 	++$max_id;
 
 	my %file_nodename_of_node_id;
@@ -267,8 +280,8 @@ sub _perform_action_on_trace_style_list {
 	foreach my $merge ( @{ $self->merges() } ) {
 		my $mergee_a_id = $file_nodename_of_node_id{ $merge->mergee_a_id() } // $merge->mergee_a();
 		my $mergee_b_id = $file_nodename_of_node_id{ $merge->mergee_b_id() } // $merge->mergee_b();
-		$action->( $mergee_a_id, $mergee_b_id, $max_id, $merge );
-		$file_nodename_of_node_id{ $merge->id() } = $max_id;
+		$action->( $mergee_a_id, $mergee_b_id, 'merge_node_' . $max_id, $merge );
+		$file_nodename_of_node_id{ $merge->id() } = 'merge_node_' . $max_id;
 		++$max_id;
 	}
 }
@@ -288,7 +301,7 @@ sub to_tracefile_string {
 
 	my $result_str = '';
 	$self->_perform_action_on_trace_style_list( sub {
-		state $check = compile( Str, Str, Int, CathGemmaTreeMerge );
+		state $check = compile( Str, Str, Str, CathGemmaTreeMerge );
 		my ( $mergee_a_id, $mergee_b_id, $new_id, $merge ) = $check->( @ARG );
 
 		$result_str .= (
@@ -357,72 +370,6 @@ sub write_to_newick_file {
 }
 
 
-=head2 build_from_nodenames_and_merges
-
-TODOCUMENT
-
-=cut
-
-sub build_from_nodenames_and_merges {
-	state $check = compile( ClassName, ArrayRef[ Tuple[ Str,CathGemmaTreeMerge ] ] );
-	my ( $class, $nodenames_and_merges ) = $check->( @ARG );
-
-	my %merge_ref_of_mergee_number;
-	my @merges;
-	foreach my $nodename_and_merge ( @$nodenames_and_merges ) {
-		my ( $nodename, $merge ) = @$nodename_and_merge;
-
-		my $fix_mergee = sub {
-			my $mergee = shift;
-			return $merge_ref_of_mergee_number{ $mergee } // $mergee;
-		};
-
-		push @merges, Cath::Gemma::Tree::Merge->new(
-			mergee_a => $fix_mergee->( $merge->mergee_a() ),
-			mergee_b => $fix_mergee->( $merge->mergee_b() ),
-			score    => $merge->score // 'inf',
-		);
-		$merge_ref_of_mergee_number{ $nodename } = $merges[ -1 ];
-	};
-
-	return __PACKAGE__->new(
-		merges => \@merges,
-	);
-}
-
-=head2 read_from_tracefile
-
-TODOCUMENT
-
-=cut
-
-sub read_from_tracefile {
-	state $check = compile( ClassName, Path );
-	my ( $class, $input_path ) = $check->( @ARG );
-
-	my $data = $input_path->slurp();
-
-	my @merges;
-	my @lines = split( /\n/, $data );
-	foreach my $line ( @lines ) {
-		my @line_parts = split( /\s+/, $line );
-		if ( scalar( @line_parts ) != 4 ) {
-			confess "Cannot parse line \"$line\" from tracefile $input_path";
-		}
-		my ( $mergee_a, $mergee_b, $merged, $score ) = @line_parts;
-
-		push @merges, [
-			$merged,
-			Cath::Gemma::Tree::Merge->new(
-				mergee_a => $mergee_a,
-				mergee_b => $mergee_b,
-				score    => $score,
-			),
-		];
-	};
-
-	return __PACKAGE__->build_from_nodenames_and_merges( \@merges );
-}
 
 =head2 starting_clusters
 
@@ -664,6 +611,14 @@ sub archive_in_dir {
 			or confess "Unable to make results archive directory \"$output_dir\" : $OS_ERROR";
 	}
 
+	my $merge_node_alignments_subdir       = $output_dir->child( 'merge_node_alignments'       );
+	my $starting_cluster_alignments_subdir = $output_dir->child( 'starting_cluster_alignments' );
+
+	foreach my $subdir ( $merge_node_alignments_subdir, $starting_cluster_alignments_subdir ) {
+		$subdir->mkpath()
+			or confess 'Unable to make subdirectory ' . $subdir . " for archiving the tree's alignments in";
+	}
+
 	$self->write_to_newick_file( $output_dir->child( $basename . '.newick' ) );
 	$self->write_to_tracefile  ( $output_dir->child( $basename . '.trace'  ) );
 
@@ -671,18 +626,18 @@ sub archive_in_dir {
 		my $starting_cluster  = $ARG;
 		[
 			$aln_dir->child( alignment_filebasename_of_starting_clusters( [ $starting_cluster ] ) ),
-			$output_dir->child( $starting_cluster . alignment_profile_suffix() )
+			$starting_cluster_alignments_subdir->child( $starting_cluster . alignment_suffix() )
 		];
 	} @{ $self->starting_clusters() };
 
 
 	$self->_perform_action_on_trace_style_list( sub {
-		state $check = compile( Str, Str, Int, CathGemmaTreeMerge );
+		state $check = compile( Str, Str, Str, CathGemmaTreeMerge );
 		my ( $mergee_a_id, $mergee_b_id, $new_id, $merge ) = $check->( @ARG );
 
 		push @src_dest_aln_file_pairs, [
 			$aln_dir->child( alignment_filebasename_of_starting_clusters( $merge->starting_nodes( $clusts_ordering ) ) ),
-			$output_dir->child( $new_id . alignment_profile_suffix() )
+			$merge_node_alignments_subdir->child( $new_id . alignment_suffix() )
 		];
 	} );
 
@@ -747,6 +702,107 @@ sub rescore_copy {
 	my $copy = bless( dclone( $self ), __PACKAGE__ );
 	$copy->rescore( $gemma_dir_set, $clusts_ordering);
 	return $copy;
+}
+
+=head2 read_from_tracefile
+
+TODOCUMENT
+
+=cut
+
+sub read_from_tracefile {
+	state $check = compile( ClassName, Path );
+	my ( $class, $input_path ) = $check->( @ARG );
+
+	my $data = $input_path->slurp();
+
+	my @merges;
+	my @lines = split( /\n/, $data );
+	foreach my $line ( @lines ) {
+		my @line_parts = split( /\s+/, $line );
+		if ( scalar( @line_parts ) != 4 ) {
+			confess "Cannot parse line \"$line\" from tracefile $input_path";
+		}
+		my ( $mergee_a, $mergee_b, $merged, $score ) = @line_parts;
+
+		push @merges, [
+			$merged,
+			Cath::Gemma::Tree::Merge->new(
+				mergee_a => $mergee_a,
+				mergee_b => $mergee_b,
+				score    => $score,
+			),
+		];
+	};
+
+	return __PACKAGE__->build_from_nodenames_and_merges( \@merges );
+}
+
+=head2 make_merge_list_from_simple_test_data
+
+Make a MergeList from an array-ref of tuples (array-refs), each containing
+two IDs and a score. IDs can refer to previous merges in the array using a
+negative number (eg -1 refers to the previous merge).
+
+=cut
+
+sub make_merge_list_from_simple_test_data {
+	state $check = compile( ClassName, ArrayRef[Tuple[Str,Str,Num]] );
+	my ( $self, $data ) = $check->( @ARG );
+
+	my $merge_list = __PACKAGE__->new();
+
+	my @merges;
+	foreach my $data_entry ( @$data ) {
+		my ( $mergee_a, $mergee_b, $score ) = @$data_entry;
+		foreach my $mergee_ref ( \$mergee_a, \$mergee_b ) {
+			if ( looks_like_number( $$mergee_ref ) && $$mergee_ref < 0 ) {
+				$$mergee_ref = $merges[ $$mergee_ref ];
+			}
+		}
+		push @merges, Cath::Gemma::Tree::Merge->new(
+			mergee_a => $mergee_a,
+			mergee_b => $mergee_b,
+			score    => $score,
+		);
+	}
+
+	return __PACKAGE__->new(
+		merges => \@merges,
+	);
+}
+
+=head2 build_from_nodenames_and_merges
+
+TODOCUMENT
+
+=cut
+
+sub build_from_nodenames_and_merges {
+	state $check = compile( ClassName, ArrayRef[ Tuple[ Str,CathGemmaTreeMerge ] ] );
+	my ( $class, $nodenames_and_merges ) = $check->( @ARG );
+
+	my %merge_ref_of_mergee_number;
+	my @merges;
+	foreach my $nodename_and_merge ( @$nodenames_and_merges ) {
+		my ( $nodename, $merge ) = @$nodename_and_merge;
+
+		my $fix_mergee = sub {
+			my $mergee = shift;
+			return $merge_ref_of_mergee_number{ $mergee } // $mergee;
+		};
+
+		push @merges, Cath::Gemma::Tree::Merge->new(
+			mergee_a => $fix_mergee->( $merge->mergee_a() ),
+			mergee_b => $fix_mergee->( $merge->mergee_b() ),
+			score    => $merge->score // 'inf',
+		);
+		$merge_ref_of_mergee_number{ $nodename } = $merges[ -1 ];
+	};
+
+	return __PACKAGE__->new(
+		merges => \@merges,
+	);
 }
 
 1;

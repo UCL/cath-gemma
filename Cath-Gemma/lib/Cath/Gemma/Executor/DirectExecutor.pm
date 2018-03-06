@@ -31,7 +31,7 @@ with ( 'Cath::Gemma::Executor' );
 
 =head2 exes
 
-TODOCUMENT
+The executables to use for directly executing the WorkBatchList
 
 =cut
 
@@ -43,7 +43,7 @@ has exes => (
 
 =head2 max_num_threads
 
-TODOCUMENT
+The maximum number of threads across which the parts of the work may be spread
 
 =cut
 
@@ -53,34 +53,33 @@ has max_num_threads => (
 	default => sub { 1; },
 );
 
-=head2 execute
+=head2 execute_batch_list
 
-TODOCUMENT
-
-The parameters are checked in Cath::Gemma::Executor
+The parameters are checked in Cath::Gemma::Executor before this code is called
 
 This can ignore the CathGemmaExecSync parameter because this always
-performs jobs synchronously anyway.
+performs jobs synchronously anyway (ie completes them all before returning)
 
 =cut
 
-sub execute {
+sub execute_batch_list {
 	my ( $self, $batches ) = @ARG;
 
+	# For each batch in the WorkBatchList
 	foreach my $batch ( @{ $batches->batches() } ) {
-		my $build_tasks     = $batch->profile_tasks();
-		my $scan_tasks      = $batch->scan_tasks();
-		my $treebuild_tasks = $batch->treebuild_tasks();
+		# Get the individual profile, scan and treebuild tasks
+		my $build_tasks           = $batch->profile_tasks();
+		my $scan_tasks            = $batch->scan_tasks();
+		my $treebuild_tasks       = $batch->treebuild_tasks();
 		my @split_build_tasks     = map { @{ $ARG->split_into_singles() } } @$build_tasks;
 		my @split_scan_tasks      = map { @{ $ARG->split_into_singles() } } @$scan_tasks;
 		my @split_treebuild_tasks = map { @{ $ARG->split_into_singles() } } @$treebuild_tasks;
 
+		# Prepare the executables (if necessary)
 		$self->exes()->prepare_all();
 
-		# use Carp qw/ confess /;
-		# use Data::Dumper;
-		# confess Dumper( [ $build_tasks, \@split_build_tasks ] ) . ' ';
-
+		# Run each of the 'profile build', 'profile scan' and 'tree build' tasks
+		# using up to $self->max_num_threads() threads to get the work done
 		Cath::Gemma::Compute::TaskThreadPooler->run_tasks(
 			'profile build',
 			$self->max_num_threads(),
@@ -111,7 +110,6 @@ sub execute {
 			[ map { [ $ARG ] } @split_treebuild_tasks ]
 		);
 	}
-
 
 }
 

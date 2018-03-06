@@ -10,7 +10,7 @@ use strict;
 use warnings;
 
 # Core
-use Carp              qw/ confess        /;
+use Carp              qw/ cluck confess  /;
 use English           qw/ -no_match_vars /;
 use Exporter          qw/ import         /;
 use File::Copy        qw/ copy move      /;
@@ -94,6 +94,12 @@ sub file_matches {
 		diag "Bootstrapped $bs_summary";
 	}
 
+	if ( ! -e $got_file ) {
+		cluck 'Cannot find got file ' . $got_file;
+		ok( -e $got_file );
+		sleep 10000;
+		return;
+	}
 	eq_or_diff(
 		$got_file->slurp(),
 		$expected_file->slurp(),

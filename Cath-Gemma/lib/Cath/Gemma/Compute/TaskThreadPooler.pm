@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::TaskThreadPooler;
 
 =head1 NAME
 
-Cath::Gemma::Compute::TaskThreadPooler - TODOCUMENT
+Cath::Gemma::Compute::TaskThreadPooler - Execute code over an array, potentially using multiple threads
 
 =cut
 
@@ -16,39 +16,33 @@ use v5.10;
 
 # Non-core (local)
 use Log::Log4perl::Tiny qw/ :easy                    /;
-# use Thread::Pool::Simple;
+use Parallel::Iterator  qw/ iterate                  /;
 use Type::Params        qw/ compile Invocant         /;
 use Types::Standard     qw/ ArrayRef CodeRef Int Str /;
 
 =head2 run_tasks
 
-TODOCUMENT
+Execute the specified CodeRef for each of the elements in the specified array of data.
+Use up to the specified number of threads to parallelise this work.
 
 =cut
 
 sub run_tasks {
 	state $check = compile( Invocant, Str, Int, CodeRef, ArrayRef[ArrayRef] );
 	my ( $proto, $name, $num_threads, $the_code, $data ) = $check->( @ARG );
+	my $iter = iterate(
+		{
+			workers => $num_threads,
+		},
+		sub {
+			my ( $id, $task_num ) = @ARG;
+			$the_code->( @{ $data->[ $task_num ] } );
+		},
+		[ 0 .. $#$data ]
+	);
 
-	my @task_nums = ( 0 .. $#$data );
-	my %unfinished_task_nums = map { ( $ARG, 1 ); } @task_nums;
-
-	my $do_task_of_num = sub {
-		my $task_num = shift;
-		$the_code->( @{ $data->[ $task_num ] } );
-		delete $unfinished_task_nums{ $task_num };
-	};
-
-	foreach my $task_num ( @task_nums ) {
-		$do_task_of_num->( $task_num );
-	}
-
-	if ( scalar( keys( %unfinished_task_nums ) ) ) {
-		use Data::Dumper;
-		confess "Error in executing $name tasks : " . join( ', ', sort( keys( %unfinished_task_nums ) ) )
-			. " remain unfinished" . Dumper( [ \@task_nums, \%unfinished_task_nums ] ) . ' ';
-	}
-
+	# Wait until all tasks are complete
+	while ( my ( $index, $value ) = $iter->() ) {}
 }
 
 1;

@@ -87,8 +87,9 @@ sub _compass_scan_impl {
 	my $query_clusters_id = generic_id_of_clusters( $query_cluster_ids, 1 );
 	my $match_clusters_id = generic_id_of_clusters( $match_cluster_ids, 1 );
 
+	# Note, these commands used to include arguments `-g', '0.50001`, which were inherited from
+	# the DFX code. See the commit that introduces this comment for more info.
 	my @compass_scan_command = (
-		'-g', '0.50001',
 		'-i', $query_prof_lib,
 		'-j', $match_prof_lib,
 		'-n', '0',

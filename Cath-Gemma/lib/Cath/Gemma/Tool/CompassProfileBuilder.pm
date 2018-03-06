@@ -75,7 +75,7 @@ sub build_compass_profile_in_dir {
 	my ( $class, $exes, $aln_file, $prof_dir, $compass_profile_build_type ) = $check->( @ARG );
 
 	my $compass_prof_file = prof_file_of_prof_dir_and_aln_file( $prof_dir, $aln_file, $compass_profile_build_type );
-	my $output_stem       = $aln_file->basename( alignment_profile_suffix() );
+	my $output_stem       = $aln_file->basename( alignment_suffix() );
 
 	if ( -s $compass_prof_file ) {
 		return {
@@ -98,10 +98,11 @@ sub build_compass_profile_in_dir {
 				my $tmp_list_file = Path::Tiny->tempfile( DIR => $exes->tmp_dir(), TEMPLATE => '.mk_compass_db.list.XXXXXXXXXXX', SUFFIX => '.txt', CLEANUP => 1 );
 				$tmp_list_file->spew( $aln_file->basename() . "\n" );
 
+				# Note, these commands used to include arguments `-g', '0.50001`, which were inherited from
+				# the DFX code. See the commit that introduces this comment for more info.
 				_run_compass_build(
 					[
 						'' . $exes->mk_compass_db(),
-						'-g', '0.50001',
 						'-i', ''.$tmp_list_file,
 						'-o', ''.$tmp_prof_absfile,
 					],
@@ -117,17 +118,18 @@ sub build_compass_profile_in_dir {
 					or confess "Unable to remove COMPASS profile \"$length_file\" : $OS_ERROR";
 			}
 			else {
-				my $tmp_dummy_aln_file  = Path::Tiny->tempfile( DIR => $exes->tmp_dir(), TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => alignment_profile_suffix(), CLEANUP => 1 );
+				my $tmp_dummy_aln_file  = Path::Tiny->tempfile( DIR => $exes->tmp_dir(), TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => alignment_suffix(), CLEANUP => 1 );
 				my $tmp_dummy_prof_file = Path::Tiny->tempfile( DIR => $exes->tmp_dir(), TEMPLATE => '.compass_dummy.XXXXXXXXXXX', SUFFIX => compass_profile_suffix(),   CLEANUP => 1 );
 				$tmp_dummy_aln_file->spew( ">A\nA\n" );
 
 				my $tmp_dummy_aln_absfile  = $tmp_dummy_aln_file->absolute();
 				my $tmp_dummy_prof_absfile = $tmp_dummy_prof_file->absolute();
 
+				# Note, these commands used to include arguments `-g', '0.50001`, which were inherited from
+				# the DFX code. See the commit that introduces this comment for more info.
 				_run_compass_build(
 					[
 						'' . $exes->compass_build(),
-						'-g', '0.50001',
 						(
 							( $compass_profile_build_type eq 'compass_wp_dummy_1st' )
 							? (

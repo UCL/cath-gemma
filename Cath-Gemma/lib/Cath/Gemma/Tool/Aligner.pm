@@ -53,7 +53,7 @@ sub build_raw_seqs_file {
 
 	my @seq_lengths;
 	foreach my $starting_cluster ( @$starting_clusters ) {
-		my $starting_cluster_file = $starting_cluster_dir->child( $starting_cluster . alignment_profile_suffix() );
+		my $starting_cluster_file = $starting_cluster_dir->child( $starting_cluster . sequences_suffix() );
 		if ( ! -s $starting_cluster_file ) {
 			confess "Cannot find non-empty starting cluster file \"$starting_cluster_file\"";
 		}
@@ -149,7 +149,7 @@ sub make_alignment_file {
 
 				# Use Bio::AlignIO to rewrite the alignment to remove wrapping
 				# because wrapped alignments occasionally cause problems in COMPASS 2.45
-				my $flatten_filename  = Path::Tiny->tempfile( TEMPLATE => '.faa_flatten.XXXXXXXXXXX',
+				my $flatten_filename  = Path::Tiny->tempfile( TEMPLATE => '.aln_flatten.XXXXXXXXXXX',
 				                                              DIR      => $exes->tmp_dir(),
 				                                              SUFFIX   => '.fa',
 				                                              CLEANUP  => 1,

@@ -24,7 +24,7 @@ use v5.10;
 
 our @EXPORT = qw/
 	alignment_filebasename_of_starting_clusters
-	alignment_profile_suffix
+	alignment_suffix
 	batch_into_n
 	cluster_name_spaceship
 	cluster_name_spaceship_sort
@@ -48,8 +48,9 @@ our @EXPORT = qw/
 	run_and_time_filemaking_cmd
 	scan_filebasename_of_cluster_ids
 	scan_filename_of_dir_and_cluster_ids
-	time_seconds_to_sge_string
+	sequences_suffix
 	time_fn
+	time_seconds_to_sge_string
 	unique_by_hashing
 	/;
 
@@ -73,7 +74,11 @@ use Cath::Gemma::Types qw/
 
 =head2 time_fn
 
-TODOCUMENT
+Time the duration of the specified function being called by the specified arguments
+
+The result is a hashref with keys-values:
+	duration => the duration as a Time::Seconds object
+	result   => the return value from the function call
 
 =cut
 
@@ -91,7 +96,11 @@ sub time_fn {
 
 =head2 run_and_time_filemaking_cmd
 
-TODOCUMENT
+Run and time the specified function.
+
+If an out_file is specified, make an atomic version of that file and pass that to the function.
+
+Use the specified name in any error messages
 
 =cut
 
@@ -103,14 +112,8 @@ sub run_and_time_filemaking_cmd {
 		sub {
 
 			if ( defined( $out_file ) ) {
-				# warn "Checking for output file \"$out_file\"";
 				if ( -s "$out_file" ) {
-					# warn "Returning...";
 					return { out_filename => $out_file };
-				}
-
-				if ( "$out_file" eq 'temporary_example_data/output/1.10.150.120/n0de_9e4d22ff9a44d049cefaa240aae7e01d.l1st_9557d2b7962844e9ccaf3c8f2e8d6ab7.scan' ) {
-					sleep 1000;
 				}
 
 				if ( -e $out_file ) {
@@ -132,7 +135,7 @@ sub run_and_time_filemaking_cmd {
 			my $result = time_fn( $operation, defined( $atomic_file ) ? ( $atomic_file ) : ( ) );
 
 			if ( ! defined( $result ) || ref( $result ) ne 'HASH' || ! defined( $result->{ result } ) || ref( $result->{ result } ) ne 'HASH' ) {
-				confess "ARGH";
+				confess "Invalid result returned by function passed to run_and_time_filemaking_cmd()";
 			}
 
 			if ( defined( $atomic_file ) ) {
@@ -258,7 +261,7 @@ sub combine_starting_cluster_names {
 
 	$clusts_ordering //= 'simple_ordering';
 
-	my $result = ( $clusts_ordering && ( $clusts_ordering eq 'tree_df_ordering' ) )
+	my $result = ( $clusts_ordering eq 'tree_df_ordering' )
 		? [                              @$starting_clusters_a, @$starting_clusters_b   ]
 		: [ cluster_name_spaceship_sort( @$starting_clusters_a, @$starting_clusters_b ) ];
 
@@ -547,14 +550,14 @@ sub default_clusts_ordering {
 	return 'simple_ordering';
 }
 
-=head2 alignment_profile_suffix
+=head2 alignment_suffix
 
 Return the filename suffix to use for alignment files
 
 =cut
 
-sub alignment_profile_suffix {
-	return '.faa';
+sub alignment_suffix {
+	return '.aln';
 }
 
 =head2 alignment_filebasename_of_starting_clusters
@@ -565,7 +568,7 @@ Get the basename of the file in which the alignment should be stored for the spe
 
 sub alignment_filebasename_of_starting_clusters {
 	my $starting_clusters = shift;
-	return id_of_clusters( $starting_clusters ) . alignment_profile_suffix();
+	return id_of_clusters( $starting_clusters ) . alignment_suffix();
 }
 
 =head2 prof_file_of_prof_dir_and_aln_file
@@ -581,7 +584,7 @@ sub prof_file_of_prof_dir_and_aln_file {
 
 	return prof_file_of_prof_dir_and_cluster_id(
 		$prof_dir,
-		$aln_file->basename( alignment_profile_suffix() ),
+		$aln_file->basename( alignment_suffix() ),
 		$compass_profile_build_type,
 	);
 }
@@ -645,7 +648,15 @@ sub scan_filename_of_dir_and_cluster_ids {
 	return $dir->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type ) );
 }
 
+=head2 sequences_suffix
 
+Return the filename suffix to use for files containing unaligned sequences
+
+=cut
+
+sub sequences_suffix {
+	return '.faa';
+}
 
 =head2 time_seconds_to_sge_string
 

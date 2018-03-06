@@ -35,23 +35,23 @@ if you don't export anything, such as for a purely object-oriented module.
 
 =head1 SUBROUTINES/METHODS
 
-=head2 function1
-
-TODOCUMENT
-
-=cut
-
-sub function1 {
-}
-
-=head2 function2
-
-TODOCUMENT
-
-=cut
-
-sub function2 {
-}
+# =head2 function1
+#
+# TODOCUMENT
+#
+# =cut
+#
+# sub function1 {
+# }
+#
+# =head2 function2
+#
+# TODOCUMENT
+#
+# =cut
+#
+# sub function2 {
+# }
 
 =head1 AUTHOR
 

@@ -28,6 +28,7 @@ WriteMakefile(
         'MooX::HandlesVia'        => 0,
         'MooX::StrictConstructor' => 0,
         'Object::Util'            => 0,
+        'Parallel::Iterator'      => 0,
         'Path::Tiny'              => 0,
         'Role::Singleton'         => 0,
         'Switch'                  => 0,

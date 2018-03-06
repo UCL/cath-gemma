@@ -64,7 +64,7 @@ sub cmp_compass_profile_type_against_file {
 
 my $test_base_dir          = path( $FindBin::Bin . '/data' )->realpath();
 my $compass_prof_types_dir = $test_base_dir->child( 'compass_profile_types' );
-my $alignment_file         = $compass_prof_types_dir->child( '1.10.150.120__1767.faa' );
+my $alignment_file         = $compass_prof_types_dir->child( '1.10.150.120__1767.aln' );
 
 SKIP: {
 	# Skip this because compass_wp_dummy_1st can give different results when run identically on different machines. Eg:

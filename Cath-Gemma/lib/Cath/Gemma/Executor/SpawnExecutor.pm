@@ -2,7 +2,9 @@ package Cath::Gemma::Executor::SpawnExecutor;
 
 =head1 NAME
 
-Cath::Gemma::Executor::SpawnExecutor - Execute a Cath::Gemma::Compute::WorkBatchList in HPC batch scripts using an SpawnRunner
+Cath::Gemma::Executor::SpawnExecutor - Execute a Cath::Gemma::Compute::WorkBatchList by spawning another Perl process via a shell script
+
+Depending on the SpawnRunner, the spawning may involve executing the batch script locally or submitting it to an SGE cluster
 
 =cut
 
@@ -112,17 +114,17 @@ sub _build__runner {
 	confess 'Could not recognise CathGemmaSpawnMode value ' . $self->hpc_mode();
 }
 
-=head2 execute
+=head2 execute_batch_list
 
 TODOCUMENT
 
 =cut
 
-sub execute {
+sub execute_batch_list {
 	my ( $self, $batches, $exec_sync ) = @ARG;
 
 	# use Carp qw/ cluck /;
-	# cluck "\n\n\n****** In SpawnExecutor::execute";
+	# cluck "\n\n\n****** In SpawnExecutor::execute_batch_list";
 
 	my $submit_script = path( "$FindBin::Bin/../script/sge_submit_script.bash" )->realpath;
 
@@ -145,7 +147,7 @@ sub execute {
 
 	my @job_dependencies;
 
-	# warn "****** In SpawnExecutor::execute(), about to loop over deps for batches numbering " . $batches->num_batches();
+	# warn "****** In SpawnExecutor::execute_batch_list(), about to loop over deps for batches numbering " . $batches->num_batches();
 	my $grouped_dependencies = $batches->get_grouped_dependencies();
 
 	# use Data::Dumper;
@@ -153,15 +155,15 @@ sub execute {
 
 	foreach my $dependencies_group ( @$grouped_dependencies ) {
 		my ( $batch_indices, $dependencies ) = @$dependencies_group;
-		# warn "****** In SpawnExecutor::execute(), in loop over deps";
+		# warn "****** In SpawnExecutor::execute_batch_list(), in loop over deps";
 
 		my $group_batches          = [ @{ $batches->batches() }[ @$batch_indices ] ];
 
-		# TODONOW Consider moving this to Executor::execute() and have that just return if nothing to do
+		# TODONOW Consider moving this to Executor::execute_batch_list() and have that just return if nothing to do
 		# Then can remove those checks from TreeBuilder and WindowedTreeBuilder
 		my $max_est_batch_exe_time = Time::Seconds->new( max( map { $ARG->estimate_time_to_execute(); } @$group_batches ) );
 		if ( $max_est_batch_exe_time == Time::Seconds->new( 0 ) ) {
-			WARN 'In Cath::Gemma::Executor::SpawnExecutor::execute(), asked to execute job with estimated execution time of 0s - perhaps client code is unknowingly attempting to do work that has already been done';
+			WARN 'In Cath::Gemma::Executor::SpawnExecutor::execute_batch_list(), asked to execute job with estimated execution time of 0s - perhaps client code is unknowingly attempting to do work that has already been done';
 		}
 
 		my $id                     = $batches->id_of_batch_indices( $batch_indices );
@@ -173,7 +175,7 @@ sub execute {
 			push @batch_files, "$batch_freeze_file";
 		}
 
-		# warn "****** In SpawnExecutor::execute(), considered freeze files";
+		# warn "****** In SpawnExecutor::execute_batch_list(), considered freeze files";
 
 		my $batch_files_file = $job_dir->child( $id . '.' . 'job_batch_files' );
 		$batch_files_file->spew( join( "\n", @batch_files ) . "\n" );

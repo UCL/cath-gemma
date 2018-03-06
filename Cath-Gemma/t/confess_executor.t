@@ -36,8 +36,8 @@ my $test_confess_executor_with_sync_fn = sub {
 	my $executor   = Cath::Gemma::Executor::ConfessExecutor->new();
 
 	dies_ok
-		sub { $executor->execute( $batch_list, $exec_sync ) },
-		'Cath::Gemma::Executor::ConfessExecutor should die on call to execute() with ExecSync:' . $exec_sync;
+		sub { $executor->execute_batch_list( $batch_list, $exec_sync ) },
+		'Cath::Gemma::Executor::ConfessExecutor should die on call to execute_batch_list() with ExecSync:' . $exec_sync;
 };
 
 # Perform a subtest for each CathGemmaExecSync

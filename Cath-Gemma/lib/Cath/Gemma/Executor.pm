@@ -28,34 +28,34 @@ use Cath::Gemma::Types qw/
 	CathGemmaExecSync
 /;
 
-=head2 requires execute
+=head2 requires execute_batch_list
 
-TODOCUMENT
-
-=cut
-
-requires 'execute';
-
-=head2 before execute
-
-TODOCUMENT
-
-TODO: Rename execute to execute_batch_list
+Require that consumers of the Executor role must provide a execute_batch_list()
 
 =cut
 
-before execute => sub {
+requires 'execute_batch_list';
+
+=head2 before execute_batch_list
+
+execute_batch_list() executes the specified WorkBatchList using the specified ExecSync
+
+This code shares the type checks on the input parameters before the concrete Executor's
+execute_batch_list()
+
+=cut
+
+before execute_batch_list => sub {
 	state $check = compile( Object, CathGemmaComputeWorkBatchList, CathGemmaExecSync );
 
 	$check->( @ARG );
-
-	# use Carp qw/ cluck /;
-	# cluck "\n\n\n****** In Executor::execute, num_batches is : " . $ARG[ 1 ]->num_batches();
 };
 
 =head2 execute_batch
 
-TODOCUMENT
+Convenience function to execute a WorkBatch
+
+This just bundles the WorkBatch up in a WorkBatchList and passes it to execute_batch_list().
 
 =cut
 
@@ -63,7 +63,7 @@ sub execute_batch {
 	state $check = compile( Object, CathGemmaComputeWorkBatch, CathGemmaExecSync );
 	my ( $self, $work_batch, $exec_sync ) = $check->( @ARG );
 
-	$self->execute(
+	$self->execute_batch_list(
 		Cath::Gemma::Compute::WorkBatchList->new( batches => [ $work_batch ] ),
 		$exec_sync
 	);

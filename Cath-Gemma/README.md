@@ -13,7 +13,7 @@ Within `lib` :
     │   │   ├── Cath::Gemma::Compute::Task::BuildTreeTask             TODOCUMENT
     │   │   ├── Cath::Gemma::Compute::Task::ProfileBuildTask          TODOCUMENT
     │   │   └── Cath::Gemma::Compute::Task::ProfileScanTask           TODOCUMENT
-    │   ├── Cath::Gemma::Compute::TaskThreadPooler                    TODOCUMENT
+    │   ├── Cath::Gemma::Compute::TaskThreadPooler                    Execute code over an array, potentially using multiple threads
     │   ├── Cath::Gemma::Compute::WorkBatcher                         TODOCUMENT
     │   ├── Cath::Gemma::Compute::WorkBatcherState                    TODOCUMENT
     │   ├── Cath::Gemma::Compute::WorkBatchList                       TODOCUMENT
@@ -26,11 +26,11 @@ Within `lib` :
     │   └── Cath::Gemma::Disk::TreeDirSet                             A bunch of directories, like GemmaDirSet plus a directory for trees
     ├── Cath::Gemma::Executor                                         Execute a Cath::Gemma::Compute::WorkBatchList of batches in some way
     │   ├── Cath::Gemma::Executor::ConfessExecutor                    Confess (ie die with stack-trace) on any attempt to call execute()
-    │   ├── Cath::Gemma::Executor::HpcExecutor                        Execute a Cath::Gemma::Compute::WorkBatchList in HPC batch scripts using an HpcRunner
-    │   ├── Cath::Gemma::Executor::HpcRunner                          Actually run an HPC batch script (wrapping script/execute_work_batch.pl) for HpcExecutor in some ways
-    │   │   ├── Cath::Gemma::Executor::HpcRunner::HpcLocalRunner      Run an HPC batch script by simulate an HPC environment locally (useful for devel/debug)
-    │   │   └── Cath::Gemma::Executor::HpcRunner::HpcSgeRunner        Submit an real HPC job to run the the HPC script
-    │   └── Cath::Gemma::Executor::LocalExecutor                      Execute a Cath::Gemma::Compute::WorkBatchList locally (ie directly)
+    │   ├── Cath::Gemma::Executor::DirectExecutor                     Execute a Cath::Gemma::Compute::WorkBatchList locally (ie directly)
+    │   ├── Cath::Gemma::Executor::SpawnExecutor                      Execute a Cath::Gemma::Compute::WorkBatchList by spawning another Perl process via a shell script
+    │   ├── Cath::Gemma::Executor::SpawnHpcSgeRunner                  Submit a real HPC job to run the HPC script
+    │   ├── Cath::Gemma::Executor::SpawnLocalRunner                   Run a batch script by loosely simulating an HPC environment locally (useful for devel/debug)
+    │   └── Cath::Gemma::Executor::SpawnRunner                        Actually run a batch script (wrapping script/execute_work_batch.pl) for SpawnExecutor in some way
     ├── (Scan)
     │   ├── (Impl)
     │   │   └── Cath::Gemma::Scan::Impl::LinkList                     [For use in ScansData] Store the links from one cluster to another
@@ -158,7 +158,7 @@ find script -iname '*.pl' | sort | xargs -I VAR perl -c VAR
 Run the all-modules-compile test on any Perl file changes:
 
 ~~~
-lsp:     aliased to find script lib t -iname "*.pm" -o -iname "*.pl" -o -name "*.t" | sort -u | entr -cs 'prove -l t/all_use_ok.t |& head -n 30'
+find script lib t -iname "*.pm" -o -iname "*.pl" -o -name "*.t" | sort -u | entr -cs 'prove -l t/all_use_ok.t |& head -n 30'
 ~~~
 
 To check all modules compile:
@@ -187,6 +187,7 @@ Ensure the Devel::Cover package is installed (which can be done in Ubuntu with p
 ~~~
 rsync -av --exclude 'other_stuff' ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/
 cd /tmp/Cath-Gemma/
+perl Makefile.PL
 \make
 cover -test +ignore ^extlib/
 ~~~
@@ -196,10 +197,14 @@ cover -test +ignore ^extlib/
 It can be useful to specify a single test. One way is:
 
 ~~~
-rsync -av --exclude 'other_stuff' ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/ ; rm -f /tmp/Cath-Gemma/t/*.t ; rsync -av ~/cath-gemma/Cath-Gemma/t/links.t /tmp/Cath-Gemma/t/links.t ; cd /tmp/Cath-Gemma/ ; \make ; cover -test +ignore ^extlib/
+rsync -av --exclude 'other_stuff' ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/ ; rm -f /tmp/Cath-Gemma/t/*.t ; rsync -av ~/cath-gemma/Cath-Gemma/t/links.t /tmp/Cath-Gemma/t/links.t ; cd /tmp/Cath-Gemma/ ; perl Makefile.PL ; \make ; cover -test +ignore ^extlib/
 ~~~
 
 ...though it can probably be done more cleanly with the `cover` command line arguments.
+
+## Issues to be aware of
+
+When using the SpawnLocalRunner, the stdout and stderr don't appear in the correct files until the job is complete.
 
 ## Future
 

@@ -2,7 +2,7 @@ package Cath::Gemma::Executor::SpawnLocalRunner;
 
 =head1 NAME
 
-Cath::Gemma::Executor::SpawnLocalRunner - Run an HPC batch script by simulate an HPC environment locally (useful for devel/debug)
+Cath::Gemma::Executor::SpawnLocalRunner - Run a batch script by loosely simulating an HPC environment locally (useful for devel/debug)
 
 =cut
 
