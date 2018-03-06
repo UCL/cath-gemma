@@ -611,6 +611,14 @@ sub archive_in_dir {
 			or confess "Unable to make results archive directory \"$output_dir\" : $OS_ERROR";
 	}
 
+	my $merge_node_alignments_subdir       = $output_dir->child( 'merge_node_alignments'       );
+	my $starting_cluster_alignments_subdir = $output_dir->child( 'starting_cluster_alignments' );
+
+	foreach my $subdir ( $merge_node_alignments_subdir, $starting_cluster_alignments_subdir ) {
+		$subdir->mkpath()
+			or confess 'Unable to make subdirectory ' . $subdir . " for archiving the tree's alignments in";
+	}
+
 	$self->write_to_newick_file( $output_dir->child( $basename . '.newick' ) );
 	$self->write_to_tracefile  ( $output_dir->child( $basename . '.trace'  ) );
 
@@ -618,7 +626,7 @@ sub archive_in_dir {
 		my $starting_cluster  = $ARG;
 		[
 			$aln_dir->child( alignment_filebasename_of_starting_clusters( [ $starting_cluster ] ) ),
-			$output_dir->child( $starting_cluster . alignment_suffix() )
+			$starting_cluster_alignments_subdir->child( $starting_cluster . alignment_suffix() )
 		];
 	} @{ $self->starting_clusters() };
 
@@ -629,7 +637,7 @@ sub archive_in_dir {
 
 		push @src_dest_aln_file_pairs, [
 			$aln_dir->child( alignment_filebasename_of_starting_clusters( $merge->starting_nodes( $clusts_ordering ) ) ),
-			$output_dir->child( $new_id . alignment_suffix() )
+			$merge_node_alignments_subdir->child( $new_id . alignment_suffix() )
 		];
 	} );
 
