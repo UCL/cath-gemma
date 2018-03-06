@@ -67,12 +67,13 @@ while ( my $row = $superfamily_ids_sth->fetchrow_hashref ) {
 	push @superfamily_ids, $row->{ SUPERFAMILY };
 }
 
+# NOTE [IS: 2018/03/01]
+# the _EXTRA tables contain only the redundant sequences
+# so we need to search both. Ideally we could do this via
+# a UNION, however aa_sequence is stored as CLOB and you
+# can't do a UNION on CLOBs (apparently)   
 
-# Loop over the superfamily IDs
-foreach my $superfamily_id ( @superfamily_ids ) {
-	INFO "Getting information from the database for superfamily \"$superfamily_id\"";
-	# Grab the sequences for the superfamily
-	my $sequences_for_superfamily_sql = <<"_SQL";
+my $sequences_extra_for_superfamily_sql = <<"_SQL";
 SELECT
   u.accession                         AS uniprot_acc,
   c.sequence_md5 || '/' || c.resolved AS domain_id,
@@ -85,25 +86,53 @@ INNER JOIN
   $tablespace.UNIPROT_PRIM_ACC        u ON c.sequence_md5 = u.sequence_md5
 WHERE
   c.superfamily = ?
-	AND
-	s.source = 'uniref90'
-	AND 
-	c.independent_evalue < 0.001
+  AND
+  s.source = 'uniref90'
+  AND
+  c.independent_evalue < 0.001
 _SQL
-	my $sequences_for_superfamily_sth = $dbh->prepare( $sequences_for_superfamily_sql )
+
+my $sequences_extra_for_superfamily_sth = $dbh->prepare( $sequences_extra_for_superfamily_sql )
 		or die "! Error: failed to prepare statement: " . $dbh->err;
+
+my $sequences_for_superfamily_sql = <<"_SQL";
+SELECT
+  u.accession                         AS uniprot_acc,
+  c.sequence_md5 || '/' || c.resolved AS domain_id,
+  s.aa_sequence                       AS sequence
+FROM
+  $tablespace.CATH_DOMAIN_PREDICTIONS c
+INNER JOIN
+  $tablespace.SEQUENCES               s ON c.sequence_md5 = s.sequence_md5
+INNER JOIN
+  $tablespace.UNIPROT_PRIM_ACC        u ON c.sequence_md5 = u.sequence_md5
+WHERE
+  c.superfamily = ?
+  AND
+  c.independent_evalue < 0.001
+_SQL
+
+my $sequences_for_superfamily_sth = $dbh->prepare( $sequences_for_superfamily_sql )
+		or die "! Error: failed to prepare statement: " . $dbh->err;
+
+# Loop over the superfamily IDs
+foreach my $superfamily_id ( @superfamily_ids ) {
+	INFO "Getting information from the database for superfamily \"$superfamily_id\"";
+	# Grab the sequences for the superfamily
+	
+	my @results;
+
 	$sequences_for_superfamily_sth->execute( $superfamily_id )
 		or die "! Error: failed to execute statement: " . $sequences_for_superfamily_sth->err;
-	my @results;
 	while ( my $row = $sequences_for_superfamily_sth->fetchrow_hashref() ) {
-		my $domain_id = $row->{ DOMAIN_ID };
-		$domain_id =~ s/,/_/g; # / Convert commas to underscores
-		push @results, [
-			$row->{ UNIPROT_ACC },
-			$domain_id,
-			$row->{ SEQUENCE    },
-		];
+		push @results, get_result_from_row( $row );
 	}
+
+  $sequences_extra_for_superfamily_sth->execute( $superfamily_id )
+    or die "! Error: failed to execute statement: " . $sequences_extra_for_superfamily_sth->err;
+  while ( my $row = $sequences_extra_for_superfamily_sth->fetchrow_hashref() ) {
+    push @results, get_result_from_row( $row );
+  }
 
 	# Write the results to a file
 	path( $superfamily_id . $suffix )->spew(
@@ -116,3 +145,17 @@ _SQL
 	);
 
 }
+
+sub get_result_from_row {
+	my $row = shift;
+	
+  my $domain_id = $row->{ DOMAIN_ID };
+  $domain_id =~ s/,/_/g; # / Convert commas to underscores
+  
+	return [
+      $row->{ UNIPROT_ACC },
+      $domain_id,
+      $row->{ SEQUENCE    },
+  ];
+}
+
