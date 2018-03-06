@@ -644,7 +644,7 @@ sub archive_in_dir {
 	foreach my $src_dest_aln_file_pair ( @src_dest_aln_file_pairs ) {
 		my ( $source_aln_file, $dest_aln_file ) = @$src_dest_aln_file_pair;
 		if ( ! -s $source_aln_file ) {
-			confess "Argh";
+			confess "Unable to find non-empty source alignment file $source_aln_file to copy to destination $dest_aln_file";
 		}
 
 		$source_aln_file->copy( $dest_aln_file )
