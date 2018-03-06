@@ -117,14 +117,18 @@ sub run_and_time_filemaking_cmd {
 				}
 
 				if ( -e $out_file ) {
-					$out_file->remove()
-						or confess "Unable to remove $name output file \"$out_file\" : $OS_ERROR";
+					my $remove_return = $out_file->remove();
+					if ( ! $remove_return && -e $out_file ) {
+						confess "Unable to remove $name output file \"$out_file\" : $OS_ERROR";
+					}
 				}
 
 				my $out_dir = $out_file->parent();
 				if ( ! -d $out_dir ) {
-					$out_dir->mkpath()
-						or confess "Unable to make $name output directory \"$out_dir\" : $OS_ERROR";
+					my $mkpath_return = $out_dir->mkpath();
+					if ( $mkpath_return == 0 && ! -d $out_dir ) {
+						confess "Unable to make $name output directory \"$out_dir\" : $OS_ERROR";
+					}
 				}
 			}
 
