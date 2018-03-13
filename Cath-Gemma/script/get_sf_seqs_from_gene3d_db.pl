@@ -7,6 +7,7 @@ use warnings;
 use Carp    qw/ confess        /;
 use English qw/ -no_match_vars /;
 use FindBin;
+use Getopt::Long;
 
 # Find non-core external lib directory using FindBin
 use lib "$FindBin::Bin/../extlib/lib/perl5";
@@ -23,13 +24,46 @@ my $user       = "orengoreader";
 my $pass       = "orengoreader";
 my $tablespace = 'gene3d_16';
 
+my $cath_node_id;
+my $suffix = ".$tablespace.uniprot_accs__ids__seqs";
+my $use_full_sequence = 0;
+
+my $USAGE = <<"_USAGE";
+
+$PROGRAM_NAME --cath=[<node_id>|ALL] [--suffix=<string>] [--full_sequence]
+
+Queries the Gene3D database and writes sequences to file (one file per CATH
+superfamily).
+
+  --cath       <node_id>   Specify the root cath node (eg. '1.10' or 'ALL')
+
+  --suffix     <string>    Specify the suffix for output files
+                           (default: '$suffix')
+
+  --tablespace <string>    Gene3D tablespace to use for queries
+                           (default: '$tablespace')
+
+  --full_sequence          Output the full UniProtKB sequence (rather than just
+                           the CATH domain sequence)
+
+_USAGE
+
+die $USAGE unless @ARGV;
+
+GetOptions(
+	'cath|c=s' => \$cath_node_id,
+	'suffix|s=s' => \$suffix,
+	'full_sequence|f' => \$use_full_sequence,
+	'tablespace|t=s' => \$tablespace,
+);
+
 # Grab command line options
-if ( scalar( @ARGV ) > 2 ) {
-	die "usage: $PROGRAM_NAME <cath_node_id> <file_suffix>\n(writes output files, one per superfamily, in current directory)\n"
-}
-my ( $cath_node_id, $suffix ) = @ARGV;
-$cath_node_id //= '';
-$suffix       //= '.gene3d_16.uniprot_accs__ids__seqs';
+die $USAGE if scalar( @ARGV ) > 0;
+
+$cath_node_id = $cath_node_id eq 'ALL' ? '' : $cath_node_id;
+
+die "! Error: string '$tablespace' does not look like a valid tablespace"
+	unless $tablespace =~ /^[a-zA-Z0-9_]+$/;
 
 # Check the CATH node is valid and convert it into a suitable 'LIKE' string
 if ( $cath_node_id !~ /^(\d+(\.\d+){0,3})?$/ ) {
@@ -37,7 +71,7 @@ if ( $cath_node_id !~ /^(\d+(\.\d+){0,3})?$/ ) {
 }
 my $cath_node_id_like_str =
 	$cath_node_id
-	 . ( ( $cath_node_id =~ /^\d+(\.\d+){0,2}$/ ) ? '.' : '' )
+	 . ( split( /\./, $cath_node_id ) < 4 ? '.' : '' )
 	 . '%';
 
 # Connect to the database
@@ -71,7 +105,7 @@ while ( my $row = $superfamily_ids_sth->fetchrow_hashref ) {
 # the _EXTRA tables contain only the redundant sequences
 # so we need to search both. Ideally we could do this via
 # a UNION, however aa_sequence is stored as CLOB and you
-# can't do a UNION on CLOBs (apparently)   
+# can't do a UNION on CLOBs (apparently)
 
 my $sequences_extra_for_superfamily_sql = <<"_SQL";
 SELECT
@@ -119,7 +153,7 @@ my $sequences_for_superfamily_sth = $dbh->prepare( $sequences_for_superfamily_sq
 foreach my $superfamily_id ( @superfamily_ids ) {
 	INFO "Getting information from the database for superfamily \"$superfamily_id\"";
 	# Grab the sequences for the superfamily
-	
+
 	my @results;
 
 	$sequences_for_superfamily_sth->execute( $superfamily_id )
@@ -148,14 +182,36 @@ foreach my $superfamily_id ( @superfamily_ids ) {
 
 sub get_result_from_row {
 	my $row = shift;
-	
+
   my $domain_id = $row->{ DOMAIN_ID };
   $domain_id =~ s/,/_/g; # / Convert commas to underscores
-  
+
+	$domain_id =~ m{/([0-9\-_]+)$}g
+		or die "! Error: failed to parse segment information from domain id '$domain_id'";
+
+	my $segment_info = $1;
+	my @segments = map {
+			my ($a, $z) = split(/\-/, $_);
+			{ start => $a, end => $z, length => $z - $a + 1 };
+		}
+		split(/_/, $segment_info);
+
+	my $full_sequence = $row->{ SEQUENCE };
+	my $domain_sequence = '';
+	my $domain_length = 0;
+	map { $domain_length += $_->{length} } @segments;
+
+	for my $seg ( @segments ) {
+		$domain_sequence .= substr( $full_sequence, $seg->{start} - 1, $seg->{length} );
+	}
+
+	if ( $domain_length != length( $domain_sequence ) ) {
+		die "! Error: expected domain length $domain_length from segment info '$segment_info', actually got " . length($domain_sequence) . " (seq: $domain_sequence)";
+	}
+
 	return [
       $row->{ UNIPROT_ACC },
       $domain_id,
-      $row->{ SEQUENCE    },
+      $use_full_sequence ? $full_sequence : $domain_sequence,
   ];
 }
-
