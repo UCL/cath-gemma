@@ -1,6 +1,7 @@
 #!/bin/bash
 
-ALLOW_CACHE=false
+# warning - if changed to false then all files will be deleted
+ALLOW_CACHE=true
 
 if [ "$#" -ne 3 ];
 then
