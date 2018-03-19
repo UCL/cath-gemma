@@ -112,12 +112,12 @@ sub test_build_profile {
 	if ( ! $should_die ) {
 		file_matches(
 			$prof_dir                                ->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.mk_compass_db.prof' ),
-			test_superfamily_aln_dir ( $superfamily )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.mk_compass_db.prof' ),
+			test_superfamily_prof_dir( $superfamily )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.mk_compass_db.prof' ),
 			'Built profile file matches expected'
 		);
 		file_matches(
 			$aln_dir                                 ->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.aln'                ),
-			test_superfamily_prof_dir( $superfamily )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.aln'                ),
+			test_superfamily_aln_dir ( $superfamily )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.aln'                ),
 			'Built alignment file matches expected'
 		);
 	}
