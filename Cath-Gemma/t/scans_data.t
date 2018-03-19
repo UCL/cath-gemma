@@ -51,7 +51,7 @@ subtest 'example_1.20.5.200' => sub {
 	my $id_and_score_b = $scans_data->ids_and_score_of_lowest_score_result();
 	is( $id_and_score_b->[ 0 ], '3',        'Lowest score in data involves starting cluster 3' );
 	is( $id_and_score_b->[ 1 ], '4',        'Lowest score in data involves starting cluster 4' );
-	is( $id_and_score_b->[ 2 ], '5.19e-09', 'Lowest score in data has score 5.19e-09'          );
+	is( $id_and_score_b->[ 2 ], '1.44e-09', 'Lowest score in data has score 5.19e-09'          );
 };
 
 subtest 'toy_data' => sub {
