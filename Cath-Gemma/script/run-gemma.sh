@@ -117,10 +117,10 @@ chuckle)
 	# set data environment variables
 
 	# ssh bchuckle.cs.ucl.ac.uk "$( cat <<'EOT'
-	print_data "Run the following commands on bchuckle..."
+	print_date "Run the following commands on bchuckle..."
 	echo qrsh -verbose
 	echo export CHUCKLE_DATA_ROOT=/cluster/project8/mg_assembly/gemma_data
-	echo cd ~/Cath-Gemma
+	echo cd /home/`whoami`/Cath-Gemma
 	echo script/prepare_research_data.pl --projects-list-file ${CHUCKLE_DATA_ROOT}/projects.txt --output-root-dir ${CHUCKLE_DATA_ROOT}
 # EOT
 # )"
