@@ -14,7 +14,7 @@ WriteMakefile(
     PL_FILES            => {},
     PREREQ_PM => {
         'Array::Utils'            => 0,
-        'Bio::AlignIO'            => 0,
+        'Bio::SeqIO'              => 0,
         'Capture::Tiny'           => 0,
         'Cwd::Guard'              => 0,
         'File::AtomicWrite'       => 0,
