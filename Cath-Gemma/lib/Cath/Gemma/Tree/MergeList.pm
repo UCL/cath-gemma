@@ -695,20 +695,20 @@ sub geometric_mean_score {
 # 	# my ( $self ) = $check->( @ARG );
 # }
 
-=head2 rescore_copy
+# =head2 rescore_copy
 
-TODOCUMENT
+# TODOCUMENT
 
-=cut
+# =cut
 
-sub rescore_copy {
-	state $check = compile( Object, CathGemmaDiskGemmaDirSet, CathGemmaNodeOrdering );
-	my ( $self, $gemma_dir_set, $clusts_ordering ) = $check->( @ARG );
+# sub rescore_copy {
+# 	state $check = compile( Object, CathGemmaDiskGemmaDirSet, CathGemmaNodeOrdering );
+# 	my ( $self, $gemma_dir_set, $clusts_ordering ) = $check->( @ARG );
 
-	my $copy = bless( dclone( $self ), __PACKAGE__ );
-	$copy->rescore( $gemma_dir_set, $clusts_ordering);
-	return $copy;
-}
+# 	my $copy = bless( dclone( $self ), __PACKAGE__ );
+# 	$copy->rescore( $gemma_dir_set, $clusts_ordering);
+# 	return $copy;
+# }
 
 =head2 read_from_tracefile
 
