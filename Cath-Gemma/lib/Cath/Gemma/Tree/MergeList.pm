@@ -416,6 +416,8 @@ sub merge_cluster_lists {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
+	$clusts_ordering //= default_clusts_ordering();
+
 	return [
 		map
 		{ $ARG->starting_nodes( $clusts_ordering ); }
@@ -537,6 +539,8 @@ sub later_scan_lists {
 	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
 
+	$clusts_ordering //= default_clusts_ordering();
+
 	return [
 		map
 		{ [ [ $ARG->[ 0 ] ], $ARG->[ 1 ] ]; }
@@ -552,8 +556,10 @@ Get all lists of starting clusters association with all the starting-clusters an
 =cut
 
 sub starting_cluster_lists_for_all_alignments {
-	state $check = compile( Object, CathGemmaNodeOrdering );
+	state $check = compile( Object, Optional[CathGemmaNodeOrdering] );
 	my ( $self, $clusts_ordering ) = $check->( @ARG );
+
+	$clusts_ordering //= default_clusts_ordering();
 
 	# Generate lists of starting clusters for:
 	return [
