@@ -48,8 +48,8 @@ Within `lib` :
     │   │   ├── Cath::Gemma::Tree::MergeBundler::RnnMergeBundler      TODOCUMENT
     │   │   ├── Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler   TODOCUMENT
     │   │   └── Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler TODOCUMENT
-    │   ├── Cath::Gemma::Tree::MergeList                              TODOCUMENT
-    │   └── Cath::Gemma::Tree::Merge                                  TODOCUMENT
+    │   ├── Cath::Gemma::Tree::MergeList                              An ordered list of Merges of nodes representing a tree
+    │   └── Cath::Gemma::Tree::Merge                                  The data associated with a single Merge in a MergeList (ie in a tree)
     ├── Cath::Gemma::TreeBuilder                                      TODOCUMENT
     │   ├── Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder         TODOCUMENT
     │   ├── Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder          TODOCUMENT

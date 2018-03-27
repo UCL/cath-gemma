@@ -2,7 +2,9 @@ package Cath::Gemma::Tree::Merge;
 
 =head1 NAME
 
-Cath::Gemma::Tree::Merge - TODOCUMENT
+Cath::Gemma::Tree::Merge - The data associated with a single Merge in a MergeList (ie in a tree)
+
+This may refer to other Merges so may not be very meaningful outside of the context of a MergeList
 
 =cut
 
@@ -33,14 +35,18 @@ use Cath::Gemma::Util;
 
 =head2 mergee_a
 
-TODOCUMENT
+The first item in this Merge
+
+This may either be the ID of a starting cluster or a reference to another Merge node
 
 =cut
 
 
 =head2 mergee_b
 
-TODOCUMENT
+The second item in this Merge
+
+This may either be the ID of a starting cluster or a reference to another Merge node
 
 =cut
 
@@ -52,7 +58,9 @@ has [ qw/ mergee_a mergee_b / ] => (
 
 =head2 score
 
-TODOCUMENT
+The score associated with this merge
+
+This will typically be of the form of an evalue (ie ≥ 0; smaller is better)
 
 =cut
 
@@ -63,7 +71,7 @@ has score => (
 
 =head2 score_with_lower_bound
 
-TODOCUMENT
+Get the score associated with this Merge bounded by the optionally specified lower bound or 1e-300
 
 =cut
 
@@ -76,7 +84,7 @@ sub score_with_lower_bound {
 
 =head2 mergee_a_is_starting_cluster
 
-TODOCUMENT
+Whether the first mergee is a starting cluster (as opposed to a merge node)
 
 =cut
 
@@ -89,7 +97,11 @@ sub mergee_a_is_starting_cluster {
 
 =head2 mergee_a_id
 
-TODOCUMENT
+Return an ID for the first mergee, using the optionally-specified ordering
+to construct the ID if the first mergee is itself a merge node.
+
+If the first mergee is a starting cluster, this is just the starting cluster ID;
+otherwise it's an ID using the optionally-specified ordering.
 
 =cut
 
@@ -106,7 +118,7 @@ sub mergee_a_id {
 
 =head2 mergee_b_is_starting_cluster
 
-TODOCUMENT
+Whether the second mergee is a starting cluster (as opposed to a merge node)
 
 =cut
 
@@ -119,7 +131,11 @@ sub mergee_b_is_starting_cluster {
 
 =head2 mergee_b_id
 
-TODOCUMENT
+Return an ID for the second mergee, using the optionally-specified ordering
+to construct the ID if the second mergee is itself a merge node.
+
+If the second mergee is a starting cluster, this is just the starting cluster ID;
+otherwise it's an ID using the optionally-specified ordering.
 
 =cut
 
@@ -136,7 +152,8 @@ sub mergee_b_id {
 
 =head2 starting_clusters_a
 
-TODOCUMENT
+Return the list of starting clusters involved in the first mergee
+using the optionally-specified ordering
 
 =cut
 
@@ -155,7 +172,8 @@ sub starting_clusters_a {
 
 =head2 starting_clusters_b
 
-TODOCUMENT
+Return the list of starting clusters involved in the second mergee
+using the optionally-specified ordering
 
 =cut
 
@@ -174,7 +192,8 @@ sub starting_clusters_b {
 
 =head2 starting_nodes
 
-TODOCUMENT
+Return the list of starting clusters involved in the merge
+using the optionally-specified ordering
 
 =cut
 
@@ -200,7 +219,7 @@ sub starting_nodes {
 
 =head2 id
 
-TODOCUMENT
+Get the ID for this merge using the optionally-specified ordering
 
 =cut
 

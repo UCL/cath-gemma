@@ -2,7 +2,7 @@ package Cath::Gemma::Tree::MergeList;
 
 =head1 NAME
 
-Cath::Gemma::Tree::MergeList - TODOCUMENT
+Cath::Gemma::Tree::MergeList - An ordered list of Merges of nodes representing a tree
 
 =cut
 
