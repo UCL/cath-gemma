@@ -578,9 +578,12 @@ Ensure all the alignments associated with the starting-clusters and merge nodes 
 $profile_dir_set specified the source file directories and the destination directory
 $clusts_ordering specifies the ordering of the starting clusters within the alignments to be ensured-present
 
-$exes, $executor and $exec_sync specify the detail of executing any alignment that
+$exes, $executor and $exec_sync specify the detail of generating any alignment that isn't already present
 
 TODO: improve this so that it doesn't execute any batches if all the alignments are already present
+
+Think carefully before calling with an $exec_sync of 'permit_async_launch', which will allow ensure_all_alignments()
+to return before all alignments have been put in place.
 
 =cut
 
@@ -588,7 +591,10 @@ sub ensure_all_alignments {
 	state $check = compile( Object, CathGemmaNodeOrdering, CathGemmaDiskExecutables, CathGemmaExecutor, CathGemmaDiskProfileDirSet, Optional[CathGemmaExecSync] );
 	my ( $self, $clusts_ordering, $exes, $executor, $profile_dir_set, $exec_sync ) = $check->( @ARG );
 
-	$exec_sync //= 'permit_async_launch';
+	$exec_sync //= 'always_wait_for_complete';
+	if ( $exec_sync eq 'permit_async_launch' ) {
+		WARN 'In ensure_all_alignments(), \$exec_sync has been set to \'permit_async_launch\', which means that the alignments may not all be present when ensure_all_alignments() returns';
+	}
 
 	$executor->execute_batch(
 		Cath::Gemma::Compute::WorkBatch->make_from_profile_build_task_ctor_args(
