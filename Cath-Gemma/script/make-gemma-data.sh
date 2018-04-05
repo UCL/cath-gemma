@@ -79,7 +79,7 @@ grep -iv 'Internal Server Error' ${FAMILY_PREFIX}${DB_VERSION}.uniprot_acc_go_te
 
 # build required files
 # build FASTA file, excluding the sequences with unrecognised UniProt accessions
-grep -Fvwf ${FAMILY_PREFIX}${DB_VERSION}.unrecognised_uniprot_accs ${FAMILY_PREFIX}${DB_VERSION}.uniprot_accs__ids__seqs | uniq -f 1 | awk '{print ">" $2 "\n" $3 }' > ${FAMILY_PREFIX}${DB_VERSION}.sequences.fa
+grep -Fvwf ${FAMILY_PREFIX}${DB_VERSION}.unrecognised_uniprot_accs ${FAMILY_PREFIX}${DB_VERSION}.uniprot_accs__ids__seqs | sort -k2,2 | uniq -f 1 | awk '{print ">" $2 "\n" $3 }' > ${FAMILY_PREFIX}${DB_VERSION}.sequences.fa
 
 # join GO annotations by UniProt accession with original file to get GO annotations by id
 sort -k 1b,1 ${FAMILY_PREFIX}${DB_VERSION}.uniprot_acc_go_terms.out > ${FAMILY_PREFIX}${DB_VERSION}.uniprot_acc_go_terms.out.join_sorted
