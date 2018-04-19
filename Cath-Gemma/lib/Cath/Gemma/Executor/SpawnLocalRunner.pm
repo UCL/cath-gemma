@@ -84,6 +84,7 @@ sub run_job_array {
 		};
 		undef $ENV{ SGE_TASK_ID };
 
+		# Write out the stderr and stdout to the correct files
 		$job_stderr_file->spew( $run_stderr );
 		$job_stdout_file->spew( $run_stdout );
 

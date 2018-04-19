@@ -111,11 +111,13 @@ around build_tree => sub {
 		DEBUG 'No steps required.'
 	}
 
+	INFO 'About to load the all-vs-all scans between the starting clusters of the tree';
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_gemma_dir_set(
 		$gemma_dir_set,
 		$compass_profile_build_type,
 		$starting_clusters,
 	);
+	INFO 'Finished loading the all-vs-all scans';
 
 	if ( scalar ( @ARG ) < 6 ) {
 		push @ARG, $compass_profile_build_type;

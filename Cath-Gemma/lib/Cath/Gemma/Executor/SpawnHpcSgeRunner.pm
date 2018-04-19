@@ -175,9 +175,9 @@ sub wait_for_jobs {
 	my %wanted_jobs = map { ( $ARG, 1 ); } @wanted_jobs;
 
 	while ( 1 ) {
-		sleep 60;
-
-		DEBUG "Waiting for submitted jobs : ". join( ', ', @wanted_jobs );
+		my $wait_in_seconds = Time::Seconds->new( 60 );
+		DEBUG "Waiting ' . $wait_in_seconds->seconds() . ' seconds before (re)checking for submitted jobs : ". join( ', ', @wanted_jobs );
+		sleep $wait_in_seconds->seconds();
 
 		DEBUG "Submit host is : " . _get_submit_host();
 
