@@ -31,6 +31,7 @@ use Types::Path::Tiny   qw/ Path                                                
 use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional Str Tuple /;
 
 # Cath::Gemma
+use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Tree::Merge;
 use Cath::Gemma::Types  qw/
 	CathGemmaDiskExecutables
