@@ -1,6 +1,7 @@
 *.newick
 *.tar.gz
 .lwpcookies
+.vstags
 _build*
 blib*
 Build
