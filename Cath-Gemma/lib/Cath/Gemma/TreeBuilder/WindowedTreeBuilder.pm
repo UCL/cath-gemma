@@ -122,6 +122,8 @@ sub build_tree {
 				),
 			];
 
+			DEBUG 'Adding merge between ' . $id1 . ' and ' . $id2;
+
 			if ( $scans_data->count() == 1 ) {
 				last;
 			}
