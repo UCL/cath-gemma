@@ -8,7 +8,7 @@ use English             qw/ -no_match_vars /;
 use FindBin;
 
 # Core (test)
-use Test::More tests => 12;
+use Test::More tests => 10;
 use v5.10;
 
 # Find non-core external lib directory using FindBin
@@ -34,7 +34,6 @@ Log::Log4perl->easy_init( { level => $WARN } );
 
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder'    ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder'     ) }
-BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder' ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder'       ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::PureTreeBuilder'            ) }
 BEGIN { use_ok( 'Cath::Gemma::TreeBuilder::WindowedTreeBuilder'        ) }
@@ -81,7 +80,6 @@ my $test_tree_builder_fn = sub {
 foreach my $tree_builder_name ( qw/
                                    Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder
                                    Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder
-                                   Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder
                                    Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder
                                    Cath::Gemma::TreeBuilder::PureTreeBuilder
                                    Cath::Gemma::TreeBuilder::WindowedTreeBuilder

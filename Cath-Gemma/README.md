@@ -61,7 +61,6 @@ Within `lib` :
     ├── Cath::Gemma::TreeBuilder                                      TODOCUMENT
     │   ├── Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder         TODOCUMENT
     │   ├── Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder          TODOCUMENT
-    │   ├── Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder      TODOCUMENT
     │   ├── Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder            TODOCUMENT
     │   ├── Cath::Gemma::TreeBuilder::PureTreeBuilder                 TODOCUMENT
     │   └── Cath::Gemma::TreeBuilder::WindowedTreeBuilder             TODOCUMENT

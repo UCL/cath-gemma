@@ -32,7 +32,6 @@ use Cath::Gemma::Executor::DirectExecutor;
 use Cath::Gemma::Executor::SpawnExecutor;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
-use Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder;
 use Cath::Gemma::TreeBuilder::PureTreeBuilder;
 use Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
