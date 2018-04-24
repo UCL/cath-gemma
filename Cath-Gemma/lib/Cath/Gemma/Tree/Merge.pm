@@ -60,7 +60,7 @@ has [ qw/ mergee_a mergee_b / ] => (
 
 The score associated with this merge
 
-This will typically be of the form of an evalue (ie ≥ 0; smaller is better)
+This will typically be of the form of an evalue (ie >= 0; smaller is better)
 
 =cut
 

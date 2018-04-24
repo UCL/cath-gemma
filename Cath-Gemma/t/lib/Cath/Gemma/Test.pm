@@ -46,7 +46,9 @@ use Types::Path::Tiny qw/ Path           /;
 use Types::Standard   qw/ Str            /;
 
 # Gemma
+use Cath::Gemma::Disk::GemmaDirSet;
 use Cath::Gemma::Disk::ProfileDirSet;
+use Cath::Gemma::Disk::TreeDirSet;
 
 # Cath Test
 use Cath::Gemma::Test::TestImpl;
