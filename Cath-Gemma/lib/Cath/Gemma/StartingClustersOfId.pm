@@ -2,7 +2,7 @@ package Cath::Gemma::StartingClustersOfId;
 
 =head1 NAME
 
-Cath::Gemma::StartingClustersOfId - TODOCUMENT
+Cath::Gemma::StartingClustersOfId - For each cluster ID, store the IDs of the starting clusters that make it up
 
 =cut
 
@@ -10,8 +10,6 @@ use strict;
 use warnings;
 
 # Core
-# use List::Util         qw/ max maxstr min minstr sum                            /;
-# use POSIX              qw/ log10                                                /;
 use Carp               qw/ confess                                              /;
 use English            qw/ -no_match_vars                                       /;
 use Storable           qw/ dclone                                               /;
@@ -24,8 +22,6 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-# use List::MoreUtils    qw/ first_value                                          /;
-# use Types::Standard    qw/ Num Tuple slurpy                                     /;
 use Type::Params       qw/ compile                                              /;
 use Types::Standard    qw/ ArrayRef ClassName HashRef Object Optional Str Tuple /;
 
@@ -34,8 +30,6 @@ use Cath::Gemma::Types qw/
 	CathGemmaNodeOrdering
 	CathGemmaScanScansData
 /;
-# 	CathGemmaScanScanData
-# /;
 use Cath::Gemma::Util;
 
 =head2 _scoi
@@ -151,17 +145,24 @@ TODOCUMENT
 
 sub merge_remove {
 	state $check = compile( Object, Str, Str, Optional[CathGemmaNodeOrdering] );
-	my ( $self, $id1, $id2, @clusts_ordering ) = $check->( @ARG );
+	my ( $self, $cluster_id1, $cluster_id2, @clusts_ordering ) = $check->( @ARG );
 
-	my $starting_clusters_1 = $self->remove_id( $id1 );
-	my $starting_clusters_2 = $self->remove_id( $id2 );
+	my $starting_clusters_1 = $self->remove_id( $cluster_id1 );
+	my $starting_clusters_2 = $self->remove_id( $cluster_id2 );
 
 	return combine_starting_cluster_names( $starting_clusters_1, $starting_clusters_2, @clusts_ordering );
 }
 
 =head2 merge_pair
 
-TODOCUMENT
+Merge the two clusters with the specified IDs using the optionally specified
+cluster ordering (or default_clusts_ordering()) and return:
+
+[
+	the ID of the new merged cluster,
+	the starting clusters within the new merged cluster,
+	the other IDs that aren't being merged in this operation
+]
 
 =cut
 
@@ -182,7 +183,15 @@ sub merge_pair {
 
 =head2 merge_pairs
 
-TODOCUMENT
+Merge the specified list of pairs of clusters (in order in which they appear) using
+the optionally specified cluster ordering (or default_clusts_ordering()) and an ref-to-array
+of entries corresponding to the merges like:
+
+[
+	the ID of the new merged cluster,
+	the starting clusters within the new merged cluster,
+	the other IDs that aren't being merged in this operation
+]
 
 =cut
 
@@ -200,7 +209,16 @@ sub merge_pairs {
 
 =head2 no_op_merge_pair
 
-TODOCUMENT
+Dry-run version of merge_pair(): perform a *dry-run* merge of the two clusters with
+the specified IDs using the optionally specified cluster ordering (or default_clusts_ordering())
+and return:
+
+[
+	the ID of the new merged cluster,
+	the starting clusters within the new merged cluster,
+	the other IDs that aren't being merged in this operation
+]
+
 
 =cut
 
@@ -211,7 +229,16 @@ sub no_op_merge_pair {
 
 =head2 no_op_merge_pairs
 
-TODOCUMENT
+Dry-run version of merge_pairs(): perform a *dry-run* merge of the specified list of
+pairs of clusters (in order in which they appear) using the optionally specified
+cluster ordering (or default_clusts_ordering()) and an ref-to-array of entries corresponding to
+the merges like:
+
+[
+	the ID of the new merged cluster,
+	the starting clusters within the new merged cluster,
+	the other IDs that aren't being merged in this operation
+]
 
 =cut
 

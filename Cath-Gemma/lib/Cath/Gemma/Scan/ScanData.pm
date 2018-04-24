@@ -2,7 +2,7 @@ package Cath::Gemma::Scan::ScanData;
 
 =head1 NAME
 
-Cath::Gemma::Scan::ScanData - TODOCUMENT
+Cath::Gemma::Scan::ScanData - Represent the raw data from a single scan
 
 =cut
 

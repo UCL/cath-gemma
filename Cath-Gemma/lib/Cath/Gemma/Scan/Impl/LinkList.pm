@@ -2,7 +2,7 @@ package Cath::Gemma::Scan::Impl::LinkList;
 
 =head1 NAME
 
-Cath::Gemma::Scan::Impl::LinkList - [For use in ScansData via LinkMatrix] Store the links from one cluster to another
+Cath::Gemma::Scan::Impl::LinkList - [For use in ScansData via LinkMatrix] Store the links between one cluster and the others
 
 This and Cath::Gemma::Scan::Impl::LinkMatrix should be seen as a closely-bound pair of classes
 that share a bunch of implementation details. It probably doesn't make sense to try to
@@ -71,7 +71,6 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-# use List::MoreUtils qw/ bsearch                                                               /;
 use List::MoreUtils     qw/ bsearch first_index lower_bound                                       /;
 use List::UtilsBy       qw/ max_by min_by                                                         /;
 use Log::Log4perl::Tiny qw/ :easy          /; # *********** TEMPORARY? ***********

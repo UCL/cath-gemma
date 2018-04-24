@@ -2,7 +2,7 @@ package Cath::Gemma::Scan::ScansDataFactory;
 
 =head1 NAME
 
-Cath::Gemma::Scan::ScansDataFactory - TODOCUMENT
+Cath::Gemma::Scan::ScansDataFactory - Functions to load ScansData from files
 
 =cut
 

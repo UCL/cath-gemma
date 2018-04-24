@@ -10,8 +10,6 @@ use strict;
 use warnings;
 
 # Core
-# use Carp                qw/ confess        /;
-# use List::Util          qw/ sum0           /;
 use English             qw/ -no_match_vars  /;
 use v5.10;
 
@@ -20,27 +18,16 @@ use Moo::Role;
 use strictures 1;
 
 # Non-core (local)
-# use Log::Log4perl::Tiny qw/ :easy          /;
-# use Types::Standard     qw/ Int Object Maybe /;
 use Type::Params        qw/ compile         /;
 use Types::Standard     qw/ Object Optional /;
 
 # Cath::Gemma
-# use Cath::Gemma::Disk::TreeDirSet;
 use Cath::Gemma::Compute::WorkBatchList; # ********** ?? TEMPORARY ?? ************
 use Cath::Gemma::Types  qw/
 	CathGemmaCompassProfileType
 	CathGemmaDiskGemmaDirSet
 	CathGemmaScanScansData
 /;
-# 	CathGemmaComputeBatchingPolicy
-# 	CathGemmaComputeWorkBatch
-# 	CathGemmaDiskExecutables
-# 	TimeSeconds
-# /;
-# use Cath::Gemma::Util;
-
-
 
 =head2 requires get_execution_bundle
 

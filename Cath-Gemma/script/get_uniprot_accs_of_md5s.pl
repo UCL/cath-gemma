@@ -31,7 +31,6 @@ use FindBin;
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core (local)
-# use DDP colored => 1;
 use List::MoreUtils     qw/ natatime       /;
 use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;

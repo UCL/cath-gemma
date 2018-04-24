@@ -2,7 +2,7 @@ package Cath::Gemma::Util;
 
 =head1 NAME
 
-Cath::Gemma::Util - TODOCUMENT
+Cath::Gemma::Util - Utility functions used throughout Cath::Gemma
 
 =cut
 
@@ -263,7 +263,7 @@ sub combine_starting_cluster_names {
 	state $check = compile( ArrayRef[Str], ArrayRef[Str], Optional[CathGemmaNodeOrdering] );
 	my ( $starting_clusters_a, $starting_clusters_b, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering //= 'simple_ordering';
+	$clusts_ordering //= default_clusts_ordering();
 
 	my $result = ( $clusts_ordering eq 'tree_df_ordering' )
 		? [                              @$starting_clusters_a, @$starting_clusters_b   ]

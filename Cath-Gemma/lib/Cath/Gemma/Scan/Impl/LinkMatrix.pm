@@ -2,7 +2,18 @@ package Cath::Gemma::Scan::Impl::LinkMatrix;
 
 =head1 NAME
 
-Cath::Gemma::Scan::Impl::LinkMatrix - Store the links between the various clusters
+Cath::Gemma::Scan::Impl::LinkMatrix - [For use in ScansData] Store the matrix of links between clusters
+                                      (with no care for the clusters' composition from other clusters)
+
+=head2 Overview
+
+This stores the matrix of links (eg evalues) between clusters as part of the imp.
+
+This is a reasonably CPU/memory performance sensitive area of code (particularly LinkList)
+
+LinkMatrix contains:
+ * a mapping to/from the ID string used by the outside world and a numeric index used here and in LinkList
+ * an array of LinkLists (corresponding to the links with the clusters with the corresponding indices)
 
 =head2 Relationship to LinkList
 
@@ -11,8 +22,8 @@ that share a bunch of implementation details. It probably doesn't make sense to 
 use or understand either in the absence of the other.
 
 In particular:
- * they share a way of handling indexing clusters such that new clusters are always given new numbers
-   (rather than overwriting old clusters).
+ * they share a way of handling indexing clusters such that a new cluster is given a
+   new number (incrementing from 0), rather than overwriting old clusters.
  * they share a way of being lazy about deleting old clusters: LinkMatrix doesn't get LinkList to eagerly
    update regarding every cluster that gets deleted by a merge; instead, it passes a list of the
    clusters that are still active whenever it queries for the current best result
@@ -24,12 +35,6 @@ This class is used by ScansData, which contains:
  * a `Cath::Gemma::StartingClustersOfId` that handles the groups of starting clusters in each cluster
 
 (In short: ScansData cares what starting clusters each cluster contains; LinkMatrix doesn't)
-
-=head2 Overview
-
-This contains:
- * a mapping to/from the ID string used by the outside world and a numeric index used here and in LinkList
- * an array of LinkLists (corresponding to the links with the clusters with the corresponding indices)
 
 =cut
 

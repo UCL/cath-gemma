@@ -40,13 +40,13 @@ Within `lib` :
     │   ├── Cath::Gemma::Executor::SpawnLocalRunner                   Run a batch script by loosely simulating an HPC environment locally (useful for devel/debug)
     │   └── Cath::Gemma::Executor::SpawnRunner                        Actually run a batch script (wrapping script/execute_work_batch.pl) for SpawnExecutor in some way
     ├── (Scan)                                                           (Represent the data acquired from one or more Scans)
-    │   ├── (Impl)                                                       (******* TODOCUMENT **********)
-    │   │   └── Cath::Gemma::Scan::Impl::LinkList                     [For use in ScansData] Store the links from one cluster to another
-    │   │   └── Cath::Gemma::Scan::Impl::Links                        TODOCUMENT
-    │   ├── Cath::Gemma::Scan::ScanData                               TODOCUMENT
-    │   ├── Cath::Gemma::Scan::ScansDataFactory                       TODOCUMENT
-    │   └── Cath::Gemma::Scan::ScansData                              TODOCUMENT
-    ├── Cath::Gemma::StartingClustersOfId                             TODOCUMENT
+    │   ├── (Impl)                                                       (Store the matrix of links between clusters)
+    │   │   └── Cath::Gemma::Scan::Impl::LinkList                     [For use in ScansData via LinkMatrix] Store the links between one cluster and the others
+    │   │   └── Cath::Gemma::Scan::Impl::LinkMatrix                   [For use in ScansData] Store the matrix of links between clusters
+    │   ├── Cath::Gemma::Scan::ScanData                               Represent the raw data from a single scan
+    │   ├── Cath::Gemma::Scan::ScansDataFactory                       Functions to load ScansData from files
+    │   └── Cath::Gemma::Scan::ScansData                              Store the matrix of links between clusters of starting clusters
+    ├── Cath::Gemma::StartingClustersOfId                             For each cluster ID, store the IDs of the starting clusters that make it up
     ├── (Tool)                                                          (Do the steps involved in the bioinformatics jobs aligning/scanning etc) these )
     │   ├── Cath::Gemma::Tool::Aligner                                Perform an alignment of starting clusters' sequences and save the results in a file
     │   ├── Cath::Gemma::Tool::CompassProfileBuilder                  Build a COMPASS profile file
@@ -66,7 +66,7 @@ Within `lib` :
     │   ├── Cath::Gemma::TreeBuilder::PureTreeBuilder                 TODOCUMENT
     │   └── Cath::Gemma::TreeBuilder::WindowedTreeBuilder             TODOCUMENT
     ├── Cath::Gemma::Types                                            The (Moo-compatible) types used throughout the Cath::Gemma code
-    └── Cath::Gemma::Util                                             TODOCUMENT
+    └── Cath::Gemma::Util                                             Utility functions used throughout Cath::Gemma
 ~~~
 
 ### Overview of Scripts

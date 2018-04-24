@@ -2,7 +2,13 @@ package Cath::Gemma::Scan::ScansData;
 
 =head1 NAME
 
-Cath::Gemma::Scan::ScansData - TODOCUMENT
+Cath::Gemma::Scan::ScansData - Store the matrix of links between clusters of starting clusters
+
+=head2 Overview
+
+This handles:
+ * the matrix of links via LinkMatrix
+ * the starting clusters within each cluster via StartingClustersOfId
 
 =cut
 
@@ -41,48 +47,48 @@ use Cath::Gemma::Types qw/
 /;
 use Cath::Gemma::Util;
 
-=head2 _starting_clusters_of_ids
+=head2 _starting_clusts_of_clust_id
 
-TODOCUMENT
+Store the starting clusters of each cluster
 
 =cut
 
-has _starting_clusters_of_ids => (
+has _starting_clusts_of_clust_id => (
 	is          => 'rwp',
 	isa         => CathGemmaStartingClustersOfId,
-	handles     => [ qw/
-		contains_id
-		count
-		get_starting_clusters_of_id
-		no_op_merge_pair
-		no_op_merge_pairs
-		sorted_ids
-	/ ],
+	handles     => [
+		'contains_id',                 # Whether this contains a cluster with the specified ID
+		'count',                       # The number of clusters
+		'get_starting_clusters_of_id', # Get the list of starting clusters within the cluster with the specified ID
+		'no_op_merge_pair',            # Return the results of performing a dry-run merge (see StartingClustersOfId::no_op_merge_pair() for more info)
+		'no_op_merge_pairs',           # Return the results of performing a dry-run of a list of merges (see StartingClustersOfId::no_op_merge_pair() for more info)
+		'sorted_ids',                  # Get a sorted list of the cluster IDs
+	],
 	default     => sub { Cath::Gemma::StartingClustersOfId->new(); },
 );
 
-=head2 _links_data
+=head2 _links_matrix
 
-TODOCUMENT
+Store the links between the clusters
 
 =cut
 
-has _links_data => (
+has _links_matrix => (
 	is          => 'rwp',
 	isa         => CathGemmaScanImplLinks,
 	default     => sub { Cath::Gemma::Scan::Impl::LinkMatrix->new(); },
-	handles     => [ qw/
-		get_id_and_score_of_lowest_score_of_id
-		get_score_between
-		ids
-		ids_and_score_of_lowest_score_result
-		ids_and_score_of_lowest_score_window
-	/ ],
+	handles     => [
+		'get_id_and_score_of_lowest_score_of_id', # Get the IDs and score of the result with the lowest score *to the cluster with the specified index*
+		'get_score_between',                      # Get the score between the two clusters with the specified IDs
+		'ids',                                    # Get the list of cluster IDs
+		'ids_and_score_of_lowest_score_result',   # TODOCUMENT
+		'ids_and_score_of_lowest_score_window',   # TODOCUMENT
+	],
 );
 
 =head2 add_separate_starting_clusters
 
-TODOCUMENT
+Add the specified clusters as separate (ie non-linked) starting clusters
 
 =cut
 
@@ -90,8 +96,8 @@ sub add_separate_starting_clusters {
 	state $check = compile( Object, ArrayRef[Str] );
 	my ( $self, $ids ) = $check->( @ARG );
 
-	$self->_links_data()->add_separate_clusters( $ids );
-	$self->_starting_clusters_of_ids()->add_separate_starting_clusters( $ids );
+	$self->_links_matrix()->add_separate_clusters( $ids );
+	$self->_starting_clusts_of_clust_id()->add_separate_starting_clusters( $ids );
 	return $self;
 }
 
@@ -105,28 +111,30 @@ sub add_starting_clusters_group_by_id {
 	state $check = compile( Object, ArrayRef[Str], Optional[Str] );
 	my ( $self, $starting_clusters, $id ) = $check->( @ARG );
 
-	$self->_links_data()->add_starting_clusters_group_by_id( $starting_clusters, $id );
-	return $self->_starting_clusters_of_ids()->add_starting_clusters_group_by_id( $starting_clusters, $id );
+	$self->_links_matrix()->add_starting_clusters_group_by_id( $starting_clusters, $id );
+	return $self->_starting_clusts_of_clust_id()->add_starting_clusters_group_by_id( $starting_clusters, $id );
 }
 
 =head2 add_scan_entry
 
-TODOCUMENT
+Add a single scan result (ie a single link)
+
+Pre-condition: both cluster IDs must already be known to this ScansData
 
 =cut
 
 sub add_scan_entry {
 	state $check = compile( Object, Str, Str, Num );
-	my ( $self, $id1, $id2, $score ) = $check->( @ARG );
+	my ( $self, $cluster_id1, $cluster_id2, $score ) = $check->( @ARG );
 
-	foreach my $id ( $id1, $id2 ) {
-		if ( ! defined( $self->contains_id( $id ) ) ) {
+	foreach my $cluster_id ( $cluster_id1, $cluster_id2 ) {
+		if ( ! defined( $self->contains_id( $cluster_id ) ) ) {
 			use Data::Dumper;
-			confess "Cannot add scan_entry for unrecognised ID \"$id\" " . Dumper( $self->_starting_clusters_of_ids() );
+			confess "Cannot add scan_entry for unrecognised ID \"$cluster_id\" " . Dumper( $self->_starting_clusts_of_clust_id() );
 		}
 	}
 
-	$self->_links_data()->add_scan_entry( $id1, $id2, $score );
+	$self->_links_matrix()->add_scan_entry( $cluster_id1, $cluster_id2, $score );
 }
 
 =head2 add_scan_data
@@ -176,15 +184,15 @@ sub merge_pair {
 	my ( $self, $id1, $id2, $score_update_function, @clusts_ordering ) = $check->( @ARG );
 
 	my $merged_starting_clusters = combine_starting_cluster_names(
-		$self->_starting_clusters_of_ids()->remove_id( $id1 ),
-		$self->_starting_clusters_of_ids()->remove_id( $id2 ),
+		$self->_starting_clusts_of_clust_id()->remove_id( $id1 ),
+		$self->_starting_clusts_of_clust_id()->remove_id( $id2 ),
 		@clusts_ordering
 	);
 	my $other_ids = $self->sorted_ids();
-	my $merged_node_id = $self->_starting_clusters_of_ids()->add_starting_clusters_group_by_id(
+	my $merged_node_id = $self->_starting_clusts_of_clust_id()->add_starting_clusters_group_by_id(
 		$merged_starting_clusters
 	);
-	$self->_links_data()->merge_pair(
+	$self->_links_matrix()->merge_pair(
 		$merged_node_id,
 		$id1,
 		$id2,

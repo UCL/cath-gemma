@@ -13,7 +13,6 @@ use Getopt::Long;
 use lib "$FindBin::Bin/../extlib/lib/perl5";
 
 # Non-core
-# use DDP colored => 1;
 use DBI;
 use Log::Log4perl::Tiny qw/ :easy /;
 use Path::Tiny;
