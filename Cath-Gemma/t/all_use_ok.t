@@ -39,7 +39,7 @@ BEGIN{  use_ok(  'Cath::Gemma::Executor::SpawnHpcSgeRunner'               )  }
 BEGIN{  use_ok(  'Cath::Gemma::Executor::SpawnLocalRunner'                )  }
 BEGIN{  use_ok(  'Cath::Gemma::Executor::SpawnRunner'                     )  }
 BEGIN{  use_ok(  'Cath::Gemma::Scan::Impl::LinkList'                      )  }
-BEGIN{  use_ok(  'Cath::Gemma::Scan::Impl::Links'                         )  }
+BEGIN{  use_ok(  'Cath::Gemma::Scan::Impl::LinkMatrix'                    )  }
 BEGIN{  use_ok(  'Cath::Gemma::Scan::ScanData'                            )  }
 BEGIN{  use_ok(  'Cath::Gemma::Scan::ScansData'                           )  }
 BEGIN{  use_ok(  'Cath::Gemma::Scan::ScansDataFactory'                    )  }

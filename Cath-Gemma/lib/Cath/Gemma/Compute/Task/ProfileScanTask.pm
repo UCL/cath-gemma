@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::Task::ProfileScanTask;
 
 =head1 NAME
 
-Cath::Gemma::Compute::Task::ProfileScanTask - TODOCUMENT
+Cath::Gemma::Compute::Task::ProfileScanTask - Define a Cath::Gemma::Compute::Task for scanning a sequence profile
 
 =cut
 

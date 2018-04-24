@@ -81,7 +81,7 @@ class_type CathGemmaDiskProfileDirSet,           { class => "Cath::Gemma::Disk::
 class_type CathGemmaDiskTreeDirSet,              { class => "Cath::Gemma::Disk::TreeDirSet"                };
 
 class_type CathGemmaScanImplLinkList,            { class => "Cath::Gemma::Scan::Impl::LinkList"            };
-class_type CathGemmaScanImplLinks,               { class => "Cath::Gemma::Scan::Impl::Links"               };
+class_type CathGemmaScanImplLinks,               { class => "Cath::Gemma::Scan::Impl::LinkMatrix"          };
 class_type CathGemmaScanScanData,                { class => "Cath::Gemma::Scan::ScanData"                  };
 class_type CathGemmaScanScansData,               { class => "Cath::Gemma::Scan::ScansData"                 };
 class_type CathGemmaStartingClustersOfId         { class => "Cath::Gemma::StartingClustersOfId"            };

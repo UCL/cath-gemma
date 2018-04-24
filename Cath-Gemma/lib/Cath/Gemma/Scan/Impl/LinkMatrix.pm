@@ -1,8 +1,35 @@
-package Cath::Gemma::Scan::Impl::Links;
+package Cath::Gemma::Scan::Impl::LinkMatrix;
 
 =head1 NAME
 
-Cath::Gemma::Scan::Impl::Links - TODOCUMENT
+Cath::Gemma::Scan::Impl::LinkMatrix - Store the links between the various clusters
+
+=head2 Relationship to LinkList
+
+This and Cath::Gemma::Scan::Impl::LinkList should be seen as a closely-bound pair of classes
+that share a bunch of implementation details. It probably doesn't make sense to try to
+use or understand either in the absence of the other.
+
+In particular:
+ * they share a way of handling indexing clusters such that new clusters are always given new numbers
+   (rather than overwriting old clusters).
+ * they share a way of being lazy about deleting old clusters: LinkMatrix doesn't get LinkList to eagerly
+   update regarding every cluster that gets deleted by a merge; instead, it passes a list of the
+   clusters that are still active whenever it queries for the current best result
+
+=head2 Relationship to ScansData
+
+This class is used by ScansData, which contains:
+ * a `Cath::Gemma::Scan::Impl::LinkMatrix` to store the links between clusters, and
+ * a `Cath::Gemma::StartingClustersOfId` that handles the groups of starting clusters in each cluster
+
+(In short: ScansData cares what starting clusters each cluster contains; LinkMatrix doesn't)
+
+=head2 Overview
+
+This contains:
+ * a mapping to/from the ID string used by the outside world and a numeric index used here and in LinkList
+ * an array of LinkLists (corresponding to the links with the clusters with the corresponding indices)
 
 =cut
 
@@ -11,6 +38,7 @@ use warnings;
 
 # Core
 use Carp                qw/ confess                                                                    /;
+use Data::Dumper;
 use English             qw/ -no_match_vars                                                             /;
 use Storable            qw/ dclone                                                                     /;
 use v5.10;
@@ -36,7 +64,10 @@ use Cath::Gemma::Util;
 
 =head2 _id_of_index
 
-TODOCUMENT
+Map from the numeric index that this and LinkList use back to the ID string that the outside world uses
+
+An undef indicates an index that was previously used for an ID that has since been deleted
+(presumably due to a merge operation).
 
 =cut
 
@@ -55,7 +86,7 @@ has _id_of_index => (
 
 =head2 _index_of_id
 
-TODOCUMENT
+Map from the ID string that the outside world uses to the numeric index that this and LinkList use
 
 =cut
 
@@ -76,7 +107,10 @@ has _index_of_id => (
 
 =head2 _links_data
 
-TODOCUMENT
+The links data, implemented as an array of `LinkList`s.
+
+The indices from the ID/index mapping are used here both for the positions of the `LinkList`s in this
+array and for the indices used within the LinkList
 
 =cut
 
@@ -94,7 +128,7 @@ has _links_data => (
 
 =head2 _checked_index_of_id
 
-TODOCUMENT
+Check that the specified ID has a valid index and return it (else confess)
 
 =cut
 
@@ -110,10 +144,11 @@ sub _checked_index_of_id {
 
 =head2 _ensure_index_of_id
 
-TODOCUMENT
+Ensure there is an index associated with the specified ID
+(ie look for one and if one doesn't already exist then add the new index and
+ return its newly assigned ID)
 
 =cut
-
 
 sub _ensure_index_of_id {
 	state $check = compile( Object, Str );
@@ -130,7 +165,7 @@ sub _ensure_index_of_id {
 
 =head2 _active_indices
 
-TODOCUMENT
+The sorted list of active indices
 
 =cut
 
@@ -145,9 +180,97 @@ sub _active_indices {
 	];
 }
 
+=head2 _indices_and_score_of_lowest_score_result
+
+Get the indices and score of the result in the matrix with the lowest score
+
+Returns: [ index1, index2, score ] corresponding to the best result (where index1 and index2 are sorted numerically).
+
+Clients probably want `ids_and_score_of_lowest_score_result` rather than this
+
+=cut
+
+sub _indices_and_score_of_lowest_score_result {
+	state $check = compile(Object);
+	my ($self) = $check->(@ARG);
+
+	# If there are fewer than two entries then log a debug message and return an empty result
+	if ( $self->count() < 2 ) {
+		DEBUG "Cannot find ids_and_score_of_lowest_score_result() in this ScansData because count is " . $self->count();
+		return [];
+	}
+
+	# Return the result with the lowest score
+	# (where undef is compared as 'inf' so it will be treated as worse than all other scores)
+	my $result = min_by {
+		my $result = $ARG;
+		$result->[2] // 'inf';
+	}
+	map {
+		# Get the link from $id with the best score
+		my $index = $ARG;
+		my ( $other_index, $score ) = @{ $self->_get_index_and_score_of_lowest_score_of_index($index) };
+		[ $index, $other_index, $score ];
+	} @{ $self->_active_indices() };
+
+	# bob
+	return [( sort { $a <=> $b } ( $result->[0], $result->[1] ) ),$result->[-1]];
+}
+
+=head2 _get_index_and_score_of_lowest_score_of_index
+
+Get the indices and score of the result with the lowest score
+*to the cluster with the specified index*
+
+Returns: [ index, score ] corresponding to the best result.
+
+Clients probably want `get_id_and_score_of_lowest_score_of_id` or
+`ids_and_score_of_lowest_score_result` rather than this.
+
+=cut
+
+sub _get_index_and_score_of_lowest_score_of_index {
+	state $check = compile( Object, Int );
+	my ( $self, $index ) = $check->(@ARG);
+
+	# Check this is large enough
+	if ( $self->count() < 2 ) {
+		confess 'Cannot get index and score of lowest score of index when there are fewer than two items that are linked ' . Dumper($self) . ' ';
+	}
+
+	# Get *a copy of* the lowest score link from that index
+	# (use a copy so that it can be modified without altering the original data)
+	return dclone($self->_get_links_data($index)->get_idx_and_score_of_lowest_score_of_id( $self->_id_of_index() ));
+}
+
+=head2 _indices_and_score_results_below_eq_cutoff_for_active_index
+
+Get all the (index1, index2, score) results below or equal to the specified cutoff
+that are active according to the specified sorted list of active indices
+
+=cut
+
+sub _indices_and_score_results_below_eq_cutoff_for_active_index {
+	state $check = compile( Object, Num, Int );
+	my ( $self, $cutoff, $active_link_list_idx ) = $check->(@ARG);
+
+	# Check index is active
+	if ( !defined( $self->_get_id_of_index($ARG) ) ) {
+		confess '_indices_and_score_results_below_eq_cutoff_for_active_index() called with inactive index';
+	}
+
+	# For each of the index-and-score results below the specified cutoff in the specified LinkList,
+	# add in the index of the link list and order the two indices
+	return [
+		map {
+			[( sort { $a <=> $b } ( $active_link_list_idx, $ARG->[0] ) ),$ARG->[1],];
+		} @{ $self->_get_links_data($active_link_list_idx)->all_index_and_score_results_below_eq_cutoff($self->_id_of_index(),$cutoff) }
+	];
+}
+
 =head2 get_score_between
 
-TODOCUMENT
+Get the score between the two clusters with the specified IDs
 
 =cut
 
@@ -162,7 +285,7 @@ sub get_score_between {
 
 =head2 sorted_ids
 
-TODOCUMENT
+Get a sorted list of the IDs
 
 =cut
 
@@ -173,13 +296,13 @@ sub sorted_ids {
 	return [ cluster_name_spaceship_sort( $self->ids() ) ];
 }
 
-=head2 add_separate_starting_clusters
+=head2 add_separate_clusters
 
-TODOCUMENT
+Add non-linked clusters for each of the 
 
 =cut
 
-sub add_separate_starting_clusters {
+sub add_separate_clusters {
 	state $check = compile( Object, ArrayRef[Str] );
 	my ( $self, $ids ) = $check->( @ARG );
 
@@ -191,7 +314,7 @@ sub add_separate_starting_clusters {
 
 =head2 add_scan_entry
 
-TODOCUMENT
+Add a single link (ie ID1, ID2 and score) to the matrix
 
 This doesn't check whether a link has already been added between the specified items
 so don't add the same link multiple times
@@ -213,7 +336,7 @@ sub add_scan_entry {
 
 =head2 remove
 
-TODOCUMENT
+Remove the entry with the specified ID
 
 =cut
 
@@ -228,48 +351,9 @@ sub remove {
 	return $self;
 }
 
-=head2 indices_and_score_of_lowest_score_result
-
-TODOCUMENT
-
-Returns: [ index1, index2, score ] for the best result (where index1 and index2 are sorted numerically,
-which gives consistency but probably isn't what you want)
-
-=cut
-
-sub indices_and_score_of_lowest_score_result {
-	state $check = compile( Object );
-	my ( $self ) = $check->( @ARG );
-
-	# If there are fewer than two entries then log a debug message and return an empty result
-	if ( $self->count() < 2 ) {
-		DEBUG "Cannot find ids_and_score_of_lowest_score_result() in this ScansData because count is " . $self->count();
-		return [];
-	}
-
-	# Return the result with the lowest score
-	# (where undef is compared as 'inf' so it will be treated as worse than all other scores)
-	my $result = min_by {
-		my $result = $ARG;
-		$result->[ 2 ] // 'inf';
-	}
-	map {
-		# Get the link from $id with the best score
-		my $index = $ARG;
-		my ( $other_index, $score ) = @{ $self->get_index_and_score_of_lowest_score_of_index( $index ) };
-		[ $index, $other_index, $score ];
-	} @{ $self->_active_indices() };
-
-	# bob
-	return [
-		( sort { $a <=> $b } ( $result->[ 0 ], $result->[ 1 ] ) ),
-		$result->[ -1 ]
-	];
-}
-
 =head2 ids_and_score_of_lowest_score_result
 
-TODOCUMENT
+Get the IDs and score of the pair with the lowest score
 
 Returns: [ id1, id2, score ] for the best result (where id1 and id2 have been ordered with cluster_name_spaceship_sort)
 
@@ -279,7 +363,7 @@ sub ids_and_score_of_lowest_score_result {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	my $result = $self->indices_and_score_of_lowest_score_result();
+	my $result = $self->_indices_and_score_of_lowest_score_result();
 
 	return [
 		cluster_name_spaceship_sort(
@@ -292,7 +376,13 @@ sub ids_and_score_of_lowest_score_result {
 
 =head2 merge_pair
 
-TODOCUMENT
+Create a new node with the specified ID by merging the two clusters with the specified IDs
+and build the new cluster's scores to each of the other clusters by calling the specified
+score_update_function for each other cluster with:
+
+ * the score from the first  cluster to the other cluster
+ * the score from the second cluster to the other cluster
+ * the ID of the other cluster
 
 =cut
 
@@ -345,38 +435,12 @@ sub merge_pair {
 	return $self;
 }
 
-
-=head2 get_index_and_score_of_lowest_score_of_index
-
-TODOCUMENT
-
-=cut
-
-sub get_index_and_score_of_lowest_score_of_index {
-	state $check = compile( Object, Int );
-	my ( $self, $index ) = $check->( @ARG );
-
-	# Check this is large enough
-	if ( $self->count() < 2 ) {
-		use Data::Dumper;
-		confess 'Cannot get index and score of lowest score of index when there are fewer than two items that are linked ' . Dumper( $self ) . ' ';
-	}
-
-	# Get *a copy of* the lowest score link from that index
-	# (use a copy so that it can be modified without altering the original data)
-	return dclone(
-		$self
-			->_get_links_data( $index )
-			->get_idx_and_score_of_lowest_score_of_id( $self->_id_of_index() )
-	);
-}
-
-
 =head2 get_id_and_score_of_lowest_score_of_id
 
-TODOCUMENT
+Get the IDs and score of the result with the lowest score
+*to the cluster with the specified index*
 
-TODONOW: is this used?
+Returns: [ id, score ] corresponding the best result
 
 =cut
 
@@ -386,12 +450,11 @@ sub get_id_and_score_of_lowest_score_of_id {
 
 	# Check this is large enough
 	if ( $self->count() < 2 ) {
-		use Data::Dumper;
 		confess 'Cannot get ID and score of lowest score of ID when there are fewer than two items that are linked ' . Dumper( $self ) . ' ';
 	}
 
 	# Get the index of the id in question and then get (a copy of) the lowest score link from that index
-	my $best_result = $self->get_index_and_score_of_lowest_score_of_index(
+	my $best_result = $self->_get_index_and_score_of_lowest_score_of_index(
 		$self->_get_index_of_id( $id )
 	);
 
@@ -403,44 +466,12 @@ sub get_id_and_score_of_lowest_score_of_id {
 	return $best_result;
 }
 
-=head2 indices_and_score_results_below_eq_cutoff_for_active_index
-
-TODOCUMENT
-
-=cut
-
-sub indices_and_score_results_below_eq_cutoff_for_active_index {
-	state $check = compile( Object, Num, Int );
-	my ( $self, $cutoff, $active_link_list_idx ) = $check->( @ARG );
-
-	# Check index is active
-	if ( ! defined( $self->_get_id_of_index( $ARG ) ) ) {
-		confess 'indices_and_score_results_below_eq_cutoff_for_active_index() called with inactive index';
-	}
-
-	# use Carp qw/ confess /;
-	# use Data::Dumper;
-	
-	# confess Dumper( $bob );
-
-	# For each of the index-and-score results below the specified cutoff in the specified LinkList,
-	# add in the index of the link list and order the two indices
-	return [
-		map {
-			[
-				( sort { $a <=> $b } ( $active_link_list_idx, $ARG->[ 0 ] ) ),
-				$ARG->[ 1 ],
-			];
-		} @{ $self->_get_links_data( $active_link_list_idx )->all_index_and_score_results_below_eq_cutoff(
-			$self->_id_of_index(),
-			$cutoff
-		) }
-	];
-}
-
 =head2 all_indices_and_score_results_below_eq_cutoff
 
 TODOCUMENT
+
+Get all the (index1, index2, score) results below or equal to the specified cutoff
+that are active according to the specified sorted list of active indices
 
 =cut
 
@@ -450,7 +481,7 @@ sub all_indices_and_score_results_below_eq_cutoff {
 
 	return [
 		map {
-			@{ $self->indices_and_score_results_below_eq_cutoff_for_active_index( $cutoff, $ARG ) };
+			@{ $self->_indices_and_score_results_below_eq_cutoff_for_active_index( $cutoff, $ARG ) };
 		} @{ $self->_active_indices() }
 	];
 }
@@ -469,7 +500,7 @@ sub ids_and_score_of_lowest_score_window {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	my ( $index1, $index2, $score ) = @{ $self->indices_and_score_of_lowest_score_result() };
+	my ( $index1, $index2, $score ) = @{ $self->_indices_and_score_of_lowest_score_result() };
 
 	if ( ! defined( $score ) ) {
 		confess ' ';
@@ -485,14 +516,9 @@ sub ids_and_score_of_lowest_score_window {
 		( $a->[ 1 ] <=> $b->[ 1 ] )
 	} @{ $self->all_indices_and_score_results_below_eq_cutoff( $score_cutoff ) };
 
-	# my $index_of_399 = $self->_get_index_of_id( '399' );
-	# my $index_of_402 = $self->_get_index_of_id( '402' );
-
 	my %indices_seen_before;
 	my @results;
 	foreach my $result ( @initial_results ) {
-
-		# if ( $idx1 == $index_of_399)
 
 		my ( $idx1, $idx2 ) = @$result;
 		if ( ! defined( $indices_seen_before{ $idx1 } ) && ! defined( $indices_seen_before{ $idx2 } ) ) {
@@ -511,30 +537,6 @@ sub ids_and_score_of_lowest_score_window {
 			];
 		} @results
 	];
-
-	# my @indices_of_duplicates = grep {
-	# 	my $ARG;
-	# }
-
-	# } ( 1 .. $#$results );
-
-	# foreach my $reverse_index ( reverse( @indices_of_duplicates ) ) {
-	# 	splice( @results, $reverse_index, 1 );
-	# }
-
-
-	# my $next_result_in_window = $self->ids_and_score_of_lowest_score_result( $score_cutoff );
-
-	# my %excluded_ids = ( $index1 => 1, $index2 => 1 );
-	# while ( my $next_result_in_window = $self->ids_and_score_of_lowest_score_result( [ $score_cutoff, \%excluded_ids ] ) ) {
-	# 	push @results, $next_result_in_window;
-	# 	# use Data::Dumper;
-	# 	my ( $next_id1, $next_id2, $next_score ) = @$next_result_in_window;
-	# 	$excluded_ids{ $next_result_in_window->[ 0 ] } = 1;
-	# 	$excluded_ids{ $next_result_in_window->[ 1 ] } = 1;
-	# }
-
-	# return \@results;
 }
 
 =head2 new_from_score_of_id_of_id

@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::Task::ProfileBuildTask;
 
 =head1 NAME
 
-Cath::Gemma::Compute::Task::ProfileBuildTask - TODOCUMENT
+Cath::Gemma::Compute::Task::ProfileBuildTask - Define a Cath::Gemma::Compute::Task for building a sequence profile
 
 =cut
 

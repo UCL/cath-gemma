@@ -2,31 +2,56 @@ package Cath::Gemma::Scan::Impl::LinkList;
 
 =head1 NAME
 
-Cath::Gemma::Scan::Impl::LinkList - [For use in ScansData via Links] Store the links from one cluster to another
+Cath::Gemma::Scan::Impl::LinkList - [For use in ScansData via LinkMatrix] Store the links from one cluster to another
 
-TODOCUMENT - how the actives work (and why that makes sense because it's permanently stored in Links)
+This and Cath::Gemma::Scan::Impl::LinkMatrix should be seen as a closely-bound pair of classes
+that share a bunch of implementation details. It probably doesn't make sense to try to
+use or understand either in the absence of the other.
 
-This class is fairly performance critical both in terms of CPU and, to a lesser extent, memory.
+In particular:
+ * they share a way of handling indexing clusters such that new clusters are always given new numbers
+   (rather than overwriting old clusters).
+ * they share a way of being lazy about deleting old clusters: LinkMatrix doesn't get LinkList to eagerly
+   update regarding every cluster that gets deleted by a merge; instead, it passes a list of the
+   clusters that are still active whenever it queries for the current best result
+
+
+This stores the index/score pairs passed to it and then allows querying of the lowest scoring entry.
+
+This class's job is made more complicated by the fact that merges may happen between queries
+which may render an existing result inactive. Rather than eagerly updating all records when this happens,
+the LinkMatrix class passes an array of active indices  add a new score to a new cluster
+
+TODOCUMENT - how the actives work (and why that makes sense because it's permanently stored in LinkMatrix)
+
+This class is fairly performance critical (both in terms of CPU and, to a lesser extent, memory)
+when handling large groups with a lot of starting clusters.
+
+=head2 Current Design
 
 The current design is:
  * one array containing the indices
  * another array containing the corresponding scores
  * a third array of "meta-indices" indices into the first two arrays - rules:
    * sort the "meta-indices" array from best (smallest) associated score to worst
-   * but do that sort array *lazily* - only when the best result is first queried
+   * but perform that sort *lazily* - only when the best result is *first* queried
    * before the sort, just push new meta-indices on to the end
    * after the sort, keep the the meta-indices in order
- * a flat to indicate whether the meta-indices have yet been sorted
+ * a flag to indicate whether the meta-indices have yet been sorted
+
+=head2 Areas for Improvement
+
+This is still sub-optimal in a bunch of ways
 
 It'd be nice to use a heap data structure but none of the CPAN modules
-appeared to meet all desiderata:
+appeared to meet all desired criteria:
  * Pure Perl only
  * Allows the ordering function to be specified
  * Allows the array to be directly modified (eg so that several elements
    can be added/removed and then the heap (re)built)
 
 An investigation of Heap::MinMax was initially promising but then
-demonstrated that the build_heap() function was doing what was hoped.
+demonstrated that the build_heap() function wasn't doing what was hoped.
 
 =cut
 
@@ -34,9 +59,9 @@ use strict;
 use warnings;
 
 # Core
-use Carp            qw/ confess                                                               /;
-use English         qw/ -no_match_vars                                                        /;
-use List::Util      qw/ first max                                                             /;
+use Carp                qw/ confess                                                               /;
+use English             qw/ -no_match_vars                                                        /;
+use List::Util          qw/ first max                                                             /;
 use v5.10;
 
 # Moo
@@ -47,11 +72,11 @@ use strictures 1;
 
 # Non-core (local)
 # use List::MoreUtils qw/ bsearch                                                               /;
-use List::MoreUtils qw/ bsearch first_index lower_bound                                       /;
-use List::UtilsBy   qw/ max_by min_by                                                         /;
+use List::MoreUtils     qw/ bsearch first_index lower_bound                                       /;
+use List::UtilsBy       qw/ max_by min_by                                                         /;
 use Log::Log4perl::Tiny qw/ :easy          /; # *********** TEMPORARY? ***********
-use Type::Params    qw/ compile                                                               /;
-use Types::Standard qw/ ArrayRef Bool ClassName CodeRef HashRef Int Num Object Optional Tuple /;
+use Type::Params        qw/ compile                                                               /;
+use Types::Standard     qw/ ArrayRef Bool ClassName CodeRef HashRef Int Num Object Optional Tuple /;
 
 =head2 _link_indices
 

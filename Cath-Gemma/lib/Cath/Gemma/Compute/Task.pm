@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::Task;
 
 =head1 NAME
 
-Cath::Gemma::Compute::Task - TODOCUMENT
+Cath::Gemma::Compute::Task - Define a Moo::Role for Tasks of computation
 
 =cut
 

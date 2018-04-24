@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::Task::BuildTreeTask;
 
 =head1 NAME
 
-Cath::Gemma::Compute::Task::BuildTreeTask - TODOCUMENT
+Cath::Gemma::Compute::Task::BuildTreeTask - Define a Cath::Gemma::Compute::Task for building a GeMMA tree
 
 =cut
 

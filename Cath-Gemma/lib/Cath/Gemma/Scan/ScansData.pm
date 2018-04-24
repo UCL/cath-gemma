@@ -30,7 +30,7 @@ use Type::Params        qw/ compile                                             
 use Types::Standard     qw/ ArrayRef ClassName CodeRef HashRef Num Tuple Object Optional slurpy Str /;
 
 # Cath::Gemma
-use Cath::Gemma::Scan::Impl::Links;
+use Cath::Gemma::Scan::Impl::LinkMatrix;
 use Cath::Gemma::StartingClustersOfId;
 use Cath::Gemma::Types qw/
 	CathGemmaNodeOrdering
@@ -70,7 +70,7 @@ TODOCUMENT
 has _links_data => (
 	is          => 'rwp',
 	isa         => CathGemmaScanImplLinks,
-	default     => sub { Cath::Gemma::Scan::Impl::Links->new(); },
+	default     => sub { Cath::Gemma::Scan::Impl::LinkMatrix->new(); },
 	handles     => [ qw/
 		get_id_and_score_of_lowest_score_of_id
 		get_score_between
@@ -90,7 +90,7 @@ sub add_separate_starting_clusters {
 	state $check = compile( Object, ArrayRef[Str] );
 	my ( $self, $ids ) = $check->( @ARG );
 
-	$self->_links_data()->add_separate_starting_clusters( $ids );
+	$self->_links_data()->add_separate_clusters( $ids );
 	$self->_starting_clusters_of_ids()->add_separate_starting_clusters( $ids );
 	return $self;
 }
