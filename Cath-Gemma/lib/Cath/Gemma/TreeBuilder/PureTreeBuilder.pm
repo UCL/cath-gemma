@@ -2,7 +2,7 @@ package Cath::Gemma::TreeBuilder::PureTreeBuilder;
 
 =head1 NAME
 
-Cath::Gemma::TreeBuilder::PureTreeBuilder - TODOCUMENT
+Cath::Gemma::TreeBuilder::PureTreeBuilder - Build "pure" trees that don't use evalue windows or other short-cuts
 
 =cut
 

@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::WorkBatch;
 
 =head1 NAME
 
-Cath::Gemma::Compute::WorkBatch - TODOCUMENT
+Cath::Gemma::Compute::WorkBatch - A batch of tasks (corresponding to a single HPC job when run under SpawnExecutor with SpawnHpcSgeRunner)
 
 It should be assumed that the scan_tasks may depend on the profile_tasks
 

@@ -2,7 +2,7 @@ package Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder;
 
 =head1 NAME
 
-Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder - TODOCUMENT
+Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder - Build a tree using only the initial all-vs-all scores by setting a merged cluster's scores as the (geometric, unweighted) mean of the mergees' corresponding scores
 
 =cut
 
@@ -17,6 +17,9 @@ use Storable qw/ dclone         /;
 use Moo;
 use MooX::StrictConstructor;
 use strictures 1;
+
+
+
 
 with ( 'Cath::Gemma::TreeBuilder' );
 

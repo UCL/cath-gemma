@@ -2,7 +2,7 @@ package Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
 
 =head1 NAME
 
-Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder - TODOCUMENT
+Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder - Build a tree using only the initial all-vs-all scores by setting merged clusters scores as the lowest of the mergees' scores
 
 =cut
 

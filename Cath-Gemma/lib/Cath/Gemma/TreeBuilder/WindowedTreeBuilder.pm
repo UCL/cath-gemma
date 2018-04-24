@@ -2,7 +2,7 @@ package Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
 
 =head1 NAME
 
-Cath::Gemma::TreeBuilder::WindowedTreeBuilder - TODOCUMENT
+Cath::Gemma::TreeBuilder::WindowedTreeBuilder - Build trees using windows of evalues (eg from 1e-40 to 1e-50) as in DFX code
 
 =cut
 

@@ -2,7 +2,8 @@ package Cath::Gemma::Tree::MergeBundler::RnnMergeBundler;
 
 =head1 NAME
 
-Cath::Gemma::Tree::MergeBundler::RnnMergeBundler - TODOCUMENT
+Cath::Gemma::Tree::MergeBundler::RnnMergeBundler - [to-implement] Skeleton for a MergeBundler that creates a bundle containing reciprocal-nearest-neighbours (RNNs)
+                                                   (and potentially also any likely RNNs involving the resulting merged nodes etc etc)
 
 =cut
 
