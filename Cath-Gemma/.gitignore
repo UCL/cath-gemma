@@ -14,3 +14,4 @@ Makefile
 Makefile.old
 pm_to_blib*
 pod2htm*.tmp
+sqlnet.log
