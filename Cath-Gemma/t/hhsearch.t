@@ -49,24 +49,55 @@ my $exe_hhconsensus           = path( $exe_dir )->child( 'bin/hhconsensus' );
 my $exe_hhsearch              = path( $exe_dir )->child( 'bin/hhsearch' );
 my $exe_ffindex_build         = path( $exe_dir )->child( 'bin/ffindex_build' );
 
-build_hhsearch_db( "build hhsearch clusters", $starting_clusters_dir, $build_hhsearch_db_dir );
+test_hhsearch_inline( "build and scan clusters with hhsearch (inline)", $starting_clusters_dir, $build_hhsearch_db_dir );
+
+test_hhsearch_lib( "build and scan clusters with hhsearch (using libraries)", $starting_clusters_dir, $build_hhsearch_db_dir );
 
 done_testing;
 
 exit;
 
-=head2 build_hhsearch_db
+=head2 test_hhsearch_lib
 
 TODOCUMENT
 
 =cut
 
-sub build_hhsearch_db {
+sub test_hhsearch_lib {
+	state $check = compile( Str, Path, Path );
+	my ( $assertion_name, $aln_dir, $expected_dir ) = $check->( @ARG );
+
+	my $test_out_dir = cath_test_tempdir( TEMPLATE => "test.compass_profile_build.XXXXXXXXXXX" );
+	my $got_file     = prof_file_of_prof_dir_and_aln_file( $test_out_dir, $aln_file, $prof_type );
+
+	# Build a profile file
+	Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile_in_dir(
+		Cath::Gemma::Disk::Executables->new(),
+		$aln_file,
+		$test_out_dir,
+		$prof_type,
+	);
+
+	# Compare it to expected
+	file_matches(
+		$got_file,
+		$expected_prof,
+		$assertion_name
+	);
+
+}
+
+=head2 test_hhsearch_inline
+
+TODOCUMENT
+
+=cut
+
+sub test_hhsearch_inline {
 	state $check = compile( Str, Path, Path );
 	my ( $assertion_name, $aln_dir, $expected_dir ) = $check->( @ARG );
 
 	my $test_out_dir = cath_test_tempdir( TEMPLATE => "test.hhsearch_db_build.XXXXXXXXXXX" );
-
 
     # 0. env
 
