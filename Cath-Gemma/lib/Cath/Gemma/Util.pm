@@ -21,24 +21,30 @@ use Sys::Hostname;
 use Time::HiRes         qw/ gettimeofday tv_interval                                       /;
 use Time::Seconds;
 use v5.10;
+use Scalar::Util        qw/ blessed                                                        /;
 
 our @EXPORT = qw/
 	alignment_filebasename_of_starting_clusters
 	alignment_suffix
 	batch_into_n
+	build_alignment_and_profile
+	check_all_profile_files_exist
 	cluster_name_spaceship
 	cluster_name_spaceship_sort
 	combine_starting_cluster_names
 	compass_profile_suffix
 	compass_scan_suffix
 	default_clusts_ordering
-	default_compass_profile_build_type
+	default_profile_build_type
 	default_temp_dir
+	default_cleanup_temp_files
 	evalue_window_ceiling
 	evalue_window_floor
 	generic_id_of_clusters
 	get_starting_clusters_of_starting_cluster_dir
 	guess_if_running_on_sge
+	hhsuite_profile_suffix
+	hhsuite_scan_suffix
 	id_of_clusters
 	make_atomic_write_file
 	mergee_is_starting_cluster
@@ -57,20 +63,35 @@ our @EXPORT = qw/
 # Non-core (local)
 use File::AtomicWrite;
 use File::Which         qw/ which                                                       /;
+use File::Copy          qw/ copy                                                        /;
 use List::MoreUtils     qw/ all natatime                                                /;
 use Log::Log4perl::Tiny qw/ :easy                                                       /;
 use Path::Tiny;
 use Try::Tiny;
 use Type::Params        qw/ compile                                                     /;
 use Types::Path::Tiny   qw/ Path                                                        /;
-use Types::Standard     qw/ ArrayRef Bool CodeRef HashRef Maybe Num Optional slurpy Str /;
+use Types::Standard     qw/ ArrayRef Bool ClassName CodeRef HashRef Maybe Num Optional slurpy Str /;
 
 # Cath::Gemma
 use Cath::Gemma::Types qw/
+	CathGemmaDiskExecutables
+	CathGemmaDiskProfileDirSet
+	CathGemmaProfileType
 	CathGemmaCompassProfileType
+	CathGemmaHHSuiteProfileType
 	CathGemmaNodeOrdering
 	TimeSeconds
 /;
+
+my $CLEANUP_TMP_FILES = 0;
+
+=head2 default_cleanup_temp_files 
+
+Whether or not to cleanup temporary files
+
+=cut
+
+sub default_cleanup_temp_files { $CLEANUP_TMP_FILES }
 
 =head2 time_fn
 
@@ -462,6 +483,29 @@ sub _id_of_nodelist {
 }
 
 
+=head2 suffix_for_profile_type
+
+=cut
+
+sub suffix_for_profile_type {
+	state $check = compile( CathGemmaProfileType );
+	my ( $profile_type ) = $check->( @ARG );
+	return 
+		CathGemmaCompassProfileType->check( $profile_type ) ? compass_profile_suffix() :
+		CathGemmaHHSuiteProfileType->check( $profile_type ) ? hhsuite_profile_suffix() :
+		confess "Failed to recognise profile type $profile_type";
+}
+
+=head2 hhsuite_profile_suffix
+
+Return the default suffix for a HH-suite profile file
+
+=cut
+
+sub hhsuite_profile_suffix {
+	return '.a3m';
+}
+
 =head2 compass_profile_suffix
 
 Return the default suffix for a COMPASS profile file
@@ -472,9 +516,9 @@ sub compass_profile_suffix {
 	return '.prof';
 }
 
-=head2 default_compass_profile_build_type
+=head2 default_profile_build_type
 
-Return the default compass_profile_build_type
+Return the default profile_build_type
 
 The previous DFX code was using an earlier version of the COMPASS code
 which sometimes gave inconsistent results on different machines and which
@@ -484,10 +528,12 @@ as the first or second of a pair (with a dummy as the other).
 In this work, we've performed a comparison of results and agreed that we're
 all happy to move to mk_compass_db which avoids these issues.
 
+UPDATE: default profile type is now 'hhconsensus'
+
 =cut
 
-sub default_compass_profile_build_type {
-	return 'mk_compass_db';
+sub default_profile_build_type {
+	return 'hhconsensus';
 }
 
 
@@ -503,7 +549,11 @@ This should keep stuff very fast. However it does mean that code must:
 =cut
 
 sub default_temp_dir {
-	return path( '/dev/shm' );
+
+	my $tmp_dir = Path::Tiny->tempdir( TEMPLATE => 'cath-gemma-util.XXXXXXXX', DIR => '/tmp', CLEANUP => 0 );
+
+	# return path( '/dev/shm' );
+	return $tmp_dir;
 }
 
 =head2 evalue_window_ceiling
@@ -544,6 +594,16 @@ sub compass_scan_suffix {
 	return '.scan';
 }
 
+=head2 hhsuite_scan_suffix
+
+Return the filename suffix to use for HH-suite scan (hhsearch) results files
+
+=cut
+
+sub hhsuite_scan_suffix {
+	return '.hhsearch';
+}
+
 =head2 default_clusts_ordering
 
 Return the default clusts_ordering value
@@ -578,33 +638,35 @@ sub alignment_filebasename_of_starting_clusters {
 =head2 prof_file_of_prof_dir_and_aln_file
 
 Return the filename of the file in which the profile should be stored for the specified profile directory,
-corresponding alignment file and compass_profile_build_type
+corresponding alignment file and profile_build_type
 
 =cut
 
 sub prof_file_of_prof_dir_and_aln_file {
-	state $check = compile( Path, Path, CathGemmaCompassProfileType );
-	my ( $prof_dir, $aln_file, $compass_profile_build_type ) = $check->( @ARG );
+	state $check = compile( Path, Path, CathGemmaProfileType );
+	my ( $prof_dir, $aln_file, $profile_build_type ) = $check->( @ARG );
 
 	return prof_file_of_prof_dir_and_cluster_id(
 		$prof_dir,
 		$aln_file->basename( alignment_suffix() ),
-		$compass_profile_build_type,
+		$profile_build_type,
 	);
 }
 
 =head2 prof_file_of_prof_dir_and_cluster_id
 
 Return the filename of the file in which the profile should be stored for the specified profile directory,
-cluster ID and compass_profile_build_type
+cluster ID and profile_build_type
 
 =cut
 
 sub prof_file_of_prof_dir_and_cluster_id {
-	state $check = compile( Path, Str, CathGemmaCompassProfileType );
-	my ( $prof_dir, $cluster_id, $compass_profile_build_type ) = $check->( @ARG );
+	state $check = compile( Path, Str, CathGemmaProfileType );
+	my ( $prof_dir, $cluster_id, $profile_build_type ) = $check->( @ARG );
 
-	return $prof_dir->child( $cluster_id . '.' . $compass_profile_build_type . compass_profile_suffix() );
+	my $suffix = suffix_for_profile_type( $profile_build_type );
+
+	return $prof_dir->child( $cluster_id . '.' . $profile_build_type . $suffix );
 }
 
 =head2 raw_sequences_filename_of_starting_clusters
@@ -621,35 +683,35 @@ sub raw_sequences_filename_of_starting_clusters {
 =head2 scan_filebasename_of_cluster_ids
 
 Get the basename of the file in which the scan results should be stored for the specified query IDs,
-match IDs and compass_profile_build_type
+match IDs and profile_build_type
 
 =cut
 
 sub scan_filebasename_of_cluster_ids {
-	state $check = compile( ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
-	my ( $query_cluster_ids, $match_cluster_ids, $compass_profile_build_type ) = $check->( @ARG );
+	state $check = compile( ArrayRef[Str], ArrayRef[Str], CathGemmaProfileType );
+	my ( $query_cluster_ids, $match_cluster_ids, $profile_build_type ) = $check->( @ARG );
 
 	return
 		  _id_of_nodelist( $query_cluster_ids )
 		. '.'
 		. _id_of_nodelist( $match_cluster_ids )
 		. '.'
-		. $compass_profile_build_type
+		. $profile_build_type
 		. '.scan';
 }
 
 =head2 scan_filename_of_dir_and_cluster_ids
 
 Get the filename in which the scan results should be stored for the specified directory, query IDs,
-match IDs and $compass_profile_build_type
+match IDs and $profile_build_type
 
 =cut
 
 sub scan_filename_of_dir_and_cluster_ids {
-	state $check = compile( Path, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
-	my ( $dir, $query_ids, $match_ids, $compass_profile_build_type ) = $check->( @ARG );
+	state $check = compile( Path, ArrayRef[Str], ArrayRef[Str], CathGemmaProfileType );
+	my ( $dir, $query_ids, $match_ids, $profile_build_type ) = $check->( @ARG );
 
-	return $dir->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids, $compass_profile_build_type ) );
+	return $dir->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids, $profile_build_type ) );
 }
 
 =head2 sequences_suffix
@@ -697,6 +759,111 @@ from List::Util)?
 
 sub unique_by_hashing {
 	sort( keys( %{ { map { ( $ARG, 1 ) } @ARG } } ) );
+}
+
+=head2 check_all_profile_files_exist
+
+TODOCUMENT
+
+=cut
+
+sub check_all_profile_files_exist {
+	state $check = compile( Path, ArrayRef[Str], ArrayRef[Str], CathGemmaProfileType );
+	my ( $profile_dir, $query_cluster_ids, $match_cluster_ids, $profile_build_type ) = $check->( @ARG );
+
+	foreach my $cluster_id ( @$query_cluster_ids, @$match_cluster_ids ) {
+		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $profile_build_type );
+		DEBUG "Profile file exists: $profile_file";
+		if ( ! -s $profile_file ) {
+			confess "Unable to find non-empty profile file $profile_file for cluster $cluster_id when scanning queries ("
+			        . join( ', ', @$query_cluster_ids )
+			        . ') against matches ('
+			        . join( ', ', @$match_cluster_ids )
+			        . ')';
+		}
+	}
+}
+
+=head2 build_alignment_and_profile
+
+TODOCUMENT
+
+=cut
+
+sub build_alignment_and_profile {
+	# allow this function to be called from an instance or class context (or neither)
+	my $maybe_class = shift if ($ARG[0] =~ /^Cath::Gemma::/ || blessed $ARG[0] =~ /^Cath::Gemma::/ );
+	state $check = compile( CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, CathGemmaProfileType, Optional[Bool] );
+	my ( $exes, $starting_clusters, $profile_dir_set, $profile_build_type, $skip_profile_build ) = $check->( @ARG );
+
+	$skip_profile_build //= 0;
+
+	my $aln_file = $profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters );
+	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $exes->tmp_dir() );
+	my $alignment_result = 
+		( -s $aln_file )
+		? {
+			out_filename         => $aln_file,
+			file_already_present => 1,
+		}
+		: Cath::Gemma::Tool::Aligner->make_alignment_file(
+			$exes,
+			$starting_clusters,
+			$profile_dir_set,
+		);
+
+	my $built_aln_file   = $alignment_result->{ out_filename  };
+	my $profile_result   = {};
+	if ( ! $skip_profile_build ) {
+		my $builder_class = 
+		    CathGemmaCompassProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::CompassProfileBuilder" :
+		    CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::HHSuiteProfileBuilder" :
+			confess "Unknown profile build type $profile_build_type";
+		
+		$profile_result = $builder_class->build_profile(
+			$exes,
+			$built_aln_file,
+			$profile_dir_set,
+		);
+	}
+
+	if ( "$built_aln_file" ne "$aln_file" ) {
+		my $aln_atomic_file   = File::AtomicWrite->new( { file => "$aln_file" } );
+		my $atom_tmp_aln_file = path( $aln_atomic_file->filename );
+
+		move( $built_aln_file, $atom_tmp_aln_file )
+			or confess "Cannot move built alignment file \"$built_aln_file\" to atomic temporary \"$atom_tmp_aln_file\" : $OS_ERROR";
+
+		try {
+			$aln_atomic_file->commit();
+		}
+		catch {
+			my $error = $ARG;
+			while ( chomp( $error ) ) {}
+			confess
+				   'Caught error when trying to atomically commit write of temporary file "'
+				 . $aln_atomic_file->filename()
+				 . '" to "'
+				 . $aln_file
+				 . '", original error message: "'
+				 . $error
+				 . '".';
+		};
+	}
+
+	return {
+		( defined( $alignment_result->{ duration             } ) ? ( aln_duration              => $alignment_result->{ duration             } ) : () ),
+		( defined( $alignment_result->{ mean_seq_length      } ) ? ( mean_seq_length           => $alignment_result->{ mean_seq_length      } ) : () ),
+		( defined( $alignment_result->{ num_sequences        } ) ? ( num_sequences             => $alignment_result->{ num_sequences        } ) : () ),
+		( defined( $alignment_result->{ wrapper_duration     } ) ? ( aln_wrapper_duration      => $alignment_result->{ wrapper_duration     } ) : () ),
+		( defined( $alignment_result->{ file_already_present } ) ? ( aln_file_already_present  => $alignment_result->{ file_already_present } ) : () ),
+
+		( defined( $profile_result  ->{ duration             } ) ? ( prof_duration             => $profile_result  ->{ duration             } ) : () ),
+		( defined( $profile_result  ->{ wrapper_duration     } ) ? ( prof_wrapper_duration     => $profile_result  ->{ wrapper_duration     } ) : () ),
+		( defined( $profile_result  ->{ file_already_present } ) ? ( prof_file_already_present => $profile_result  ->{ file_already_present } ) : () ),
+		aln_filename  => $aln_file,
+		prof_filename => $profile_result->{ out_filename  },
+	};
 }
 
 1;

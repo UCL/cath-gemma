@@ -38,7 +38,7 @@ TODOCUMENT
 sub make_example_profile_build_task {
 	return Cath::Gemma::Compute::Task::ProfileBuildTask->new(
 		starting_cluster_lists     => [ [ qw/ a b / ] ],
-		compass_profile_build_type => default_compass_profile_build_type(),
+		profile_build_type         => default_profile_build_type(),
 		dir_set                    => Cath::Gemma::Disk::ProfileDirSet->new(
 			starting_cluster_dir => $starting_cluster_dir,
 			aln_dir              => path( 'dummy_aln_dir'  ),
@@ -50,7 +50,7 @@ sub make_example_profile_build_task {
 subtest 'constructs_without_error' => sub {
 	new_ok( 'Cath::Gemma::Compute::Task::ProfileBuildTask' => [
 		starting_cluster_lists     => [ [ qw/ a b / ] ],
-		compass_profile_build_type => default_compass_profile_build_type(),
+		profile_build_type         => default_profile_build_type(),
 		dir_set                    => Cath::Gemma::Disk::ProfileDirSet->new(
 			starting_cluster_dir => $starting_cluster_dir,
 			aln_dir              => path( 'dummy_aln_dir'  ),

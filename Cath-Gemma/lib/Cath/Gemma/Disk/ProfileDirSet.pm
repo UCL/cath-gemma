@@ -27,6 +27,8 @@ use Types::Standard   qw/ ArrayRef Maybe Object Optional Str /;
 # Cath::Gemma
 use Cath::Gemma::Disk::BaseDirAndProject;
 use Cath::Gemma::Types qw/
+	CathGemmaProfileType
+	CathGemmaHHSuiteProfileType
 	CathGemmaCompassProfileType
 	CathGemmaDiskBaseDirAndProject
 	CathGemmaDiskProfileDirSet
@@ -178,31 +180,31 @@ Get the profile file in this ProfileDirSet associated with the specified alignme
 =cut
 
 sub prof_file_of_aln_file {
-	state $check = compile( Object, Path, Optional[CathGemmaCompassProfileType] );
-	my ( $self, $aln_file, $compass_profile_build_type ) = $check->( @ARG );
+	state $check = compile( Object, Path, Optional[CathGemmaProfileType] );
+	my ( $self, $aln_file, $profile_build_type ) = $check->( @ARG );
 	# uncoverable condition false
-	$compass_profile_build_type //= default_compass_profile_build_type();
+	$profile_build_type //= default_profile_build_type();
 	return prof_file_of_prof_dir_and_aln_file(
 		$self->prof_dir(),
 		$aln_file,
-		$compass_profile_build_type,
+		$profile_build_type,
 	);
 }
 
-=head2 compass_file_of_starting_clusters
+=head2 profile_file_of_starting_clusters
 
 Get the profile file in this ProfileDirSet associated with the specified starting clusters
 
 =cut
 
-sub compass_file_of_starting_clusters {
-	state $check = compile( Object, ArrayRef[Str], Optional[CathGemmaCompassProfileType] );
-	my ( $self, $starting_clusters, $compass_profile_build_type ) = $check->( @ARG );
+sub profile_file_of_starting_clusters {
+	state $check = compile( Object, ArrayRef[Str], Optional[CathGemmaProfileType] );
+	my ( $self, $starting_clusters, $profile_build_type ) = $check->( @ARG );
 	# uncoverable condition false
-	$compass_profile_build_type //= default_compass_profile_build_type();
+	$profile_build_type //= default_profile_build_type();
 	return $self->prof_file_of_aln_file(
 		$self->alignment_filename_of_starting_clusters( $starting_clusters ),
-		$compass_profile_build_type,
+		$profile_build_type,
 	);
 }
 
