@@ -20,6 +20,7 @@ use Path::Tiny;
 use Try::Tiny;
 use Type::Params        qw/ compile        /;
 use Types::Standard     qw/ Bool CodeRef   /;
+use DDP;
 
 # Non-core (test) (local)
 use Test::Exception;
@@ -40,6 +41,11 @@ use Cath::Gemma::Types qw/
 Log::Log4perl->easy_init( {
 	level => $WARN,
 } );
+
+my $CLEANUP = 0;
+if ( !$CLEANUP ) {
+	diag "**** WARNING: NOT removing temp directories (\$CLEANUP=0) ****";	
+}
 
 my $superfamily = '1.20.5.200';
 
@@ -85,13 +91,17 @@ sub test_build_profile {
 	my ( $executor, $should_die ) = $check->( @ARG );
 
 	# Prepare directories for building a profile
-	my $aln_dir         = Path::Tiny->tempdir( CLEANUP => 1 );
-	my $prof_dir        = Path::Tiny->tempdir( CLEANUP => 1 );
+	my $aln_dir         = Path::Tiny->tempdir( CLEANUP => $CLEANUP );
+	my $prof_dir        = Path::Tiny->tempdir( CLEANUP => $CLEANUP );
 	my $profile_dir_set = Cath::Gemma::Disk::ProfileDirSet->new(
 		starting_cluster_dir => test_superfamily_starting_cluster_dir( $superfamily ),
 		aln_dir              => $aln_dir,
 		prof_dir             => $prof_dir,
 	);
+
+	diag( "aln_dir: " . $profile_dir_set->aln_dir );
+	diag( "prof_dir: " . $profile_dir_set->prof_dir );
+	diag( "starting_cluster_dir: " . $profile_dir_set->starting_cluster_dir );
 
 	# Try building a profile, handling whether the executor should confess
 	check_sub_if_die(
@@ -111,8 +121,8 @@ sub test_build_profile {
 	# Check that the alignment and profile were built
 	if ( ! $should_die ) {
 		file_matches(
-			$prof_dir                                ->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.mk_compass_db.prof' ),
-			test_superfamily_prof_dir( $superfamily )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.mk_compass_db.prof' ),
+			$prof_dir                                ->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.hhconsensus.a3m' ),
+			test_superfamily_prof_dir( $superfamily )->child( 'n0de_c20ad4d76fe97759aa27a0c99bff6710.hhconsensus.a3m' ),
 			'Built profile file matches expected'
 		);
 		file_matches(
@@ -134,11 +144,16 @@ sub test_scan_profile {
 	my ( $executor, $should_die ) = $check->( @ARG );
 
 	# Prepare directories for building a profile
-	my $scan_dir      = Path::Tiny->tempdir( CLEANUP => 1 );
+	my $scan_dir      = Path::Tiny->tempdir( CLEANUP => $CLEANUP );
 	my $gemma_dir_set = Cath::Gemma::Disk::GemmaDirSet->new(
 		profile_dir_set => profile_dir_set_of_superfamily( $superfamily ),
 		scan_dir        => $scan_dir,
 	);
+
+	# NOTE: this requires manual bootstrap (alignments -> profiles)
+	# for id in $(seq 1 4); do 
+	#   hhconsensus -i ./t/data/1.20.5.200/alignments/$id.aln -o t/data/1.20.5.200/profiles/$id.hhconsensus.a3m
+	# done
 
 	# Try building a profile, handling whether the executor should confess
 	check_sub_if_die(
@@ -157,7 +172,7 @@ sub test_scan_profile {
 
 	# Check that the alignment and profile were built
 	if ( ! $should_die ) {
-		my $scan_basename = '1.l1st_37693cfc748049e45d87b8c7d8b9aacd.mk_compass_db.scan';
+		my $scan_basename = '1.l1st_37693cfc748049e45d87b8c7d8b9aacd.hhsuite.scan';
 		file_matches(
 			$scan_dir                                ->child( $scan_basename ),
 			test_superfamily_scan_dir( $superfamily )->child( $scan_basename ),
@@ -177,7 +192,7 @@ sub test_build_tree {
 	my ( $executor, $should_die ) = $check->( @ARG );
 
 	# Prepare directories for building a profile
-	my $tree_dir     = Path::Tiny->tempdir( CLEANUP => 1 );
+	my $tree_dir     = Path::Tiny->tempdir( CLEANUP => $CLEANUP );
 	my $tree_dir_set = Cath::Gemma::Disk::TreeDirSet->new(
 		gemma_dir_set => gemma_dir_set_of_superfamily( $superfamily ),
 		tree_dir      => $tree_dir,
@@ -225,8 +240,9 @@ sub test_build_tree {
 foreach my $executor_details (
                             [ 'Cath::Gemma::Executor::ConfessExecutor'      ],
                             [ 'Cath::Gemma::Executor::SpawnExecutor', [
-                            	submission_dir => Path::Tiny->tempdir( CLEANUP  => 1 ),
-                            	hpc_mode       => 'spawn_local'
+                            	submission_dir => Path::Tiny->tempdir( CLEANUP  => $CLEANUP ),
+                            	hpc_mode       => 'spawn_local',
+#								tmp_dir        => Path::Tiny->tempdir( CLEANUP  => 0 ),   # DEBUG (avoid /dev/shm for testing)
                             ] ],
                             [ 'Cath::Gemma::Executor::DirectExecutor'        ],
                             ) {
