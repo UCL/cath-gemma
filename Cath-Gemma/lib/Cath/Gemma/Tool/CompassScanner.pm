@@ -137,8 +137,10 @@ sub build_temp_profile_lib_file {
 		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $compass_profile_build_type );
 		my $profile_fh = $profile_file->openr()
 			or confess "Unable to open profile file \"$profile_file\" for reading : $OS_ERROR";
-		copy( $profile_fh, $lib_fh )
-			or confess "Failed to copy profile file \"$profile_file\" to profile library file \"$lib_filename\" : $OS_ERROR";
+		while (my $line = <$profile_fh>) {
+			print $lib_fh $line;  
+		}
+		$profile_fh->close;
 	}
 
 	return $lib_filename;
