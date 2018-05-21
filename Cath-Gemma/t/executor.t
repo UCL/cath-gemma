@@ -22,6 +22,9 @@ use Type::Params        qw/ compile        /;
 use Types::Standard     qw/ Bool CodeRef   /;
 use DDP;
 
+use Carp qw/ confess /;
+use Capture::Tiny qw/ capture /;
+
 # Non-core (test) (local)
 use Test::Exception;
 
@@ -48,6 +51,8 @@ if ( !$CLEANUP ) {
 }
 
 my $superfamily = '1.20.5.200';
+my $HHSUITE_DIR     = path( "$FindBin::Bin/../tools/hhsuite" )->absolute;
+my $HHCONSENSUS_EXE = $HHSUITE_DIR->child( 'bin', 'hhconsensus' )->absolute;
 
 =head2 check_sub_if_die
 
@@ -133,6 +138,43 @@ sub test_build_profile {
 	}
 }
 
+
+=head2 bootstrap_profile_files_for_superfamily
+
+=cut
+
+sub bootstrap_profile_files_for_superfamily {
+	# for id in $(seq 1 4); do 
+	#   hhconsensus -i ./t/data/1.20.5.200/alignments/$id.aln -o t/data/1.20.5.200/profiles/$id.hhconsensus.a3m
+	#   sed -i '1s/.*/#$id/' $id.hhconsensus.a3m
+    #   sed -i '2s/.*/>$id _consensus/' $id.hhconsensus.a3m
+	# done
+
+	my $sfam_id = shift;
+	my $aln_dir = path( $FindBin::Bin, 'data', $sfam_id, 'alignments' );
+	my $prof_dir = path( $aln_dir, '..', 'profiles' );
+	
+	my $hhcon = $HHCONSENSUS_EXE->stringify;
+	local $ENV{HHLIB} = $HHSUITE_DIR->stringify;
+
+	for my $aln_file ( $aln_dir->children( qr/\.aln$/ ) ) {
+		my $id = $aln_file->basename('.aln');
+		my $prof_file = $prof_dir->child( $id . '.hhconsensus.a3m' );
+		sys( "$hhcon -i $aln_file -o $prof_file" );
+		sys( "sed -i '1s/.*/#$id/' $prof_file" );
+		sys( "sed -i '2s/.*/>$id _consensus/' $prof_file" );
+	}
+}
+
+sub sys {
+	my $com = shift;
+	diag( "COM: $com" );
+	my ($stdout, $stderr, $exit) = capture { system( $com ) };
+	if ( $exit != 0 ) {
+		confess "command `$com` returned non-zero exit code ($exit)\nSTDOUT: $stdout\nSTDERR: $stderr\n";
+	}
+}
+
 =head2 test_scan_profile
 
 Test that the specified executor can scan a profile against others
@@ -150,10 +192,9 @@ sub test_scan_profile {
 		scan_dir        => $scan_dir,
 	);
 
-	# NOTE: this requires manual bootstrap (alignments -> profiles)
-	# for id in $(seq 1 4); do 
-	#   hhconsensus -i ./t/data/1.20.5.200/alignments/$id.aln -o t/data/1.20.5.200/profiles/$id.hhconsensus.a3m
-	# done
+	if ( Cath::Gemma::Test->bootstrap_is_on ) {
+		bootstrap_profile_files_for_superfamily( $superfamily );
+	}
 
 	# Try building a profile, handling whether the executor should confess
 	check_sub_if_die(
@@ -172,7 +213,7 @@ sub test_scan_profile {
 
 	# Check that the alignment and profile were built
 	if ( ! $should_die ) {
-		my $scan_basename = '1.l1st_37693cfc748049e45d87b8c7d8b9aacd.hhsuite.scan';
+		my $scan_basename = '1.l1st_37693cfc748049e45d87b8c7d8b9aacd.hhconsensus.scan';
 		file_matches(
 			$scan_dir                                ->child( $scan_basename ),
 			test_superfamily_scan_dir( $superfamily )->child( $scan_basename ),
@@ -226,7 +267,8 @@ sub test_build_tree {
 		                                tree.newick
 		                                tree.trace
 		                                # ) {
-			my $tree_subdir   = 'simple_ordering.mk_compass_db.windowed';
+			#my $tree_subdir   = 'simple_ordering.mk_compass_db.windowed';
+			my $tree_subdir   = 'simple_ordering.hhconsensus.windowed';
 			file_matches(
 				$tree_dir                                ->child( $tree_subdir )->child( $tree_basename ),
 				test_superfamily_tree_dir( $superfamily )->child( $tree_subdir )->child( $tree_basename ),
@@ -242,7 +284,6 @@ foreach my $executor_details (
                             [ 'Cath::Gemma::Executor::SpawnExecutor', [
                             	submission_dir => Path::Tiny->tempdir( CLEANUP  => $CLEANUP ),
                             	hpc_mode       => 'spawn_local',
-#								tmp_dir        => Path::Tiny->tempdir( CLEANUP  => 0 ),   # DEBUG (avoid /dev/shm for testing)
                             ] ],
                             [ 'Cath::Gemma::Executor::DirectExecutor'        ],
                             ) {
