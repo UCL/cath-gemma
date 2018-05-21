@@ -39,7 +39,7 @@ Params checked in Cath::Gemma::TreeBuilder
 =cut
 
 sub build_tree {
-	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
+	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
 
 	my $orig_scans_data = bless( dclone( $scans_data ), ref( $scans_data ) );
 

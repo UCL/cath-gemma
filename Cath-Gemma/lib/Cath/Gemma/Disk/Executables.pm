@@ -199,14 +199,23 @@ sub _build__exes_dir {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	WARN "DEBUG: using /tmp rather than /dev/shm (and NOT cleaning up)";
+	my $CLEANUP_TMP_FILES = default_cleanup_temp_files();
 
-	return Path::Tiny->tempdir(
-		TEMPLATE => "cath_gemma_exes_dir.XXXXXXXX",
-		# DIR      => '/dev/shm',
-		DIR      => '/tmp',
-		CLEANUP  => 0,
-	);
+	if (! $CLEANUP_TMP_FILES) {
+		WARN "DEBUG: using /tmp rather than /dev/shm (and NOT cleaning up)";
+		return Path::Tiny->tempdir(
+			TEMPLATE => "cath_gemma_exes_dir.XXXXXXXX",
+			DIR      => '/tmp',
+			CLEANUP  => 0,
+		);
+	}
+	else {
+		return Path::Tiny->tempdir(
+			TEMPLATE => "cath_gemma_exes_dir.XXXXXXXX",
+			DIR      => '/dev/shm',
+			CLEANUP  => 1,
+		);
+	}
 }
 
 =head2 _build_hhconsensus

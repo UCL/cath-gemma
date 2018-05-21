@@ -208,7 +208,7 @@ sub build_profile {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, CathGemmaDiskProfileDirSet, CathGemmaCompassProfileType );
 	my ( $class, $exes, $aln_file, $profile_dir_set, $compass_profile_build_type ) = $check->( @ARG );
 
-	return __PACKAGE__->build_compass_profile_in_dir(
+	return __PACKAGE__->build_profile_in_dir(
 		$exes,
 		$aln_file,
 		$profile_dir_set->prof_dir(),

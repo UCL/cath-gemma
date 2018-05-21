@@ -179,23 +179,6 @@ sub total_num_starting_clusters {
 	return sum0( map { scalar( @$ARG ); } @{ $self->starting_cluster_lists() } );
 }
 
-=head2 get_profile_builder_class
-
-=cut
-
-sub get_profile_builder_class {
-	my $self = shift;
-	my $build_type = $self->profile_build_type;
-	if ( CathGemmaCompassProfileType->check( $build_type ) ) {
-		return 'Cath::Gemma::Tool::CompassProfileBuilder';
-	}
-	elsif ( CathGemmaHHSuiteProfileType->check( $build_type ) ) {
-		return 'Cath::Gemma::Tool::HHSuiteProfileBuilder';
-	}
-	else {
-		confess "Failed to understand profile type '$build_type'";
-	}
-}
 
 =head2 execute_task
 
@@ -206,7 +189,7 @@ TODOCUMENT
 sub execute_task {
 	my ( $self, $exes, $subtask_executor ) = @ARG;
 
-	my $profile_builder_class = $self->get_profile_builder_class;
+	my $profile_builder_class = profile_builder_class_from_type( $self->profile_build_type );
 
 	return [
 		map

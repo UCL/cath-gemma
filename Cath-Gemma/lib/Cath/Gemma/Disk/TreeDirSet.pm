@@ -26,7 +26,7 @@ use Types::Standard    qw/ ArrayRef Object Str        /;
 
 # Cath::Gemma
 use Cath::Gemma::Types qw/
-	CathGemmaCompassProfileType
+	CathGemmaProfileType
 	CathGemmaDiskGemmaDirSet
 	CathGemmaDiskTreeDirSet
 /;

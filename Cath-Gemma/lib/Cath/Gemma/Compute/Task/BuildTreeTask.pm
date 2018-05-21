@@ -354,6 +354,8 @@ sub execute_task {
 	my $tree_builder_name          = $tree_builder->name();
 	my $tree_out_dir               = $self->tree_dir()->child( join( '.', $clusts_ordering, $profile_build_type, $tree_builder_name ) );
 
+	my $profile_build_class        = profile_builder_class_from_type( $profile_build_type );
+
 	return [
 		map
 		{
@@ -401,7 +403,7 @@ sub execute_task {
 				$tree_out_dir,
 			);
 
-			Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
+			$profile_build_class->build_alignment_and_profile(
 				$exes,
 				$starting_clusters,
 				$tree_dir_set->profile_dir_set(),

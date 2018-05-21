@@ -58,6 +58,7 @@ sub _compass_scan_impl {
 		$compass_profile_build_type
 	);
 
+	# builds a profile file from the cluster ids 
 	my $query_prof_lib = build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
 	my $match_prof_lib = build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
 
@@ -219,7 +220,9 @@ sub get_pair_scan_score {
 
 =head2 build_temp_profile_lib_file
 
-TODOCUMENT
+Create a compass profile library out of the individual profiles for the given cluster ids 
+
+Effectively this concatenates *.prof -> *.prof_lib
 
 =cut
 
@@ -247,15 +250,8 @@ sub build_temp_profile_lib_file {
 		my $profile_fh = $profile_file->openr()
 			or confess "Unable to open profile file \"$profile_file\" for reading : $OS_ERROR";
 
-		# IS: 11/05/2018 - doesn't look like this would append?!
-		# copy( $profile_fh, $lib_fh )
-		# 	or confess "Failed to copy profile file \"$profile_file\" to profile library file \"$lib_file\" : $OS_ERROR";
-
-		DEBUG sprintf( "Appending %s profile (cluster %d) '%s' to temp profile file '%s'", $profile_build_type, $cluster_id, $profile_file, $lib_file);
-        while (my $line = <$profile_fh>) {
-            print $lib_fh $line;
-        }
-		$profile_fh->close;
+		copy( $profile_fh, $lib_fh )
+			or confess "Failed to copy profile file \"$profile_file\" to profile library file \"$lib_file\" : $OS_ERROR";
 	}
 
 	return $lib_file;

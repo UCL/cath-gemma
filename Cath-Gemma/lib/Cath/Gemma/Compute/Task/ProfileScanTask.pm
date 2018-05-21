@@ -196,19 +196,6 @@ sub total_num_starting_clusters {
 
 # }
 
-=head2 get_scanner_class
-
-TODOCUMENT
-
-=cut
-
-sub get_scanner_class {
-	my ($self) = @_;
-	my $profile_type = $self->profile_build_type;
-	return CathGemmaHHSuiteProfileType->check( $profile_type ) ? 'Cath::Gemma::Tool::HHSuiteScanner' :
-	       CathGemmaCompassProfileType->check( $profile_type ) ? 'Cath::Gemma::Tool::CompassScanner' :
-				 confess "Failed to understand profile build type '$profile_type'";
-}
 
 =head2 execute_task
 
@@ -219,7 +206,7 @@ TODOCUMENT
 sub execute_task {
 	my ( $self, $exes, $subtask_executor ) = @ARG;
 
-	my $scanner_class = $self->get_scanner_class;
+	my $scanner_class = profile_scanner_class_from_type( $self->profile_build_type );
 
 	return [
 		map

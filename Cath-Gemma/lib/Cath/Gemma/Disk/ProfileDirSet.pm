@@ -63,7 +63,7 @@ The directory for alignments
 
 =head2 prof_dir
 
-The directory for COMPASS profiles
+The directory for profiles
 
 =cut
 

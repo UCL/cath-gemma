@@ -31,7 +31,7 @@ use Types::Standard    qw/ ArrayRef ClassName Int Object Optional Str Tuple /;
 use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Types qw/
-	CathGemmaCompassProfileType
+	CathGemmaProfileType
 	CathGemmaComputeWorkBatch
 	CathGemmaDiskGemmaDirSet
 	/;
@@ -298,7 +298,7 @@ TODOCUMENT
 =cut
 
 sub make_work_batch_list_of_query_scs_and_match_scs_list {
-	state $check = compile( ClassName, ArrayRef[Tuple[ArrayRef[Str], ArrayRef[Str]]], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType] );
+	state $check = compile( ClassName, ArrayRef[Tuple[ArrayRef[Str], ArrayRef[Str]]], CathGemmaDiskGemmaDirSet, Optional[CathGemmaProfileType] );
 	my ( $class, $query_scs_and_match_scs_list, $gemma_dir_set, @profile_type ) = $check->( @ARG );
 
 	my $rebatch = 1;

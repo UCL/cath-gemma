@@ -68,7 +68,7 @@ Params checked in Cath::Gemma::TreeBuilder
 =cut
 
 sub build_tree {
-	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
+	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
 
 	# TODONOW: Sort this out
 	my $local_executor = Cath::Gemma::Executor::DirectExecutor->new();
@@ -78,6 +78,9 @@ sub build_tree {
 
 	my $merge_bundler = Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler->new();
 
+	my $scanner_class = profile_scanner_class_from_type( $profile_build_type );
+
+
 	my @nodenames_and_merges;
 
 	my $num_merge_batches = 0;
@@ -85,7 +88,7 @@ sub build_tree {
 		# my $ids_and_score_list = $scans_data->ids_and_score_of_lowest_score_window();
 
 		# Get a list of work and then, if it's non-empty, wait for it to be run (potentially in child jobs)
-		my $work_batch_list = $merge_bundler->make_work_batch_list_of_query_scs_and_match_scs_list( $scans_data, $gemma_dir_set, $compass_profile_build_type );
+		my $work_batch_list = $merge_bundler->make_work_batch_list_of_query_scs_and_match_scs_list( $scans_data, $gemma_dir_set, $profile_build_type );
 		DEBUG
 			'In '
 			. __PACKAGE__
@@ -128,12 +131,12 @@ sub build_tree {
 				last;
 			}
 
-			my $response = Cath::Gemma::Tool::CompassScanner->build_and_scan_merge_cluster_against_others(
+			my $response = $scanner_class->build_and_scan_merge_cluster_against_others(
 				$exes,
 				$merged_starting_clusters,
 				$other_ids,
 				$gemma_dir_set,
-				$compass_profile_build_type,
+				$profile_build_type,
 			);
 
 			foreach my $check ( qw/ aln_file_already_present prof_file_already_present scan_file_already_present / ) {
