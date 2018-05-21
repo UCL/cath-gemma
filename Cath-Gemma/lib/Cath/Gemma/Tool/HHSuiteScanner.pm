@@ -2,7 +2,7 @@ package Cath::Gemma::Tool::HHSuiteScanner;
 
 =head1 NAME
 
-Cath::Gemma::Tool::HHSuiteScanner - Scan HH-suite profiles against libraries of others and store the results in a file
+Cath::Gemma::Tool::HHSuiteScanner - Scan HHSuite profiles against libraries of others and store the results in a file
 
 =cut
 
@@ -33,36 +33,10 @@ use Cath::Gemma::Types  qw/
 	CathGemmaDiskGemmaDirSet
 /;
 use Cath::Gemma::Util;
+use Cath::Gemma::Tool::HHSuiteScanner;
 
 use Moo;
 with 'Cath::Gemma::Tool::ScannerInterface';
-
-=head2 _ffindex_impl
-
-TODOCUMENT
-
-=cut
-
-sub _ffindex_impl {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, Path );
-	my ( $class, $exes, $prof_lib_file ) = $check->( @ARG );
-
-	my $ffindex_build_exe = $exes->ffindex_build();
-
-	my @ffindex_args = ("-as", "$prof_lib_file.ffdata", "$prof_lib_file.ffindex", "$prof_lib_file" );
-	my ( $ffindex_stdout, $ffindex_stderr, $ffindex_exit ) = capture {
-		system( "$ffindex_build_exe", @ffindex_args );
-	};
-
-	if ( $ffindex_exit != 0 ) {
-		confess
-			"HHSuite ffindex command "
-			.join( ' ', ( "$ffindex_build_exe", @ffindex_args ) )
-			." failed with:\nstderr:\n$ffindex_stderr\nstdout:\n$ffindex_stdout";
-	}
-
-	return 1;
-}
 
 =head2 _hhsearch_scan_impl
 
@@ -84,53 +58,53 @@ sub _hhsearch_scan_impl {
 		$profile_build_type
 	);
 
-	INFO sprintf "About to build query profile library: profile_dir=%s clusters=[%s] tmp_dir=%s profile_type=%s", $profile_dir, join(",",@$match_cluster_ids), $exes->tmp_dir(), $profile_build_type;
-	my $query_prof_lib = build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $exes->tmp_dir(), $profile_build_type );
+	# search individual query alignments against the library of match profiles
+	my @all_scan_data;
+	for my $query_cluster_id ( @$query_cluster_ids ) {
 
-	INFO sprintf "About to build match profile library: profile_dir=%s clusters=[%s] tmp_dir=%s profile_type=%s", $profile_dir, join(",",@$match_cluster_ids), $exes->tmp_dir(), $profile_build_type;
-	my $match_prof_lib = build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $exes->tmp_dir(), $profile_build_type );
+		my $query_prof_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $query_cluster_id, $profile_build_type );
 
-	my $query_clusters_id = generic_id_of_clusters( $query_cluster_ids, 1 );
-	my $match_clusters_id = generic_id_of_clusters( $match_cluster_ids, 1 );
+		# builds profile library db (stub, ffdata, ffindex) from the cluster ids 
+		# my ($query_lib_stub, $query_lib_ffdata, $query_lib_ffindex) 
+		# 	= build_temp_profile_lib_files( $profile_dir, $exes, $query_cluster_ids, $exes->tmp_dir(), $profile_build_type );
+		my ($match_lib_stub, $match_lib_ffdata, $match_lib_ffindex) 
+			= build_temp_profile_lib_files( $profile_dir, $exes, $match_cluster_ids, $exes->tmp_dir(), $profile_build_type );
 
-	if ( 0 ) {
-		my $query_prof_file_orig = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $query_cluster_ids, $profile_build_type );
+		my $hhsuite_scan_exe = $exes->hhsearch;
 
-		# TODO:
-		INFO "COPY $query_prof_file_orig, $query_prof_lib";
-		copy( $query_prof_file_orig, $query_prof_lib )
-			or confess "failed to copy query alignment ($query_prof_file_orig => $query_prof_lib): $!";
+		my $query_clusters_id = generic_id_of_clusters( $query_cluster_ids, 1 );
+		my $match_clusters_id = generic_id_of_clusters( $match_cluster_ids, 1 );
+
+		# hhsearch -cpu 4 -i $cluster_id.a3m -d $db_stub -o $result_file
+
+		my @scan_command = (
+			'-i', $query_prof_file,
+			'-d', $match_lib_stub,
+		);
+
+		INFO "About to HHSuite-[$profile_build_type]-scan     $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
+
+		my ( $stdout, $stderr, $exit ) = capture {
+			system( "$hhsuite_scan_exe", @scan_command );
+		};
+
+		if ( $exit != 0 ) {
+			confess
+				"HHSuite scan command "
+				.join( ' ', ( "$hhsuite_scan_exe", @scan_command ) )
+				." failed with:\nstderr:\n$stderr\nstdout:\n$stdout";
+		}
+
+		INFO "Finished HHSuite-[$profile_build_type]-scanning $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
+
+		my @output_lines = split( /\n/, $stdout );
+		my $expected_num_results = $num_query_ids * $num_match_ids;
+
+		my $scan = Cath::Gemma::Scan::ScanData->parse_from_raw_hhsearch_scan_output_lines( \@output_lines, $expected_num_results );
+
+		push @all_scan_data, @{ $scan->scan_data };
 	}
-
-	INFO "QUERY FILE EXISTS: $query_prof_lib ? " . (-e $query_prof_lib ? 'YES' : 'NO');
-
-	INFO "About to index match library HHSuite-[$profile_build_type]-scan     $match_clusters_id [$num_match_ids profile(s)] => $match_prof_lib";
-
-	$class->_ffindex_impl( $exes, $match_prof_lib );
-
-	my $hhsearch_scan_exe = $exes->hhsearch();
-
-	INFO "About to HHSearch-[$profile_build_type]-scan     $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
-
-	my @hhsearch_args = ( "-cpu", "4", "-i", "$query_prof_lib", "-d", "$match_prof_lib" );
-	my ( $hhsearch_stdout, $hhsearch_stderr, $hhsearch_exit ) = capture {
-		system( "$hhsearch_scan_exe", @hhsearch_args );
-	};
-
-	INFO "QUERY FILE (STILL) EXISTS: $query_prof_lib ? " . (-e $query_prof_lib ? 'YES' : 'NO');
-
-	if ( $hhsearch_exit != 0 ) {
-		confess
-			"HHSearch scan command "
-			.join( ' ', ( "$hhsearch_scan_exe", @hhsearch_args ) )
-			." failed with:\nstderr:\n$hhsearch_stderr\nstdout:\n$hhsearch_stdout";
-	}
-
-	INFO "Finished HHSearch-[$profile_build_type]-scanning $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
-
-	my @output_lines = split( /\n/, $hhsearch_stdout );
-	my $expected_num_results = $num_query_ids * $num_match_ids;
-	return Cath::Gemma::Scan::ScanData->parse_from_raw_hhsearch_scan_output_lines( \@output_lines, $expected_num_results );
+	return Cath::Gemma::Scan::ScanData->new( scan_data => \@all_scan_data );
 }
 
 =head2 hhsuite_scan
@@ -180,7 +154,7 @@ sub scan_to_file {
 	my $file_already_present = ( -s $output_file ) ? 1 : 0;
 	if ( ! $file_already_present ) {
 		$result = run_and_time_filemaking_cmd(
-			'HHSearch scan',
+			'HHSuite scan',
 			$output_file,
 			sub {
 				my $scan_atomic_file = shift;
@@ -225,7 +199,7 @@ sub build_and_scan_merge_cluster_against_others {
 		$profile_build_type,
 	);
 
-	my $result = __PACKAGE__->hhsearch_scan_to_file(
+	my $result = __PACKAGE__->scan_to_file(
 		$exes,
 		[ id_of_clusters( $query_starting_cluster_ids ) ],
 		$match_ids,
@@ -253,52 +227,87 @@ sub get_pair_scan_score {
 	
 }
 
-=head2 build_temp_profile_lib_file
+=head2 build_temp_profile_lib_files
 
-TODOCUMENT
+Create a hhsuite profile library out of the individual profiles for the given cluster ids 
+
+Effectively this involves:
+
+	ffindex_build: *.a3m -> .ffdata, .ffindex
 
 =cut
 
-sub build_temp_profile_lib_file {
-	state $check = compile( Path, ArrayRef[Str], Path, CathGemmaHHSuiteProfileType );
-	my ( $profile_dir, $cluster_ids, $dest_dir, $profile_build_type ) = $check->( @ARG );
+sub build_temp_profile_lib_files {
+	state $check = compile( Path, CathGemmaDiskExecutables, ArrayRef[Str], Path, CathGemmaHHSuiteProfileType );
+	my ( $profile_dir, $exes, $cluster_ids, $dest_dir, $profile_build_type ) = $check->( @ARG );
 
+	my $exe_ffindex_build = $exes->ffindex_build;
 	my $CLEANUP_TMP_FILES = default_cleanup_temp_files();
-	my $profile_suffix = hhsuite_profile_suffix();
 
-	my $lib_file = Path::Tiny->tempfile( TEMPLATE => '.' . id_of_clusters( $cluster_ids ) . '.XXXXXXXXXXX',
+	my $hhsuite_ffdata_suffix  = hhsuite_ffdata_suffix();
+	my $hhsuite_ffindex_suffix = hhsuite_ffindex_suffix();
+	my $hhsuite_ffdb_suffix    = hhsuite_ffdb_suffix();
+
+	my $ffdata_tmp_file = Path::Tiny->tempfile( TEMPLATE => '.' . id_of_clusters( $cluster_ids ) . '.XXXXXXXXXXX',
 	                                         DIR      => $dest_dir,
-	                                         SUFFIX   => $profile_suffix,
 	                                         CLEANUP  => $CLEANUP_TMP_FILES,
-	                                    );
+	                                         );
 
-	if ( ! $CLEANUP_TMP_FILES ) {
-		WARN "NOT cleaning up temp profile lib file: $lib_file";
-	}
+	my $ffbase_file  = path( $ffdata_tmp_file )->absolute;
+	my $ffdata_file  = path( $ffbase_file . $hhsuite_ffdata_suffix );
+	my $ffdb_file    = path( $ffbase_file . $hhsuite_ffdb_suffix );
+	my $ffindex_file = path( $ffbase_file . $hhsuite_ffindex_suffix );
+	my $ffprof_list_file = path( $ffbase_file . '.list' );
 
-	my $lib_fh = $lib_file->openw()
-		or confess "Unable to open profile library file \"$lib_file\" for writing : $OS_ERROR";
+	# dump the list of profile file paths into a file
 
-	# concatenate files into 
+	my $ffprof_list_fh   = $ffprof_list_file->openw 
+		or confess "failed to open $ffprof_list_file for writing: $!";
 
 	foreach my $cluster_id ( @$cluster_ids ) {
 		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $profile_build_type );
-		my $profile_fh = $profile_file->openr()
-			or confess "Unable to open profile file \"$profile_file\" for reading : $OS_ERROR";
+		$ffprof_list_fh->print( $profile_file->absolute, "\n" );
+	}
+	$ffprof_list_fh->close;
 
-		# IS: 11/05/2018 - doesn't look like this would append?!
-		# copy( $profile_fh, $lib_fh )
-		# 	or confess "Failed to copy profile file \"$profile_file\" to profile library file \"$lib_file\" : $OS_ERROR";
+	my @ffindex_args = ( "-as", "-f", $ffprof_list_file, $ffdata_file, $ffindex_file );
+	INFO( sprintf "About to ffindex %s profiles for %d cluster ids [%s]: `%s`", $profile_build_type, scalar @$cluster_ids, join( ',', @$cluster_ids ), 
+		join( " ", $exe_ffindex_build, @ffindex_args ),
+	);
 
-		DEBUG sprintf( "Appending %s profile (cluster %d) '%s' to temp profile file '%s'", $profile_build_type, $cluster_id, $profile_file, $lib_file);
-        while (my $line = <$profile_fh>) {
-            print $lib_fh $line;
-        }
-		$profile_fh->close;
+	my ($stdout, $stderr, $exit) = capture {
+		system( $exe_ffindex_build, @ffindex_args );
+	};
+
+	if ( $exit != 0 ) {
+		confess "error: ffindex returned non-zero exit code ($exit)\nCOM: $exe_ffindex_build ".join(" ", @ffindex_args)."\nSTDOUT: $stdout\nSTDERR: $stderr\n";
 	}
 
-	return $lib_file;
+	if ( !-e $ffdata_file ) {
+		confess "failed to create ffdata file $ffdata_file"
+	}
+	if ( !-e $ffindex_file ) {
+		confess "failed to create ffindex file $ffindex_file";
+	}
+
+	_register_temp_files( $ffdata_tmp_file, $ffdata_file, $ffindex_file );
+
+	if ( ! $CLEANUP_TMP_FILES ) {
+		WARN "NOT cleaning up temp profile lib files: $ffdata_file, $ffindex_file";
+	}
+
+	return ( $ffdb_file, $ffdata_file, $ffindex_file );
 }
 
+my @ALL_TEMP_FILES;
+sub _register_temp_files {
+	push @ALL_TEMP_FILES, @_;
+}
+
+sub DESTROY {
+	my $CLEANUP_TMP_FILES = default_cleanup_temp_files();
+	warn "This is where I would consider deleting the following files (CLEANUP=$CLEANUP_TMP_FILES):\n"
+		. join( "", map { "\t$_\n" } @ALL_TEMP_FILES );  
+}
 
 1;

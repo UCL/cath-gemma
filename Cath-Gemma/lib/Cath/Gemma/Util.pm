@@ -45,11 +45,16 @@ our @EXPORT = qw/
 	guess_if_running_on_sge
 	hhsuite_profile_suffix
 	hhsuite_scan_suffix
+	hhsuite_ffdb_suffix
+	hhsuite_ffdata_suffix
+	hhsuite_ffindex_suffix
 	id_of_clusters
 	make_atomic_write_file
 	mergee_is_starting_cluster
 	prof_file_of_prof_dir_and_aln_file
 	prof_file_of_prof_dir_and_cluster_id
+	profile_builder_class_from_type
+	profile_scanner_class_from_type
 	raw_sequences_filename_of_starting_clusters
 	run_and_time_filemaking_cmd
 	scan_filebasename_of_cluster_ids
@@ -83,7 +88,62 @@ use Cath::Gemma::Types qw/
 	TimeSeconds
 /;
 
-my $CLEANUP_TMP_FILES = 0;
+my $CLEANUP_TMP_FILES = 1;
+
+####
+
+=head2 compass_scan_suffix
+
+Return the filename suffix to use for scan results files
+
+=head2 hhsuite_scan_suffix
+
+Return the filename suffix to use for HH-suite scan (hhsearch) results files
+
+=head2 alignment_suffix
+
+Return the filename suffix to use for alignment files
+
+=head2 hhsuite_profile_suffix
+
+Return the default suffix for a HH-suite profile file
+
+=head2 compass_profile_suffix
+
+Return the default suffix for a COMPASS profile file
+
+=head2 sequences_suffix
+
+Return the filename suffix to use for files containing unaligned sequences
+
+=head2 default_profile_build_type
+
+Return the default profile_build_type
+
+The previous DFX code was using an earlier version of the COMPASS code
+which sometimes gave inconsistent results on different machines and which
+sometimes gave inconsistent results depending on whether a model was built
+as the first or second of a pair (with a dummy as the other).
+
+In this work, we've performed a comparison of results and agreed that we're
+all happy to move to mk_compass_db which avoids these issues.
+
+UPDATE: default profile type is now 'hhconsensus'
+
+=cut
+
+sub hhsuite_ffdb_suffix        { '.db' }
+sub hhsuite_ffdata_suffix      { '.db_a3m.ffdata' }
+sub hhsuite_ffindex_suffix     { '.db_a3m.ffindex' }
+sub hhsuite_aln_suffix         { '.aln' }
+sub hhsuite_profile_suffix     { '.a3m' }
+sub hhsuite_scan_suffix        { '.hhsearch' }
+sub compass_profile_suffix     { '.prof' }
+sub compass_scan_suffix        { '.scan' }
+sub alignment_suffix           { '.aln' }
+sub sequences_suffix           { '.faa' }
+
+sub default_profile_build_type { 'hhconsensus' }
 
 =head2 default_cleanup_temp_files 
 
@@ -496,47 +556,6 @@ sub suffix_for_profile_type {
 		confess "Failed to recognise profile type $profile_type";
 }
 
-=head2 hhsuite_profile_suffix
-
-Return the default suffix for a HH-suite profile file
-
-=cut
-
-sub hhsuite_profile_suffix {
-	return '.a3m';
-}
-
-=head2 compass_profile_suffix
-
-Return the default suffix for a COMPASS profile file
-
-=cut
-
-sub compass_profile_suffix {
-	return '.prof';
-}
-
-=head2 default_profile_build_type
-
-Return the default profile_build_type
-
-The previous DFX code was using an earlier version of the COMPASS code
-which sometimes gave inconsistent results on different machines and which
-sometimes gave inconsistent results depending on whether a model was built
-as the first or second of a pair (with a dummy as the other).
-
-In this work, we've performed a comparison of results and agreed that we're
-all happy to move to mk_compass_db which avoids these issues.
-
-UPDATE: default profile type is now 'hhconsensus'
-
-=cut
-
-sub default_profile_build_type {
-	return 'hhconsensus';
-}
-
-
 =head2 default_temp_dir
 
 Return the default temporary directory to use as a scratch space
@@ -549,10 +568,9 @@ This should keep stuff very fast. However it does mean that code must:
 =cut
 
 sub default_temp_dir {
-
-	my $tmp_dir = Path::Tiny->tempdir( TEMPLATE => 'cath-gemma-util.XXXXXXXX', DIR => '/tmp', CLEANUP => 0 );
-
-	# return path( '/dev/shm' );
+	my $base_path = '/dev/shm'; # /tmp 
+	my $CLEANUP_TMP_FILES = default_cleanup_temp_files();
+	my $tmp_dir = Path::Tiny->tempdir( TEMPLATE => 'cath-gemma-util.XXXXXXXX', DIR => $base_path, CLEANUP => $CLEANUP_TMP_FILES );
 	return $tmp_dir;
 }
 
@@ -584,25 +602,6 @@ sub evalue_window_floor {
 	( 10 ** ( floor( log10( $evalue ) / 10 ) * 10 ) );
 }
 
-=head2 compass_scan_suffix
-
-Return the filename suffix to use for scan results files
-
-=cut
-
-sub compass_scan_suffix {
-	return '.scan';
-}
-
-=head2 hhsuite_scan_suffix
-
-Return the filename suffix to use for HH-suite scan (hhsearch) results files
-
-=cut
-
-sub hhsuite_scan_suffix {
-	return '.hhsearch';
-}
 
 =head2 default_clusts_ordering
 
@@ -612,16 +611,6 @@ Return the default clusts_ordering value
 
 sub default_clusts_ordering {
 	return 'simple_ordering';
-}
-
-=head2 alignment_suffix
-
-Return the filename suffix to use for alignment files
-
-=cut
-
-sub alignment_suffix {
-	return '.aln';
 }
 
 =head2 alignment_filebasename_of_starting_clusters
@@ -712,16 +701,6 @@ sub scan_filename_of_dir_and_cluster_ids {
 	my ( $dir, $query_ids, $match_ids, $profile_build_type ) = $check->( @ARG );
 
 	return $dir->child( scan_filebasename_of_cluster_ids( $query_ids, $match_ids, $profile_build_type ) );
-}
-
-=head2 sequences_suffix
-
-Return the filename suffix to use for files containing unaligned sequences
-
-=cut
-
-sub sequences_suffix {
-	return '.faa';
 }
 
 =head2 time_seconds_to_sge_string
@@ -824,6 +803,7 @@ sub build_alignment_and_profile {
 			$exes,
 			$built_aln_file,
 			$profile_dir_set,
+			$profile_build_type
 		);
 	}
 
@@ -865,5 +845,43 @@ sub build_alignment_and_profile {
 		prof_filename => $profile_result->{ out_filename  },
 	};
 }
+
+=head2 profile_builder_class_from_type
+
+Return the class name of the appropriate profile builder based on the given C<profile_build_type>
+
+=cut
+
+sub profile_builder_class_from_type {
+	# allow this function to be called from an instance or class context (or neither)
+	my $maybe_class;
+	$maybe_class = shift if ($ARG[0] =~ /^Cath::Gemma::/ || blessed $ARG[0] =~ /^Cath::Gemma::/ );
+	my $profile_build_type = shift;
+	my $builder_class = 
+		CathGemmaCompassProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::CompassProfileBuilder" :
+		CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::HHSuiteProfileBuilder" :
+		confess "Unknown profile build type $profile_build_type";
+	return $builder_class;
+}
+
+=head2 profile_scanner_class_from_type
+
+Return the class name of the appropriate profile scanner based on the given C<profile_build_type>
+
+=cut
+
+sub profile_scanner_class_from_type {
+	# allow this function to be called from an instance or class context (or neither)
+	my $maybe_class;
+	$maybe_class = shift if ($ARG[0] =~ /^Cath::Gemma::/ || blessed $ARG[0] =~ /^Cath::Gemma::/ );
+	my $profile_build_type = shift;
+	my $scanner_class = 
+		CathGemmaCompassProfileType->check( $profile_build_type ) ? 'Cath::Gemma::Tool::CompassScanner' : 
+		CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? 'Cath::Gemma::Tool::HHSuiteScanner' : 
+		confess "! Error: not able to get scanner class for profile build type '$profile_build_type'";
+	return $scanner_class;
+}
+
+
 
 1;
