@@ -21,9 +21,10 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 # Non-core (local)
-use Type::Params      qw/ compile Invocant                  /;
-use Types::Path::Tiny qw/ Path                              /;
-use Types::Standard   qw/ ArrayRef Int Num Object Str Tuple /;
+use Type::Params        qw/ compile Invocant                  /;
+use Log::Log4perl::Tiny qw/ :easy                    /;
+use Types::Path::Tiny   qw/ Path                              /;
+use Types::Standard     qw/ ArrayRef Int Num Object Str Tuple /;
 
 # Cath::Gemma
 use Cath::Gemma::Util;
@@ -209,7 +210,7 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 	my $num_results = scalar keys %best_score_per_match;
 
 	if ( $num_results != $expected_num_results ) {
-		confess "Something wrong whilst parsing HHSuite results: expected to get $expected_num_results results but found $num_results."
+		WARN "Something wrong whilst parsing HHSuite results: expected to get $expected_num_results results but found $num_results."
 	}
 
 	# sort by lowest evalue
