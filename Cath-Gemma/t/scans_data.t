@@ -76,3 +76,5 @@ subtest 'toy_data' => sub {
 	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( '2' ), [ '1', 5.0 ], 'gets correct lowest result' );
 	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( '3' ), [ '1', 5.0 ], 'gets correct lowest result' );
 };
+
+

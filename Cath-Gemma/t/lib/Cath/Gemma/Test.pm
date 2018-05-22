@@ -266,4 +266,87 @@ sub tree_dir_set_of_superfamily {
 	);
 }
 
+
+=head2 bootstrap_hhsuite_scan_files_for_superfamily
+
+Create HHSuite scan files in the test area for a given superfamily and clusters
+
+	bootstrap_hhsuite_scan_files_for_superfamily( '1.10.8.10', [ [ 1, [2, 3] ] ])
+
+=cut
+
+
+sub bootstrap_hhsuite_scan_files_for_superfamily {
+	my $sfam_id       = shift;
+	my $clust_and_clust_list_pairs = shift;
+
+	my $scan_dir      = Path::Tiny->tempdir( CLEANUP => ! bootstrap_is_on() );
+
+	my $executor      = Cath::Gemma::Executor::DirectExecutor->new();
+	my $prof_dir_set  = Cath::Gemma::Test::profile_dir_set_of_superfamily( $sfam_id );
+	my $gemma_dir_set = Cath::Gemma::Disk::GemmaDirSet->new(
+		profile_dir_set => $prof_dir_set,
+		scan_dir        => $scan_dir,
+	);
+
+	if ( ! $clust_and_clust_list_pairs ) {
+		use DDP;
+		my @prof_files = $prof_dir_set->prof_dir->children( qr{\b[0-9]+\.hhconsensus\.a3m$} );
+		my @prof_ids   = sort { $a <=> $b } map { $_->basename( '.hhconsensus.a3m' ) } @prof_files;
+		my ($first_id, @rest_of_ids) = @prof_ids;
+		$clust_and_clust_list_pairs = [ [ $first_id, \@rest_of_ids ] ];
+	}
+
+	diag( "bootstrap_superfamily_scan_files: $sfam_id, $scan_dir, $clust_and_clust_list_pairs" );
+	my $exec_sync = 'always_wait_for_complete';
+	$executor->execute_batch(
+		Cath::Gemma::Compute::WorkBatch->make_from_profile_scan_task_ctor_args(
+			clust_and_clust_list_pairs => $clust_and_clust_list_pairs,
+			dir_set                    => $gemma_dir_set,
+		),
+		$exec_sync
+	);
+}
+
+=head2 bootstrap_hhsuite_profile_files_for_superfamily
+
+Create HHSuite profiles in the test area for a given superfamily
+
+=cut
+
+sub bootstrap_hhsuite_profile_files_for_superfamily {
+	my $sfam_id = shift;
+
+	my $root_dir        = path( "$FindBin::Bin/.." )->absolute;
+	my $hhsuite_dir     = $root_dir->child( "tools", "hhsuite" );
+	my $hhconsensus_exe = $hhsuite_dir->child( 'bin', 'hhconsensus' );
+
+	# for id in $(seq 1 4); do 
+	#   hhconsensus -i ./t/data/1.20.5.200/alignments/$id.aln -o t/data/1.20.5.200/profiles/$id.hhconsensus.a3m
+	#   sed -i '1s/.*/#$id/' $id.hhconsensus.a3m
+    #   sed -i '2s/.*/>$id _consensus/' $id.hhconsensus.a3m
+	# done
+
+	my $aln_dir = $root_dir->child( 't', 'data', $sfam_id, 'alignments' );
+	my $prof_dir = $aln_dir->sibling( 'profiles' );
+	
+	my $hhcon = $hhconsensus_exe->stringify;
+	local $ENV{HHLIB} = $hhsuite_dir->stringify;
+
+	my @profile_files;
+	for my $aln_file ( $aln_dir->children( qr/\.aln$/ ) ) {
+		my $id = $aln_file->basename('.aln');
+		my $prof_file = $prof_dir->child( $id . '.hhconsensus.a3m' );
+		my $com = "$hhcon -i $aln_file -o $prof_file";
+		system( $com );
+		confess "! Error: failed to bootstrap hhsuite profile file '$prof_file' using command `$com`";
+		system( "sed -i '1s/.*/#$id/' $prof_file" );
+		system( "sed -i '2s/.*/>$id _consensus/' $prof_file" );
+		push @profile_files, $prof_file; 
+	}
+
+	return @profile_files;
+}
+
+
 1;

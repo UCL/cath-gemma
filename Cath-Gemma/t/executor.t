@@ -45,14 +45,12 @@ Log::Log4perl->easy_init( {
 	level => $WARN,
 } );
 
-my $CLEANUP = 0;
+my $CLEANUP = 1;
 if ( !$CLEANUP ) {
 	diag "**** WARNING: NOT removing temp directories (\$CLEANUP=0) ****";	
 }
 
 my $superfamily = '1.20.5.200';
-my $HHSUITE_DIR     = path( "$FindBin::Bin/../tools/hhsuite" )->absolute;
-my $HHCONSENSUS_EXE = $HHSUITE_DIR->child( 'bin', 'hhconsensus' )->absolute;
 
 =head2 check_sub_if_die
 
@@ -138,34 +136,6 @@ sub test_build_profile {
 	}
 }
 
-
-=head2 bootstrap_profile_files_for_superfamily
-
-=cut
-
-sub bootstrap_profile_files_for_superfamily {
-	# for id in $(seq 1 4); do 
-	#   hhconsensus -i ./t/data/1.20.5.200/alignments/$id.aln -o t/data/1.20.5.200/profiles/$id.hhconsensus.a3m
-	#   sed -i '1s/.*/#$id/' $id.hhconsensus.a3m
-    #   sed -i '2s/.*/>$id _consensus/' $id.hhconsensus.a3m
-	# done
-
-	my $sfam_id = shift;
-	my $aln_dir = path( $FindBin::Bin, 'data', $sfam_id, 'alignments' );
-	my $prof_dir = path( $aln_dir, '..', 'profiles' );
-	
-	my $hhcon = $HHCONSENSUS_EXE->stringify;
-	local $ENV{HHLIB} = $HHSUITE_DIR->stringify;
-
-	for my $aln_file ( $aln_dir->children( qr/\.aln$/ ) ) {
-		my $id = $aln_file->basename('.aln');
-		my $prof_file = $prof_dir->child( $id . '.hhconsensus.a3m' );
-		sys( "$hhcon -i $aln_file -o $prof_file" );
-		sys( "sed -i '1s/.*/#$id/' $prof_file" );
-		sys( "sed -i '2s/.*/>$id _consensus/' $prof_file" );
-	}
-}
-
 sub sys {
 	my $com = shift;
 	diag( "COM: $com" );
@@ -193,7 +163,7 @@ sub test_scan_profile {
 	);
 
 	if ( Cath::Gemma::Test->bootstrap_is_on ) {
-		bootstrap_profile_files_for_superfamily( $superfamily );
+		Cath::Gemma::Test::bootstrap_hhsuite_profile_files_for_superfamily( $superfamily );
 	}
 
 	# Try building a profile, handling whether the executor should confess
