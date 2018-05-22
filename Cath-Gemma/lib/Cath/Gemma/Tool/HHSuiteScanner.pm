@@ -271,9 +271,11 @@ sub build_temp_profile_lib_files {
 	$ffprof_list_fh->close;
 
 	my @ffindex_args = ( "-as", "-f", $ffprof_list_file, $ffdata_file, $ffindex_file );
-	INFO( sprintf "About to ffindex %s profiles for %d cluster ids [%s]: `%s`", $profile_build_type, scalar @$cluster_ids, join( ',', @$cluster_ids ), 
+	INFO( sprintf "About to ffindex %s profiles for %d cluster ids [%s]", $profile_build_type, scalar @$cluster_ids, join( ',', @$cluster_ids ), 
 		join( " ", $exe_ffindex_build, @ffindex_args ),
 	);
+
+	DEBUG( sprintf "SYSTEM: `%s`", join( " ", $exe_ffindex_build, @ffindex_args ) );
 
 	my ($stdout, $stderr, $exit) = capture {
 		system( $exe_ffindex_build, @ffindex_args );
