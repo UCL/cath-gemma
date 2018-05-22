@@ -104,6 +104,18 @@ Return the filename suffix to use for HH-suite scan (hhsearch) results files
 
 Return the filename suffix to use for alignment files
 
+=head2 hhsuite_ffdb_suffix
+
+Return the default suffix for a HH-suite DB
+
+=head2 hhsuite_ffdata_suffix
+
+Return the default suffix for a HH-suite DB ffdata file
+
+=head2 hhsuite_ffindex_suffix
+
+Return the default suffix for a HH-suite DB ffindex file
+
 =head2 hhsuite_profile_suffix
 
 Return the default suffix for a HH-suite profile file
@@ -135,7 +147,6 @@ UPDATE: default profile type is now 'hhconsensus'
 sub hhsuite_ffdb_suffix        { '.db' }
 sub hhsuite_ffdata_suffix      { '.db_a3m.ffdata' }
 sub hhsuite_ffindex_suffix     { '.db_a3m.ffindex' }
-sub hhsuite_aln_suffix         { '.aln' }
 sub hhsuite_profile_suffix     { '.a3m' }
 sub hhsuite_scan_suffix        { '.hhsearch' }
 sub compass_profile_suffix     { '.prof' }
