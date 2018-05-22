@@ -34,6 +34,8 @@ use Cath::Gemma::Disk::Executables;
 #use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Util;
 
+use_ok( 'Cath::Gemma::Tool::HHSuiteProfileBuilder' );
+
 # Don't flood this test with INFO messages
 Log::Log4perl->easy_init( { level => $WARN } );
 
@@ -49,7 +51,7 @@ my $exe_hhconsensus           = path( $exe_dir )->child( 'bin/hhconsensus' );
 my $exe_hhsearch              = path( $exe_dir )->child( 'bin/hhsearch' );
 my $exe_ffindex_build         = path( $exe_dir )->child( 'bin/ffindex_build' );
 
-test_hhsearch_inline( "build and scan clusters with hhsearch (inline)", $starting_clusters_dir, $build_hhsearch_db_dir );
+#test_hhsearch_inline( "build and scan clusters with hhsearch (inline)", $starting_clusters_dir, $build_hhsearch_db_dir );
 
 test_hhsearch_lib( "build and scan clusters with hhsearch (using libraries)", $starting_clusters_dir, $build_hhsearch_db_dir );
 
@@ -67,11 +69,16 @@ sub test_hhsearch_lib {
 	state $check = compile( Str, Path, Path );
 	my ( $assertion_name, $aln_dir, $expected_dir ) = $check->( @ARG );
 
-	my $test_out_dir = cath_test_tempdir( TEMPLATE => "test.compass_profile_build.XXXXXXXXXXX" );
-	my $got_file     = prof_file_of_prof_dir_and_aln_file( $test_out_dir, $aln_file, $prof_type );
+    my $prof_type    = 'hhconsensus';
+    my $node_id      = 'n0de_02b5cea3bd4bc106e284257d12addb09';
+	my $test_out_dir = cath_test_tempdir( TEMPLATE => "test.hhsuite_profile_build.XXXXXXXXXXX" );
+	my $aln_file     = path( $aln_dir )->child( $node_id . ".aln" );
+
+	my $expected_profile = prof_file_of_prof_dir_and_aln_file( $aln_dir->sibling('profiles'), $node_id, $prof_type );
+	my $got_profile      = prof_file_of_prof_dir_and_aln_file( $test_out_dir, $node_id, $prof_type );
 
 	# Build a profile file
-	Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile_in_dir(
+	Cath::Gemma::Tool::HHSuiteProfileBuilder->build_profile_in_dir(
 		Cath::Gemma::Disk::Executables->new(),
 		$aln_file,
 		$test_out_dir,
@@ -80,11 +87,10 @@ sub test_hhsearch_lib {
 
 	# Compare it to expected
 	file_matches(
-		$got_file,
-		$expected_prof,
+		$got_profile,
+		$expected_profile,
 		$assertion_name
 	);
-
 }
 
 =head2 test_hhsearch_inline
@@ -117,12 +123,13 @@ sub test_hhsearch_inline {
         my $cluster_name = $1;
         push @cluster_names, $cluster_name;
         my $a3m_file = $a3m_dir->child( $cluster_name . ".a3m" );
+        my $hhm_file = $a3m_dir->child( $cluster_name . ".hhm" );
         trap { 
             sys( "$exe_hhconsensus -v 0 -i $aln_file -o $a3m_file" );
             sys( "sed -i '1s/.*/#$cluster_name/' $a3m_file" );
             sys( "sed -i '2s/.*/>$cluster_name _consensus/' $a3m_file" );
         };
-        ok( -e "$a3m_file", "a3m file exists: $a3m_file" );
+        ok( -e "$hhm_file", "hhm file exists: $hhm_file" );
     }
 
     # 2. ffindex_build: *.a3m -> .ffdata, .ffindex
@@ -144,27 +151,11 @@ sub test_hhsearch_inline {
     };
     ok( -e "$result_file", "hhsearch results file exists: $result_file" );
 
-    warn $result_file->slurp;
-
-	# # Build a profile file
-	# Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile_in_dir(
-	# 	Cath::Gemma::Disk::Executables->new(),
-	# 	$aln_file,
-	# 	$test_out_dir,
-	# 	$prof_type,
-	# );
-
-	# # Compare it to expected
-	# file_matches(
-	# 	$got_file,
-	# 	$expected_prof,
-	# 	$assertion_name
-	# );
-
+    #warn $result_file->slurp;
 }
 
 sub sys {
     my $com = shift;
-    diag( "COM: $com" );
+    #diag( "COM: $com" );
     `$com`;
 }
