@@ -30,7 +30,7 @@ subtest 'example_1.20.5.200' => sub {
 	my $tree       = Cath::Gemma::Tree::MergeList->read_from_tracefile( $tree_file );
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_starting_clusters_and_dir(
 		$scans_dir,
-		default_compass_profile_build_type(),
+		default_profile_build_type(),
 		$tree->starting_clusters(),
 	);
 

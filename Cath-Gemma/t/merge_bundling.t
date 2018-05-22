@@ -31,7 +31,7 @@ my $windowed_bundler = new_ok( 'Cath::Gemma::Tree::MergeBundler::WindowedMergeBu
 
 my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_dir_and_starting_clusters_dir(
 	$scans_dir,
-	default_compass_profile_build_type(),
+	default_profile_build_type(),
 	$starting_clusters_dir,
 );
 

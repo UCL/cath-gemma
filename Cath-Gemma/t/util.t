@@ -176,12 +176,12 @@ subtest 'compass_profile_suffix' => sub {
 	is( compass_profile_suffix(), '.prof', 'compass_profile_suffix() returns as expected' );
 };
 
-subtest 'default_compass_profile_build_type' => sub {
-	is( default_compass_profile_build_type(), 'mk_compass_db', 'default_compass_profile_build_type() returns as expected' );
+subtest 'default_profile_build_type' => sub {
+	is( default_profile_build_type(), 'hhconsensus', 'default_profile_build_type() returns as expected' );
 };
 
 subtest 'default_temp_dir' => sub {
-	is( default_temp_dir(), '/dev/shm', 'default_temp_dir() returns as expected' );
+	like( default_temp_dir(), qr{/dev/shm}, 'default_temp_dir() returns as expected' );
 };
 
 subtest 'evalue_window_ceiling() / evalue_window_floor()' => sub {
@@ -211,15 +211,15 @@ subtest 'alignment_filebasename_of_starting_clusters' => sub {
 
 subtest 'prof_file_of_prof_dir_and_aln_file' => sub {
 	is(
-		prof_file_of_prof_dir_and_aln_file( '/tmp', '/some/other/dir/my_clust_1.aln', default_compass_profile_build_type() ),
-		'/tmp/my_clust_1.mk_compass_db.prof',
+		prof_file_of_prof_dir_and_aln_file( '/tmp', '/some/other/dir/my_clust_1.aln', default_profile_build_type() ),
+		'/tmp/my_clust_1.hhconsensus.a3m',
 		'prof_file_of_prof_dir_and_aln_file() returns as expected'
 	);
 };
 
 subtest 'prof_file_of_prof_dir_and_cluster_id' => sub {
 	is(
-		prof_file_of_prof_dir_and_cluster_id( '/tmp', 'my_clust_1', default_compass_profile_build_type() ),
+		prof_file_of_prof_dir_and_cluster_id( '/tmp', 'my_clust_1', 'mk_compass_db' ),
 		'/tmp/my_clust_1.mk_compass_db.prof',
 		'prof_file_of_prof_dir_and_cluster_id() returns as expected'
 	);
@@ -235,25 +235,25 @@ subtest 'raw_sequences_filename_of_starting_clusters' => sub {
 
 subtest 'scan_filebasename_of_cluster_ids' => sub {
 	is(
-		scan_filebasename_of_cluster_ids( [ 'my_query' ], [ 'my_match_1', 'my_match_2' ], default_compass_profile_build_type(), ),
+		scan_filebasename_of_cluster_ids( [ 'my_query' ], [ 'my_match_1', 'my_match_2' ], 'mk_compass_db', ),
 		'my_query.l1st_0fefca17cea83290bf5f9fa57c6f18c8.mk_compass_db.scan',
 		'scan_filebasename_of_cluster_ids() returns as expected'
 	);
 
 	dies_ok(
-		sub { scan_filebasename_of_cluster_ids( [            ], [ 'my_match_1', 'my_match_2' ], default_compass_profile_build_type(), ); },
+		sub { scan_filebasename_of_cluster_ids( [            ], [ 'my_match_1', 'my_match_2' ], default_profile_build_type(), ); },
 		'scan_filebasename_of_cluster_ids() dies as expected with empty query'
 	);
 	dies_ok(
-		sub { scan_filebasename_of_cluster_ids( [ 'my_query' ], [                            ], default_compass_profile_build_type(), ); },
+		sub { scan_filebasename_of_cluster_ids( [ 'my_query' ], [                            ], default_profile_build_type(), ); },
 		'scan_filebasename_of_cluster_ids() dies as expected with empty match'
 	);
 };
 
 subtest 'scan_filename_of_dir_and_cluster_ids' => sub {
 	is(
-		scan_filename_of_dir_and_cluster_ids( '/tmp', [ 'my_query' ], [ 'my_match_1', 'my_match_2' ], default_compass_profile_build_type(), ),
-		'/tmp/my_query.l1st_0fefca17cea83290bf5f9fa57c6f18c8.mk_compass_db.scan',
+		scan_filename_of_dir_and_cluster_ids( '/tmp', [ 'my_query' ], [ 'my_match_1', 'my_match_2' ], default_profile_build_type(), ),
+		'/tmp/my_query.l1st_0fefca17cea83290bf5f9fa57c6f18c8.hhconsensus.scan',
 		'scan_filename_of_dir_and_cluster_ids() returns as expected'
 	);
 };
