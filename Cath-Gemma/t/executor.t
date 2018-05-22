@@ -217,7 +217,7 @@ sub test_scan_profile {
 		file_matches(
 			$scan_dir                                ->child( $scan_basename ),
 			test_superfamily_scan_dir( $superfamily )->child( $scan_basename ),
-			'Scan results file matches expected'
+			"Scan results file matches expected ($scan_basename)"
 		);
 	}
 }
@@ -272,7 +272,7 @@ sub test_build_tree {
 			file_matches(
 				$tree_dir                                ->child( $tree_subdir )->child( $tree_basename ),
 				test_superfamily_tree_dir( $superfamily )->child( $tree_subdir )->child( $tree_basename ),
-				'Scan results file matches expected'
+				"Scan results file matches expected ($tree_basename)"
 			);
 		}
 	}

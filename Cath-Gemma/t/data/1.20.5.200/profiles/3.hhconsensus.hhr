@@ -1,0 +1,28 @@
+Query         3
+Match_columns 46
+No_of_seqs    1 out of 4
+Neff          1
+Searched_HMMs 1
+Date          Tue May 22 12:26:08 2018
+Command       /dev/shm/cath_gemma_exes_dir.DG_QuNnP/hhsearch -i /cath/homes2/ucbcisi/git/cath-gemma/Cath-Gemma/t/data/1.20.5.200/profiles/3.hhconsensus.a3m -d /dev/shm/cath-gemma-util.rXd8dX_o/.4.LStOvt0Yukw.db 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 4                               94.3   1E-07   1E-07   35.0   0.0   44    2-45      1-44  (45)
+  2 4                                0.0    0.96    0.96    4.3   0.0    1   20-20     29-29  (45)
+
+No 1
+>4
+Probab=94.30  E-value=1e-07  Score=35.01  Aligned_cols=44  Identities=36%  Similarity=0.562  Sum_probs=33.6  Template_Neff=1.000
+
+Q 3                 2 CDSYTNILSQNDLVAFKRFMRIRSSLMILQSIEDDLQDNENKDE   45 (46)
+Q Consensus         2 cdsytnilsqndlvafkrfmrirsslmilqsieddlqdnenkde   45 (46)
+                      |-|-||.||.-||..||...+.|-.+....|-.|-+.-....||
+T Consensus         1 cisatnvlskydlmnfkkllkrrlaltffmseddfigvhgerde   44 (45)
+T 4                 1 CISATNVLSKYDLMNFKKLLKRRLALTFFMSEDDFIGVHGERDE   44 (45)
+Confidence            78999999999999999999999888877764443333333444
+
+
+No 2
+>4
+Probab=0.03  E-value=0.96  Score=4.31  Aligned_cols=1  Identities=0%  Similarity=0.000  Sum_probs=0.0  Template_Neff=1.000
+

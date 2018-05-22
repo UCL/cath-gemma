@@ -1,0 +1,46 @@
+Query         1
+Match_columns 52
+No_of_seqs    1 out of 2
+Neff          1
+Searched_HMMs 2
+Date          Tue May 22 12:45:44 2018
+Command       /dev/shm/cath_gemma_exes_dir.RW83OzFY/hhsearch -i /cath/homes2/ucbcisi/git/cath-gemma/Cath-Gemma/t/data/1.20.5.200/profiles/1.hhconsensus.a3m -d /dev/shm/cath-gemma-util.RKSanhGy/.n0de_37693cfc748049e45d87b8c7d8b9aacd.IqBTbJkAqYS.db 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 2                               98.5 3.5E-15 1.7E-15   69.1   0.0   49    2-52      2-50  (50)
+  2 3                               97.4 2.6E-11 1.3E-11   52.0   0.0   46    5-52      1-46  (46)
+  3 3                                0.0       2    0.98    4.2   0.0    1    1-1       1-1   (46)
+  4 2                                0.0       2       1    2.2   0.0    1    6-6       1-1   (50)
+
+No 1
+>2
+Probab=98.53  E-value=3.5e-15  Score=69.09  Aligned_cols=49  Identities=61%  Similarity=0.798  Sum_probs=45.1  Template_Neff=1.000
+
+Q 1                 2 SDTTCASLTNKLSQHDLADFKKYIKRKFTLMTLLSINNDGFFSNNGGKDEL   52 (52)
+Q Consensus         2 sdttcasltnklsqhdladfkkyikrkftlmtllsinndgffsnnggkdel   52 (52)
+                      |--||.-+||.|||.|+-.|||.||||-|.+||-||  |.|.-.||.||||
+T Consensus         2 sfltcdfitnelsqadllkfkklikrkstfltlqsi--ddflvkngdkdel   50 (50)
+T 2                 2 SFLTCDFITNELSQADLLKFKKLIKRKSTFLTLQSI--DDFLVKNGDKDEL   50 (50)
+Confidence            345899999999999999999999999999999998  5699999999996
+
+
+No 2
+>3
+Probab=97.39  E-value=2.6e-11  Score=52.03  Aligned_cols=46  Identities=48%  Similarity=0.771  Sum_probs=40.8  Template_Neff=1.000
+
+Q 1                 5 TCASLTNKLSQHDLADFKKYIKRKFTLMTLLSINNDGFFSNNGGKDEL   52 (52)
+Q Consensus         5 tcasltnklsqhdladfkkyikrkftlmtllsinndgffsnnggkdel   52 (52)
+                      .|.|.||-|||.||-.||++++-+-.||.|-||..|  ...|..||||
+T Consensus         1 acdsytnilsqndlvafkrfmrirsslmilqsiedd--lqdnenkdel   46 (46)
+T 3                 1 ACDSYTNILSQNDLVAFKRFMRIRSSLMILQSIEDD--LQDNENKDEL   46 (46)
+Confidence            489999999999999999999999999999999877  4567778875
+
+
+No 3
+>3
+Probab=0.03  E-value=2  Score=4.20  Aligned_cols=1  Identities=0%  Similarity=0.000  Sum_probs=0.0  Template_Neff=1.000
+
+No 4
+>2
+Probab=0.01  E-value=2  Score=2.17  Aligned_cols=1  Identities=0%  Similarity=0.000  Sum_probs=0.0  Template_Neff=1.000
+

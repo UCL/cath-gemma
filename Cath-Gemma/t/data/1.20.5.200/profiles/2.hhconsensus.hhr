@@ -1,0 +1,46 @@
+Query         2
+Match_columns 50
+No_of_seqs    1 out of 2
+Neff          1
+Searched_HMMs 2
+Date          Tue May 22 12:26:07 2018
+Command       /dev/shm/cath_gemma_exes_dir.DG_QuNnP/hhsearch -i /cath/homes2/ucbcisi/git/cath-gemma/Cath-Gemma/t/data/1.20.5.200/profiles/2.hhconsensus.a3m -d /dev/shm/cath-gemma-util.rXd8dX_o/.n0de_e369853df766fa44e1ed0ff613f563bd.lywLykEeFEy.db 
+
+ No Hit                             Prob E-value P-value  Score    SS Cols Query HMM  Template HMM
+  1 3                               98.0   4E-13   2E-13   59.2   0.0   46    5-50      1-46  (46)
+  2 4                               96.7 8.3E-10 4.1E-10   45.3   0.0   45    6-50      1-45  (45)
+  3 4                                0.0     1.9    0.97    4.2   0.0    1    1-1       1-1   (45)
+  4 3                                0.0     1.9    0.97    4.2   0.0    1    1-1       1-1   (46)
+
+No 1
+>3
+Probab=98.01  E-value=4e-13  Score=59.25  Aligned_cols=46  Identities=50%  Similarity=0.749  Sum_probs=44.1  Template_Neff=1.000
+
+Q 2                 5 TCDFITNELSQADLLKFKKLIKRKSTFLTLQSIDDFLVKNGDKDEL   50 (50)
+Q Consensus         5 tcdfitnelsqadllkfkklikrkstfltlqsiddflvkngdkdel   50 (50)
+                      .||-.||-|||.||..||+..+-+|....||||.|-|..|..||||
+T Consensus         1 acdsytnilsqndlvafkrfmrirsslmilqsieddlqdnenkdel   46 (46)
+T 3                 1 ACDSYTNILSQNDLVAFKRFMRIRSSLMILQSIEDDLQDNENKDEL   46 (46)
+Confidence            4999999999999999999999999999999999999999999986
+
+
+No 2
+>4
+Probab=96.68  E-value=8.3e-10  Score=45.33  Aligned_cols=45  Identities=47%  Similarity=0.699  Sum_probs=39.7  Template_Neff=1.000
+
+Q 2                 6 CDFITNELSQADLLKFKKLIKRKSTFLTLQSIDDFLVKNGDKDEL   50 (50)
+Q Consensus         6 cdfitnelsqadllkfkklikrkstfltlqsiddflvkngdkdel   50 (50)
+                      |--.||-||.-||..|||+.||+-..--..|-|||+--.|..|||
+T Consensus         1 cisatnvlskydlmnfkkllkrrlaltffmseddfigvhgerdel   45 (45)
+T 4                 1 CISATNVLSKYDLMNFKKLLKRRLALTFFMSEDDFIGVHGERDEL   45 (45)
+Confidence            444689999999999999999998777778999999999999986
+
+
+No 3
+>4
+Probab=0.03  E-value=1.9  Score=4.19  Aligned_cols=1  Identities=0%  Similarity=0.000  Sum_probs=0.0  Template_Neff=1.000
+
+No 4
+>3
+Probab=0.03  E-value=1.9  Score=4.19  Aligned_cols=1  Identities=0%  Similarity=0.000  Sum_probs=0.0  Template_Neff=1.000
+
