@@ -2,7 +2,7 @@ package Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler;
 
 =head1 NAME
 
-Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler - TODOCUMENT
+Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler - [to-implement] Skeleton for a MergeBundler that creates a bundle containing the single next best merge
 
 =cut
 

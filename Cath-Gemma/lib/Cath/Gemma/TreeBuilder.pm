@@ -2,7 +2,7 @@ package Cath::Gemma::TreeBuilder;
 
 =head1 NAME
 
-Cath::Gemma::TreeBuilder - TODOCUMENT
+Cath::Gemma::TreeBuilder - Define a Moo::Role for building trees; ensure that each TreeBuilder gets complete all-vs-all ScansData
 
 =cut
 
@@ -40,7 +40,7 @@ use Cath::Gemma::Util;
 
 =head2 requires build_tree
 
-TODOCUMENT
+Require that a consumer of the TreeBuilder role must provide a build_tree() method that builds a tree
 
 =cut
 
@@ -48,7 +48,7 @@ requires 'build_tree';
 
 =head2 requires name
 
-TODOCUMENT
+Require that a consumer of the TreeBuilder role must provide a name() method that returns its name
 
 =cut
 
@@ -56,7 +56,11 @@ requires 'name';
 
 =head2 around build_tree
 
-TODOCUMENT
+Before calling the consuming class's build_tree() method, ensure that an all-against-all scan has been
+completed and include the resulting ScansData in the call to the concrete build_tree().
+
+This uses `around` rather than `before` so it can substantially modify the @ARG that gets passed to the
+consuming class's build_tree() method
 
 =cut
 

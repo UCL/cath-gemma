@@ -2,7 +2,7 @@ package Cath::Gemma::Tree::MergeBundler;
 
 =head1 NAME
 
-Cath::Gemma::Tree::MergeBundler- TODOCUMENT
+Cath::Gemma::Tree::MergeBundler - Define a Moo::Role for choosing the next list of merges to investigate/perform for a specified ScansData object
 
 =cut
 
@@ -31,15 +31,15 @@ use Cath::Gemma::Types  qw/
 
 =head2 requires get_execution_bundle
 
-TODOCUMENT
+Require that a consumer of the TreeBuilder role must provide a get_execution_bundle() method that gets the bundle of merges to execute next for given ScansData
 
 =cut
 
 requires 'get_execution_bundle';
 
-=head2 get_execution_bundle
+=head2 before get_execution_bundle
 
-TODOCUMENT
+Check the arguments before passing-through to the consuming class's get_execution_bundle()
 
 =cut
 

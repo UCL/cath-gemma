@@ -2,7 +2,7 @@ package Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler;
 
 =head1 NAME
 
-Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler - TODOCUMENT
+Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler - Create a bundle containing the merges within the current-best window of evalues
 
 =cut
 

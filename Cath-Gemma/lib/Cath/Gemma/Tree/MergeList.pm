@@ -31,7 +31,6 @@ use Types::Path::Tiny   qw/ Path                                                
 use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional Str Tuple /;
 
 # Cath::Gemma
-use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Tree::Merge;
 use Cath::Gemma::Types  qw/
 	CathGemmaDiskExecutables
@@ -591,6 +590,8 @@ to return before all alignments have been put in place.
 sub ensure_all_alignments {
 	state $check = compile( Object, CathGemmaNodeOrdering, CathGemmaDiskExecutables, CathGemmaExecutor, CathGemmaDiskProfileDirSet, Optional[CathGemmaExecSync] );
 	my ( $self, $clusts_ordering, $exes, $executor, $profile_dir_set, $exec_sync ) = $check->( @ARG );
+
+	require Cath::Gemma::Compute::WorkBatch;
 
 	$exec_sync //= 'always_wait_for_complete';
 	if ( $exec_sync eq 'permit_async_launch' ) {

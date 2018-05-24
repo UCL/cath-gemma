@@ -1,14 +1,45 @@
 # Cath::Gemma
 
-## Overview of Code
+## Overview
 
-* `Moo::Role`s (which are akin to Java interfaces or C++ Abstract Base Classes) are used quite a bit. No other inheritance-like pattern is used.
+This file documents this GeMMA code. For instructions on running it, see [wiki:Running-GeMMA](https://github.com/UCL/cath-gemma/wiki/Running-GeMMA).
 
-### Areas of note
+### Points of Note
 
+* Within this code, `Moo::Role`s (which are akin to Java interfaces or C++ Abstract Base Classes) are used quite a bit. No other inheritance-like pattern is used.
+* SGE `qsub`s must often be performed within a script executing on a compute node rather than a submit node (and you're encouraged to use a `qrsh` session to avoid running anything non-trivial on the submit node &mdash; see [wiki:Running-GeMMA](https://github.com/UCL/cath-gemma/wiki/Running-GeMMA)). To achieve this, the code uses passwordless-`ssh` to `ssh` onto the head node to execute the `qsub` command.
+* One task (eg a `BuildTreeTask`) may need to execute other child tasks (eg `ProfileScanTask`s). This is implemented by requiring calls to `WorkBatch::execute_task()` to specify an Executor to use for sub-tasks. At present, the `execute_work_batch.pl` script always passes a `SpawnExecutor` for this and it allows the `SpawnExecutor` to auto-detect whether it's running in an HPC environment to determine whether to use a `SpawnHpcSgeRunner` or `SpawnLocalRunner`).
+* The code doesn't currently do anything particularly smart regarding HPC failures but it does try to perform steps reasonably atomically (so they won't, eg, leave partial results files on failure).
+ Batches
 * Links and LinkList
   * TODOCUMENT: data structure
   * TODOCUMENT: indices
+* When using the `SpawnLocalRunner`, the stdout and stderr don't appear in the correct files until the job is complete.
+
+### Incomplete code changes
+
+* The functionality of selecting the next (possibly speculative) bundle of merges is being abstracted into MergeBundler. There is further to go so that much of the TreeBuilder functionality can be made common but with different MergeBundler policies.
+
+### To-do
+
+* **TODONOW** Improve `ensure_all_alignments()` so that it doesn't execute any batches if all the alignments are already present
+* **TODONOW** SpawnExecutor::execute_batch_list() Consider moving this to Executor::execute_batch_list() and have that just return if nothing to do
+
+* Issues as documented within the [GeMMA wiki](https://github.com/UCL/cath-gemma/wiki) (particularly those pages with names beginning "Development:")
+* Investigate whether we can do better than the evalue-windowing approach, (which deviates from pure trees and can still involve a lot of batches (see [wiki:Development:-Batching](https://github.com/UCL/cath-gemma/wiki/Development:-Batching)). Notes:
+  * Investigate whether it's possible to get batches whilst sticking to the "pure" tree by finding reciprocal-nearest-neighbours RNNs (ie all pairs of clusters that are each other's best hit) and speculatively batch-scanning those (in the hope that many of those pairs will be merged in the pure tree)
+  * Then make that batch go further by looking for what would be likely to RNN-pair with each of speculative merges (and so on as far as possible)
+* Consider putting any relevant config in a file and using MooX::ConfigFromFile
+* STUFF HERE TODOCUMENT :
+  * Get WindowedTreeBuilder to return the number of cycles (consistently regardless of whether previously run)
+  * Write code to count windows in any trace file
+  * Then count all windows in all v4.0 trees
+* Add a factory function for Executors and then use that to tidy up scripts
+* Abstract other common code out of scripts
+* Consider using `Gemma::Util::batch_into_n()` to simplify batching in WorkBatcher / WorkBatcherState
+* Tidy up and sort out the code for `ssh` command-execution, `qsub` job-submitting and `qstat` job-completion-detection
+* Add functionality to retry failed tasks and/or resubmit failed HPC jobs
+* Add functionality to have HPC jobs just run locally if they're estimated to take a small amount of time (less than the time they're likely to spend in the queue)
 
 ## Overview of Modules
 
@@ -17,15 +48,15 @@ Within `lib` :
 ~~~no-highlight
 └── Cath::Gemma                                                       The great new Cath::Gemma!
     ├── (Compute)                                                        (Organise computation into tasks, batches etc. The Tasks are typically implemented via calls to functions in Cath::Gemma::Tool.)
-    │   ├── Cath::Gemma::Compute::Task                                Define a Moo::Role for Tasks of computation
-    │   │   ├── Cath::Gemma::Compute::Task::BuildTreeTask             Define a Cath::Gemma::Compute::Task for building a GeMMA tree
-    │   │   ├── Cath::Gemma::Compute::Task::ProfileBuildTask          Define a Cath::Gemma::Compute::Task for building a sequence profile
-    │   │   └── Cath::Gemma::Compute::Task::ProfileScanTask           Define a Cath::Gemma::Compute::Task for scanning a sequence profile
+    │   ├── Cath::Gemma::Compute::Task                                Define a Moo::Role for representing a list of computations to perform
+    │   │   ├── Cath::Gemma::Compute::Task::BuildTreeTask             Define a Cath::Gemma::Compute::Task for GeMMA tree-building computations
+    │   │   ├── Cath::Gemma::Compute::Task::ProfileBuildTask          Define a Cath::Gemma::Compute::Task for sequence profile-building computations
+    │   │   └── Cath::Gemma::Compute::Task::ProfileScanTask           Define a Cath::Gemma::Compute::Task for sequence profile-scanning computations
     │   ├── Cath::Gemma::Compute::TaskThreadPooler                    Execute code over an array, potentially using multiple threads
     │   ├── Cath::Gemma::Compute::WorkBatcher                         TODOCUMENT
     │   ├── Cath::Gemma::Compute::WorkBatcherState                    TODOCUMENT
     │   ├── Cath::Gemma::Compute::WorkBatchList                       TODOCUMENT
-    │   └── Cath::Gemma::Compute::WorkBatch                           TODOCUMENT
+    │   └── Cath::Gemma::Compute::WorkBatch                           A batch of tasks (corresponding to a single HPC job when run under SpawnExecutor with SpawnHpcSgeRunner)
     ├── (Disk)                                                           (Represent where data should be found on disk)
     │   ├── Cath::Gemma::Disk::BaseDirAndProject                      Store a base directory for files and optionally a sub-project
     │   ├── Cath::Gemma::Disk::Executables                            Prepare align/profile-scan executables in a temporary directory that gets automatically cleaned up
@@ -52,19 +83,18 @@ Within `lib` :
     │   ├── Cath::Gemma::Tool::CompassProfileBuilder                  Build a COMPASS profile file
     │   └── Cath::Gemma::Tool::CompassScanner                         Scan COMPASS profiles against libraries of others and store the results in a file
     ├── (Tree)                                                          (Represent and compute a GeMMA tree (aka a MergeList because it's an ordered list of Merges))
-    │   ├── Cath::Gemma::Tree::MergeBundler                           TODOCUMENT
-    │   │   ├── Cath::Gemma::Tree::MergeBundler::RnnMergeBundler      TODOCUMENT
-    │   │   ├── Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler   TODOCUMENT
-    │   │   └── Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler TODOCUMENT
+    │   ├── Cath::Gemma::Tree::MergeBundler                           Define a Moo::Role for choosing the next list of merges to investigate/perform for a specified ScansData object
+    │   │   ├── Cath::Gemma::Tree::MergeBundler::RnnMergeBundler      [to-implement] Skeleton for a MergeBundler that creates a bundle containing reciprocal-nearest-neighbours (RNNs) (and potentially also any likely RNNs involving the resulting merged nodes etc etc)
+    │   │   ├── Cath::Gemma::Tree::MergeBundler::SimpleMergeBundler   [to-implement] Skeleton for a MergeBundler that creates a bundle containing the single next best merge
+    │   │   └── Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler Create a bundle containing the merges within the current-best window of evalues
     │   ├── Cath::Gemma::Tree::MergeList                              An ordered list of Merges of nodes representing a tree
     │   └── Cath::Gemma::Tree::Merge                                  The data associated with a single Merge in a MergeList (ie in a tree)
-    ├── Cath::Gemma::TreeBuilder                                      TODOCUMENT
-    │   ├── Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder         TODOCUMENT
-    │   ├── Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder          TODOCUMENT
-    │   ├── Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder      TODOCUMENT
-    │   ├── Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder            TODOCUMENT
-    │   ├── Cath::Gemma::TreeBuilder::PureTreeBuilder                 TODOCUMENT
-    │   └── Cath::Gemma::TreeBuilder::WindowedTreeBuilder             TODOCUMENT
+    ├── Cath::Gemma::TreeBuilder                                      Define a Moo::Role for building trees; ensure that each TreeBuilder gets complete all-vs-all ScansData
+    │   ├── Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder         Build a tree using only the initial all-vs-all scores by setting merged clusters scores as the highest of the mergees' scores
+    │   ├── Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder          Build a tree using only the initial all-vs-all scores by setting merged clusters scores as the lowest of the mergees' scores
+    │   ├── Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder            Build a tree using only the initial all-vs-all scores by setting merged clusters scores as the (geometric) mean of the mergees' scores
+    │   ├── Cath::Gemma::TreeBuilder::PureTreeBuilder                 Build "pure" trees that don't use evalue windows or other short-cuts
+    │   └── Cath::Gemma::TreeBuilder::WindowedTreeBuilder             Build trees using windows of evalues (eg from 1e-40 to 1e-50) as in DFX code
     ├── Cath::Gemma::Types                                            The (Moo-compatible) types used throughout the Cath::Gemma code
     └── Cath::Gemma::Util                                             Utility functions used throughout Cath::Gemma
 ~~~
@@ -210,53 +240,3 @@ rsync -av --exclude 'other_stuff' ~/cath-gemma/Cath-Gemma/ /tmp/Cath-Gemma/ ; rm
 ~~~
 
 ...though it can probably be done more cleanly with the `cover` command line arguments.
-
-## Issues to be aware of
-
-When using the SpawnLocalRunner, the stdout and stderr don't appear in the correct files until the job is complete.
-
-## Future
-
-* Document
-* Test
-* Track test coverage with [Devel::Cover](https://metacpan.org/pod/Devel::Cover) [related blog post](http://blogs.perl.org/users/neilb/2014/08/check-your-test-coverage-with-develcover.html) and put summary of process here
-
-### To Do 1
-
-* Add Executor factory with necessary options - abstract that out of scripts
-* Abstract common options out of scripts
-* Use batch_into_n() for batching in WorkBatcher::add_profile_build_work()
-* improve ensure_all_alignments() so that it doesn't execute any batches if all the alignments are already present
-
-### To Do from A3 pad
-
-* SSH wrapper
-* `qstat`-ing
-* Job tracking etc
-* Document and then fix Executor OO violation
-
-### To Do Soon from A3 pad
-
-* Get WindowedTreeBuilder to return the number of cycles (consistently regardless of whether previously run)
-* Write code to count windows in any trace file
-* Then count all windows in all v4.0 trees
-* Make child-submitting executor smarter (eg use if estimated time > x)
-
-### To Do Now from A3 pad
-
-* Change back splice for Optional[CathGemmaCompassProfileType] and just use maybe instead
-* Sort out qstat-ing (time and loading)
-* Add a 'retry' (ie persevere with retries) option to execute()
-* Add an executor that does nothing but assert that there's nothing to do (which can be used in tests)
-* Add an executor that resubmits smaller jobs
-* MergeBundler should have methods:
-  * what to execute
-  * what to merge
-  * RnnMergeBundler
-  * RnnAndsomeMergeBundler
-* Integrate into a TreeBuilder
-
-### Of possible future interest
-
-* MooX::ConfigFromFile
-* `shift if ref $_[0] eq __PACKAGE__;`

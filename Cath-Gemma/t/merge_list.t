@@ -23,6 +23,7 @@ use Path::Tiny;
 use lib path( $FindBin::Bin . '/lib' )->realpath()->stringify();
 
 # Cath::Gemma
+use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Executor::SpawnExecutor;
 use Cath::Gemma::Util;

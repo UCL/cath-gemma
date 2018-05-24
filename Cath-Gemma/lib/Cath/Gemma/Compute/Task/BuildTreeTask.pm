@@ -2,7 +2,7 @@ package Cath::Gemma::Compute::Task::BuildTreeTask;
 
 =head1 NAME
 
-Cath::Gemma::Compute::Task::BuildTreeTask - Define a Cath::Gemma::Compute::Task for building a GeMMA tree
+Cath::Gemma::Compute::Task::BuildTreeTask - Define a Cath::Gemma::Compute::Task for GeMMA tree-building computations
 
 =cut
 
@@ -32,7 +32,6 @@ use Cath::Gemma::Executor::DirectExecutor;
 use Cath::Gemma::Executor::SpawnExecutor;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
-use Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder;
 use Cath::Gemma::TreeBuilder::PureTreeBuilder;
 use Cath::Gemma::TreeBuilder::WindowedTreeBuilder;

@@ -2,7 +2,7 @@ package Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 
 =head1 NAME
 
-Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder - TODOCUMENT
+Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder - Build a tree using only the initial all-vs-all scores by setting a merged cluster's scores as the highest of the mergees' corresponding scores
 
 =cut
 
@@ -43,6 +43,11 @@ Params checked in Cath::Gemma::TreeBuilder
 
 sub build_tree {
 	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
+
+
+
+
+
 
 	my @nodenames_and_merges;
 	while ( $scans_data->count() > 1 ) {

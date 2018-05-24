@@ -7,7 +7,7 @@ use warnings;
 use FindBin;
 
 # Core (test)
-use Test::More tests => 47;
+use Test::More tests => 46;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -56,7 +56,6 @@ BEGIN{  use_ok(  'Cath::Gemma::Tree::MergeList'                           )  }
 BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder'                               )  }
 BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder'      )  }
 BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder'       )  }
-BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::NaiveMeanOfBestTreeBuilder'   )  }
 BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder'         )  }
 BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::PureTreeBuilder'              )  }
 BEGIN{  use_ok(  'Cath::Gemma::TreeBuilder::WindowedTreeBuilder'          )  }

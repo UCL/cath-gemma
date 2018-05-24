@@ -30,6 +30,7 @@ use Path::Tiny;
 use Types::Path::Tiny   qw/ Path           /;
 
 # Cath::Gemma
+use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Executor::SpawnHpcSgeRunner;
 use Cath::Gemma::Executor::SpawnLocalRunner;
 use Cath::Gemma::Types qw/
