@@ -148,7 +148,7 @@ sub hhsuite_ffdb_suffix        { '.db' }
 sub hhsuite_ffdata_suffix      { '.db_a3m.ffdata' }
 sub hhsuite_ffindex_suffix     { '.db_a3m.ffindex' }
 sub hhsuite_profile_suffix     { '.a3m' }
-sub hhsuite_scan_suffix        { '.hhsearch' }
+sub hhsuite_scan_suffix        { '.hhr' }
 sub compass_profile_suffix     { '.prof' }
 sub compass_scan_suffix        { '.scan' }
 sub alignment_suffix           { '.aln' }
@@ -691,13 +691,17 @@ sub scan_filebasename_of_cluster_ids {
 	state $check = compile( ArrayRef[Str], ArrayRef[Str], CathGemmaProfileType );
 	my ( $query_cluster_ids, $match_cluster_ids, $profile_build_type ) = $check->( @ARG );
 
+	my $suffix = CathGemmaCompassProfileType->check( $profile_build_type ) ? compass_scan_suffix() 
+		 : CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? hhsuite_scan_suffix()
+		 : confess "failed to understand profile build type: $profile_build_type";
+
 	return
 		  _id_of_nodelist( $query_cluster_ids )
 		. '.'
 		. _id_of_nodelist( $match_cluster_ids )
 		. '.'
 		. $profile_build_type
-		. '.scan';
+		. $suffix
 }
 
 =head2 scan_filename_of_dir_and_cluster_ids

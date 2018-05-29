@@ -183,7 +183,7 @@ sub test_scan_profile {
 
 	# Check that the alignment and profile were built
 	if ( ! $should_die ) {
-		my $scan_basename = '1.l1st_37693cfc748049e45d87b8c7d8b9aacd.hhconsensus.scan';
+		my $scan_basename = '1.l1st_37693cfc748049e45d87b8c7d8b9aacd.hhconsensus.hhr';
 		file_matches(
 			$scan_dir                                ->child( $scan_basename ),
 			test_superfamily_scan_dir( $superfamily )->child( $scan_basename ),
