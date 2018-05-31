@@ -80,6 +80,7 @@ sub _hhsearch_scan_impl {
 		my @scan_command = (
 			'-i', $query_prof_file,
 			'-d', $match_lib_stub,
+			'-o', 'stdout'
 		);
 
 		INFO "About to HHSuite-[$profile_build_type]-scan     $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
