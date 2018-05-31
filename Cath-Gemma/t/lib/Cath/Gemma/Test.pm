@@ -268,6 +268,27 @@ sub tree_dir_set_of_superfamily {
 	);
 }
 
+=head2 root_dir
+
+Path to root of this project 
+
+=cut
+
+sub root_dir {
+	return path( $FindBin::Bin, '..' );	
+}
+
+
+=head2 hhlib_base_dir
+
+Path to the root of the hhsuite tools 
+
+=cut
+
+sub hhlib_base_dir {
+	return root_dir()->child( 'tools', 'hhsuite' );
+}
+
 
 =head2 bootstrap_hhsuite_scan_files_for_superfamily
 
@@ -283,6 +304,8 @@ sub bootstrap_hhsuite_scan_files_for_superfamily {
 	my $clust_and_clust_list_pairs = shift;
 
 	my $scan_dir      = Path::Tiny->tempdir( CLEANUP => ! bootstrap_is_on() );
+
+	local $ENV{HHLIB} = hhlib_base_dir()->stringify;
 
 	my $executor      = Cath::Gemma::Executor::DirectExecutor->new();
 	my $prof_dir_set  = Cath::Gemma::Test::profile_dir_set_of_superfamily( $sfam_id );
@@ -319,9 +342,12 @@ Create HHSuite profiles in the test area for a given superfamily
 sub bootstrap_hhsuite_profile_files_for_superfamily {
 	my $sfam_id = shift;
 
-	my $root_dir        = path( "$FindBin::Bin/.." )->absolute;
-	my $hhsuite_dir     = $root_dir->child( "tools", "hhsuite" );
+	my $root_dir        = root_dir();
+	my $hhsuite_dir     = hhlib_base_dir();
 	my $hhconsensus_exe = $hhsuite_dir->child( 'bin', 'hhconsensus' );
+
+	local $ENV{HHLIB} = $hhsuite_dir->stringify;
+	diag( "ENV: HHLIB=" . $ENV{HHLIB} );
 
 	# for id in $(seq 1 4); do 
 	#   hhconsensus -i ./t/data/1.20.5.200/alignments/$id.aln -o t/data/1.20.5.200/profiles/$id.hhconsensus.a3m
@@ -333,7 +359,6 @@ sub bootstrap_hhsuite_profile_files_for_superfamily {
 	my $prof_dir = $aln_dir->sibling( 'profiles' );
 	
 	my $hhcon = $hhconsensus_exe->stringify;
-	local $ENV{HHLIB} = $hhsuite_dir->stringify;
 
 	my @profile_files;
 	for my $aln_file ( $aln_dir->children( qr/\.aln$/ ) ) {
@@ -341,7 +366,8 @@ sub bootstrap_hhsuite_profile_files_for_superfamily {
 		my $prof_file = $prof_dir->child( $id . '.hhconsensus.a3m' );
 		my $com = "$hhcon -i $aln_file -o $prof_file";
 		system( $com );
-		confess "! Error: failed to bootstrap hhsuite profile file '$prof_file' using command `$com`";
+		confess "! Error: failed to bootstrap hhsuite profile file '$prof_file' using command `$com`"
+			if $! != 0 || ! -e $prof_file;
 		system( "sed -i '1s/.*/#$id/' $prof_file" );
 		system( "sed -i '2s/.*/>$id _consensus/' $prof_file" );
 		push @profile_files, $prof_file; 
