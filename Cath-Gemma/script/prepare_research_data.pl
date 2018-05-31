@@ -69,7 +69,7 @@ my $trace_files_ext            = '.trace';
 # );
 
 #my @COMPASS_PROFILE_TYPES = ( qw/                                           mk_compass_db / );
-my @PROFILE_TYPES         = ( qw/                                           hhsuite       / );
+my @PROFILE_TYPES         = ( qw/                                            hhconsensus   / );
 my @NODE_ORDERINGS        = ( qw/                  simple_ordering                        / );
 my @TREE_BUILDERS         = ( Cath::Gemma::TreeBuilder::WindowedTreeBuilder->new()          );
 

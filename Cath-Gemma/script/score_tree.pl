@@ -94,7 +94,7 @@ foreach my $project ( @project_list ) {
 	# 		                           ) {
 
 	foreach my $clusts_ordering ( 'simple_ordering', 'tree_df_ordering' ) {
-		foreach my $profile_build_type ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db hhsuite / ) {
+		foreach my $profile_build_type ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db hhconsensus / ) {
 			foreach my $tree_builder (
 			                           Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder->new(),
 			                           Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder ->new(),
