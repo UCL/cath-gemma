@@ -160,7 +160,7 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 	state $check = compile( Invocant, ArrayRef[Str], Int );
 	my ( $proto, $output_lines, $expected_num_results ) = $check->( @ARG );
 
-	my %best_score_per_match;
+	my %best_score_per_querymatch;
 	my $alignment_suffix = alignment_suffix();
 
 	# Query         1
@@ -179,42 +179,58 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 
 	my $line_count=0;
 	my $total_lines = scalar @$output_lines;
-	my $query_id;
-	while ( $line_count < $total_lines ) {
+
+	my $c=0;
+	DEBUG join( "", map { sprintf( "%4d| %s\n", ++$c, $_ ) } @$output_lines );
+
+	# search until we hit 'Query'
+	# go through the hits
+
+	my $current_query_id;
+	my $scan_hits;
+	LINE: while ( $line_count < $total_lines ) {
 		my $line = $output_lines->[ $line_count++ ];
 		if ( $line =~ /^Query\s+(\S+)/ ) {
-			$query_id = $1;
+			$current_query_id = $1;
 		}
-		last if $line =~ /^\s+No\s+Hit/;	
-	}
-	while ( $line_count < $total_lines ) {
-		my $line = $output_lines->[ $line_count++ ];
-		$line =~ s/^\s+//;
-		next unless $line;
-		my @cols = split( /\s+/, $line );
+		if ( $current_query_id && $line =~ /^\s+No\s+Hit/ ) {
+			$scan_hits = 1;
+			next LINE;
+		}
+		if ( $scan_hits ) {
+			$line =~ s/^\s+//;
+			if ( ! $line ) {
+				$current_query_id = undef;
+				$scan_hits = 0;
+				next LINE;
+			}
 
-		confess "expected 11 columns, got $#cols columns (line: $line_count): '$line'"
-			if scalar @cols != 11;
+			my @cols = split( /\s+/, $line );
 
-		my ($num, $match_id, $prob, $evalue, $pvalue, $score, $ss, $cols, $query_hmm, $template_hmm, $something)
-			= @cols;
-		
-		my $data = [ $query_id, $match_id, $evalue ];
-		$best_score_per_match{$match_id} //= $data;
+			confess "expected 11 columns in hhsearch 'hit', got $#cols columns (line: $line_count): '$line'"
+				if scalar @cols != 11;
 
-		if ( $evalue < $best_score_per_match{$match_id}->[2] ) {
-			$best_score_per_match{$match_id} = $data;
+			my ($num, $match_id, $prob, $evalue, $pvalue, $score, $ss, $cols, $query_hmm, $template_hmm, $something)
+				= @cols;
+			
+			my $key = join( "__", $current_query_id, $match_id );
+			my $data = [ $current_query_id, $match_id, $evalue ];
+			$best_score_per_querymatch{$key} //= $data;
+
+			if ( $evalue < $best_score_per_querymatch{$key}->[2] ) {
+				$best_score_per_querymatch{$key} = $data;
+			}
 		}
 	}
 
-	my $num_results = scalar keys %best_score_per_match;
+	my $num_results = scalar keys %best_score_per_querymatch;
 
 	if ( $num_results != $expected_num_results ) {
 		WARN "Something wrong whilst parsing HHSuite results: expected to get $expected_num_results results but found $num_results."
 	}
 
 	# sort by lowest evalue
-	my @outputs = sort { $a->[2] <=> $b->[2] } values %best_score_per_match; 
+	my @outputs = sort { $a->[2] <=> $b->[2] } values %best_score_per_querymatch; 
 	return __PACKAGE__->new(
 		scan_data => \@outputs
 	);
