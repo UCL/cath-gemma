@@ -130,6 +130,9 @@ sub build_profile_in_dir {
 			$fh_in->close;
 			$fh_out->close;
 
+			unlink( $tmp_prof_absfile_orig )
+				or confess "failed to unlink tmp profile file '$tmp_prof_absfile_orig' : $!";
+
 			return {
 				file_already_present => 0,
 			};
