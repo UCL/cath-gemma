@@ -157,11 +157,15 @@ TODOCUMENT
 =cut
 
 sub parse_from_raw_hhsearch_scan_output_lines {
-	state $check = compile( Invocant, ArrayRef[Str], Int );
-	my ( $proto, $output_lines, $expected_num_results ) = $check->( @ARG );
+	state $check = compile( Invocant, ArrayRef[Str], ArrayRef[Str], ArrayRef[Str] );
+	my ( $proto, $output_lines, $query_ids, $match_ids ) = $check->( @ARG );
 
 	my %best_score_per_querymatch;
+
+	my $maxevalue = 1000000;
 	my $alignment_suffix = alignment_suffix();
+	my %query_lookup = map { ($_ => 1) } @$query_ids;
+	my %match_lookup = map { ($_ => 1) } @$match_ids;
 
 	# Query         1
 	# Match_columns 52
@@ -179,9 +183,6 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 
 	my $line_count=0;
 	my $total_lines = scalar @$output_lines;
-
-	my $c=0;
-	DEBUG join( "", map { sprintf( "%4d| %s\n", ++$c, $_ ) } @$output_lines );
 
 	# search until we hit 'Query'
 	# go through the hits
@@ -223,6 +224,7 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 		}
 	}
 
+	my $expected_num_results = scalar @$query_ids * scalar @$match_ids;
 	my $num_results = scalar keys %best_score_per_querymatch;
 
 	if ( $num_results != $expected_num_results ) {
@@ -230,9 +232,49 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 	}
 
 	# sort by lowest evalue
-	my @outputs = sort { $a->[2] <=> $b->[2] } values %best_score_per_querymatch; 
+	my @all_scan_data = sort { $a->[2] <=> $b->[2] } values %best_score_per_querymatch; 
+
+	# Make sure we've got the full matrix of scores and that all ids found in the scan match expected
+
+	my $c=0;
+	my $debug_scan_lines = join( "", map { sprintf( "%4d| %s\n", ++$c, $_ ) } @$output_lines );
+
+	my %query_match_lookup;
+	for my $scandata ( @all_scan_data ) {
+		my ($query_id, $match_id, $evalue) = @$scandata;
+		confess "Found unexpected query id '$query_id' in scan data:\n$debug_scan_lines" unless exists $query_lookup{ $query_id };
+		confess "Found unexpected match id '$match_id' in scan data:\n$debug_scan_lines" unless exists $match_lookup{ $match_id };
+		$query_match_lookup{ $query_id } //= {};
+		$query_match_lookup{ $query_id }->{ $match_id } = $evalue;
+	}
+
+	# figure out what we're missing
+	my @missing_scan_data;
+	my $count_reverse_hits = 0;
+	my $count_max_hits = 0;
+	for my $query_id ( @$query_ids ) {
+		for my $match_id ( @$match_ids ) {
+			if ( ! exists $query_match_lookup{ $query_id }->{ $match_id } ) {
+				# if we have b->a then assume this is the same as a->b, otherwise use crap evalue as placeholder
+				my $evalue;
+				if ( exists $query_match_lookup{ $match_id } && $query_match_lookup{ $match_id }->{ $query_id } ) {
+					$evalue = $query_match_lookup{ $match_id }->{ $query_id };
+					$count_reverse_hits++;
+				}
+				else {
+					$evalue = $maxevalue;
+					$count_max_hits++;
+				}
+				push @missing_scan_data, [ $query_id, $match_id, $evalue ];
+			}
+		}
+	}
+
+	WARN "Filling scan matrix with $count_reverse_hits rows of reverse hits and $count_max_hits rows of placeholder hits";
+	push @all_scan_data, @missing_scan_data;
+
 	return __PACKAGE__->new(
-		scan_data => \@outputs
+		scan_data => \@all_scan_data,
 	);
 }
 1;

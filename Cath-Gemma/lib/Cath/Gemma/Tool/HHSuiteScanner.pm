@@ -99,12 +99,13 @@ sub _hhsearch_scan_impl {
 		INFO "Finished HHSuite-[$profile_build_type]-scanning $query_clusters_id [$num_query_ids profile(s)] versus $match_clusters_id [$num_match_ids profile(s)]";
 
 		my @output_lines = split( /\n/, $stdout );
-		my $expected_num_results = $num_query_ids * $num_match_ids;
+		my $expected_num_results = $num_match_ids;
 
-		my $scan = Cath::Gemma::Scan::ScanData->parse_from_raw_hhsearch_scan_output_lines( \@output_lines, $expected_num_results );
+		my $scan = Cath::Gemma::Scan::ScanData->parse_from_raw_hhsearch_scan_output_lines( \@output_lines, [ $query_cluster_id ], $match_cluster_ids );
 
 		push @all_scan_data, @{ $scan->scan_data };
 	}
+
 	return Cath::Gemma::Scan::ScanData->new( scan_data => \@all_scan_data );
 }
 
