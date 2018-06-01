@@ -9,7 +9,7 @@ use List::Util          qw/ min    /;
 use Time::HiRes         qw/ usleep /;
 
 # Core (test)
-use Test::More tests => 27 ;
+use Test::More tests => 26;
 
 # Find non-core external lib directory using FindBin
 use lib $FindBin::Bin . '/../extlib/lib/perl5';
@@ -189,12 +189,8 @@ subtest 'evalue_window_ceiling() / evalue_window_floor()' => sub {
 	is( evalue_window_floor  ( 1.2e-15 ), 1e-20, 'evalue_window_floor  () calculates correctly' );
 };
 
-subtest 'compass_scan_suffix' => sub {
-	is( compass_scan_suffix(), '.scan', 'compass_scan_suffix() returns as expected' );
-};
-
-subtest 'hhsuite_scan_suffix' => sub {
-	is( hhsuite_scan_suffix(), '.hhr', 'hhsuite_scan_suffix() returns as expected' );
+subtest 'scandata_suffix' => sub {
+	is( scandata_suffix(), '.scan', 'scandata_suffix() returns as expected' );
 };
 
 subtest 'default_clusts_ordering' => sub {
@@ -257,7 +253,7 @@ subtest 'scan_filebasename_of_cluster_ids' => sub {
 subtest 'scan_filename_of_dir_and_cluster_ids' => sub {
 	is(
 		scan_filename_of_dir_and_cluster_ids( '/tmp', [ 'my_query' ], [ 'my_match_1', 'my_match_2' ], default_profile_build_type(), ),
-		'/tmp/my_query.l1st_0fefca17cea83290bf5f9fa57c6f18c8.hhconsensus.hhr',
+		'/tmp/my_query.l1st_0fefca17cea83290bf5f9fa57c6f18c8.hhconsensus.scan',
 		'scan_filename_of_dir_and_cluster_ids() returns as expected'
 	);
 };
