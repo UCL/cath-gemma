@@ -208,7 +208,7 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 
 			my @cols = split( /\s+/, $line );
 
-			confess "expected 11 columns in hhsearch 'hit', got $#cols columns (line: $line_count): '$line'"
+			confess "expected 11 columns in hhsearch 'hit', got " . scalar( @cols ) . " columns (line: $line_count): '$line'"
 				if scalar @cols != 11;
 
 			my ($num, $match_id, $prob, $evalue, $pvalue, $score, $ss, $cols, $query_hmm, $template_hmm, $something)
