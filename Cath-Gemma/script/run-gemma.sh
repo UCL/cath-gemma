@@ -6,7 +6,7 @@
 # should also remove superfamilies with one starting cluster as at least two
 # are needed for GeMMA
 
-# ALLOW_CACHE=true
+ALLOW_CACHE=false
 
 if [ "$#" -ne 4 ];
 then
@@ -29,6 +29,20 @@ FAMILY_ID=$3                 # e.g. 3.40.50.12260
 FAMILY_PREFIX=${FAMILY_ID}.
 # TODO: add database version to wiki
 DB_VERSION=gene3d_16
+
+############################
+# remove cache if required #
+############################
+
+if [ $ALLOW_CACHE == "false" ]
+then
+	echo "Removing contents of $FF_GEN_ROOTDIR/alignments/$PROJECT"
+	echo "Removing contents of $FF_GEN_ROOTDIR/profiles/$PROJECT"
+	echo "Removing contents of $FF_GEN_ROOTDIR/scans/$PROJECT"
+	rm -rf $FF_GEN_ROOTDIR/alignments/$PROJECT
+	rm -rf $FF_GEN_ROOTDIR/profiles/$PROJECT
+	rm -rf $FF_GEN_ROOTDIR/scans/$PROJECT
+fi
 
 ########################
 # build the gemma tree # # https://github.com/UCL/cath-gemma/wiki/Running-GeMMA
@@ -78,6 +92,13 @@ legion)
 	# ssh legion.rc.ucl.ac.uk "$( cat <<'EOT'
 	# echo "Running these commands on legion..."
 	print_date "Run the following commands on legion..."
+	if [ $ALLOW_CACHE == "false" ]
+	then
+		echo export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
+		echo rm $LEGION_DATA_ROOT/alignments/$PROJECT/*
+		echo rm $LEGION_DATA_ROOT/profiles/$PROJECT/*
+		echo rm $LEGION_DATA_ROOT/scans/$PROJECT/*
+	fi
 	echo qrsh -verbose
 	echo export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
 	echo cd /home/ucbtnld/Scratch/Cath-Gemma
