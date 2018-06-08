@@ -101,7 +101,7 @@ legion)
 	fi
 	echo qrsh -verbose
 	echo export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
-	echo cd /home/ucbtnld/Scratch/Cath-Gemma
+	echo cd /home/`whoami`/Scratch/Cath-Gemma
 	echo module load perl
 	echo script/prepare_research_data.pl --projects-list-file ${LEGION_DATA_ROOT}/projects.txt --output-root-dir ${LEGION_DATA_ROOT}
 # EOT
