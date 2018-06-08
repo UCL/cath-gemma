@@ -39,6 +39,6 @@ merge_node_22	merge_node_24	merge_node_38	6.7E-07
 merge_node_36	merge_node_37	merge_node_39	4.3E-06
 merge_node_35	merge_node_23	merge_node_40	1.3E-05
 merge_node_39	merge_node_40	merge_node_41	0.0079
-merge_node_32	merge_node_38	merge_node_42	0.019
-merge_node_41	merge_node_42	merge_node_43	0.17
-560	merge_node_43	merge_node_44	100000000
+560	merge_node_32	merge_node_42	1000000
+merge_node_41	merge_node_38	merge_node_43	1000000
+merge_node_43	merge_node_42	merge_node_44	1000000

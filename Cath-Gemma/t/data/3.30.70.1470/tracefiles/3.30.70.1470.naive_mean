@@ -39,6 +39,6 @@ merge_node_27	merge_node_21	merge_node_38	4.71836815661762e-10
 305	merge_node_37	merge_node_39	1.07166976426297e-09
 559	merge_node_39	merge_node_40	2.95275178728434e-08
 merge_node_28	merge_node_40	merge_node_41	3.94034966753516e-07
-merge_node_41	merge_node_38	merge_node_42	5.8356614787827e-05
-merge_node_31	merge_node_42	merge_node_43	0.205571877409732
-560	merge_node_43	merge_node_44	100000000
+merge_node_41	merge_node_38	merge_node_42	3.49838714672318e-05
+merge_node_31	merge_node_42	merge_node_43	0.0268752956685258
+560	merge_node_43	merge_node_44	2418.64657218729
