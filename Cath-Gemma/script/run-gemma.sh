@@ -54,12 +54,8 @@ print_date "PROJECT_FILE   $LOCAL_PROJECT_FILE"
 
 if [ $ALLOW_CACHE == "false" ]
 then
-	echo "Removing contents of $FF_GEN_ROOTDIR/alignments/$PROJECT"
-	echo "Removing contents of $FF_GEN_ROOTDIR/profiles/$PROJECT"
-	echo "Removing contents of $FF_GEN_ROOTDIR/scans/$PROJECT"
-	rm -rf $FF_GEN_ROOTDIR/alignments/$PROJECT
-	rm -rf $FF_GEN_ROOTDIR/profiles/$PROJECT
-	rm -rf $FF_GEN_ROOTDIR/scans/$PROJECT
+	echo "Removing contents of cache files: $FF_GEN_ROOTDIR/{alignments,profiles,scans}/$PROJECT"
+	rm -rf $FF_GEN_ROOTDIR/{alignments,profiles,scans}/$PROJECT
 fi
 
 ########################
@@ -92,8 +88,11 @@ local)
 # on legion cluster
 legion)
 	# path to gemma data in legion scratch dir
-	export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
-	REMOTE_DATA_ROOT=`whoami`@login05.external.legion.ucl.ac.uk:/scratch/scratch/`whoami`/Cath-Gemma
+
+	LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
+	REMOTE_DATA_PATH=/scratch/scratch/`whoami`/Cath-Gemma
+	REMOTE_DATA_HOST=`whoami`@login05.external.legion.ucl.ac.uk
+	REMOTE_DATA_ROOT=${REMOTE_DATA_HOST}:${REMOTE_DATA_PATH}
 
 	# make results directory
 	print_date "Making results directory: $LEGION_DATA_ROOT"
@@ -119,18 +118,17 @@ legion)
 	# ssh legion.rc.ucl.ac.uk "$( cat <<'EOT'
 	# echo "Running these commands on legion..."
 	print_date "Run the following commands on legion..."
+	echo
+	echo ssh ${REMOTE_DATA_HOST}
+	echo qrsh -verbose
+	echo LEGION_DATA_ROOT=${LEGION_DATA_ROOT}
 	if [ $ALLOW_CACHE == "false" ]
 	then
-		echo export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
-		echo rm $LEGION_DATA_ROOT/alignments/$PROJECT/*
-		echo rm $LEGION_DATA_ROOT/profiles/$PROJECT/*
-		echo rm $LEGION_DATA_ROOT/scans/$PROJECT/*
+		echo rm -rf \$LEGION_DATA_ROOT/{alignments,profiles,scans}
 	fi
-	echo qrsh -verbose
-	echo export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
-	echo cd /home/`whoami`/Scratch/Cath-Gemma
+	echo cd ${REMOTE_DATA_PATH}
 	echo module load perl
-	echo script/prepare_research_data.pl --projects-list-file ${LEGION_DATA_ROOT}/projects.txt --output-root-dir ${LEGION_DATA_ROOT}
+	echo script/prepare_research_data.pl --projects-list-file \${LEGION_DATA_ROOT}/projects.txt --output-root-dir \${LEGION_DATA_ROOT}
 # EOT
 # )"
 	# ssh legion.rc.ucl.ac.uk "${SSH_COMMAND}"
