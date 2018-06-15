@@ -30,11 +30,14 @@ FAMILY_PREFIX=${FAMILY_ID}.
 # TODO: add database version to wiki
 DB_VERSION=gene3d_16
 
+RUNNING_METHOD=$4
+print_date "Setting up to run GeMMA using the $RUNNING_METHOD method."
+
 ############################
 # remove cache if required #
 ############################
 
-if [ $ALLOW_CACHE == "false" ]
+if [ $ALLOW_CACHE == "false" ] && [ $RUNNING_METHOD == "local" ]
 then
 	echo "Removing contents of $FF_GEN_ROOTDIR/alignments/$PROJECT"
 	echo "Removing contents of $FF_GEN_ROOTDIR/profiles/$PROJECT"
@@ -47,9 +50,6 @@ fi
 ########################
 # build the gemma tree # # https://github.com/UCL/cath-gemma/wiki/Running-GeMMA
 ########################
-
-RUNNING_METHOD=$4
-print_date "Setting up to run GeMMA using the $RUNNING_METHOD method."
 
 # parameters
 LOCAL_DATA_ROOT=$FF_GEN_ROOTDIR
@@ -139,6 +139,13 @@ chuckle)
 
 	# ssh bchuckle.cs.ucl.ac.uk "$( cat <<'EOT'
 	print_date "Run the following commands on bchuckle..."
+	if [ $ALLOW_CACHE == "false" ]
+	then
+		echo export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
+		echo rm $CHUCKLE_DATA_ROOT/alignments/$PROJECT/*
+		echo rm $CHUCKLE_DATA_ROOT/profiles/$PROJECT/*
+		echo rm $CHUCKLE_DATA_ROOT/scans/$PROJECT/*
+	fi
 	echo qrsh -verbose
 	echo export CHUCKLE_DATA_ROOT=/cluster/project8/mg_assembly/gemma_data
 	echo cd /home/`whoami`/Cath-Gemma
