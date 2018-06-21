@@ -26,6 +26,7 @@ use List::MoreUtils     qw/ first_index                                         
 use Log::Log4perl::Tiny qw/ :easy                                                        /;
 use Path::Tiny;
 use Scalar::Util        qw/ looks_like_number                                            /;
+use Try::Tiny;
 use Type::Params        qw/ compile Invocant                                             /;
 use Types::Path::Tiny   qw/ Path                                                         /;
 use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional Str Tuple /;
@@ -299,6 +300,7 @@ sub to_tracefile_string {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
+	my $really_bad_score = really_bad_score();
 	my $result_str = '';
 	$self->_perform_action_on_trace_style_list( sub {
 		state $check = compile( Str, Str, Str, CathGemmaTreeMerge );
@@ -311,7 +313,7 @@ sub to_tracefile_string {
 			. "\t"
 			. $new_id
 			. "\t"
-			. ( ( defined( $merge->score() ) && lc( $merge->score() ) ne 'inf' ) ? $merge->score() : 100000000 )
+			. ( ( defined( $merge->score() ) && lc( $merge->score() ) ne 'inf' ) ? $merge->score() : $really_bad_score )
 			. "\n"
 		);
 	} );
@@ -621,16 +623,20 @@ sub archive_in_dir {
 	DEBUG "Archiving $basename [$clusts_ordering] to $output_dir (with alignments from $aln_dir)";
 
 	if ( ! -d $output_dir ) {
-		$output_dir->mkpath()
-			or confess "Unable to make results archive directory \"$output_dir\" : $OS_ERROR";
+		try { $output_dir->mkpath() }
+		catch {
+			confess "Unable to make results archive directory \"$output_dir\" : $OS_ERROR";
+		}
 	}
 
 	my $merge_node_alignments_subdir       = $output_dir->child( 'merge_node_alignments'       );
 	my $starting_cluster_alignments_subdir = $output_dir->child( 'starting_cluster_alignments' );
 
 	foreach my $subdir ( $merge_node_alignments_subdir, $starting_cluster_alignments_subdir ) {
-		$subdir->mkpath()
-			or confess 'Unable to make subdirectory ' . $subdir . " for archiving the tree's alignments in";
+		try { $subdir->mkpath() } 
+		catch {
+			confess 'Unable to make subdirectory ' . $subdir . " for archiving the tree's alignments in";
+		}
 	}
 
 	$self->write_to_newick_file( $output_dir->child( $basename . '.newick' ) );
