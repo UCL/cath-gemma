@@ -10,6 +10,7 @@ use strict;
 use warnings;
 
 # Core
+use Carp qw/ confess /;
 use English             qw/ -no_match_vars /;
 
 # Moo
@@ -73,7 +74,7 @@ sub build_tree {
 	# TODONOW: Sort this out
 	my $local_executor = Cath::Gemma::Executor::DirectExecutor->new();
 
-	my $really_bad_score = 100000000;
+	my $really_bad_score = really_bad_score();
 	my %scores;
 
 	my $merge_bundler = Cath::Gemma::Tree::MergeBundler::WindowedMergeBundler->new();
@@ -82,6 +83,8 @@ sub build_tree {
 
 
 	my @nodenames_and_merges;
+
+	my $last_scans_data_count = 0;
 
 	my $num_merge_batches = 0;
 	while ( $scans_data->count() > 1 ) {
@@ -96,7 +99,16 @@ sub build_tree {
 			. $work_batch_list->num_steps()
 			. ' steps, estimated to take up to '
 			. $work_batch_list->estimate_time_to_execute()
-			. ' seconds';
+			. ' seconds ('
+			. $scans_data->count()
+			. ' scans left)';
+		
+		# test whether going into infinite loop
+		if ( $last_scans_data_count == $scans_data->count() ) {
+			confess "Last scans data count looks the same as previous loop ($last_scans_data_count), could be stuck in infinite loop";
+		}
+		$last_scans_data_count = $scans_data->count();
+
 		if ( $work_batch_list->num_steps() > 0 ) {
 			$executor->execute_batch_list( $work_batch_list, 'always_wait_for_complete' );
 		}
