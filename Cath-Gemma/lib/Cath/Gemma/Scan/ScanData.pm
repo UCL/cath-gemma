@@ -162,7 +162,7 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 
 	my %best_score_per_querymatch;
 
-	my $maxevalue = 1000000;
+	my $really_bad_score = really_bad_score();
 	my $alignment_suffix = alignment_suffix();
 	my %query_lookup = map { ($_ => 1) } @$query_ids;
 	my %match_lookup = map { ($_ => 1) } @$match_ids;
@@ -262,7 +262,7 @@ sub parse_from_raw_hhsearch_scan_output_lines {
 					$count_reverse_hits++;
 				}
 				else {
-					$evalue = $maxevalue;
+					$evalue = $really_bad_score;
 					$count_max_hits++;
 				}
 				push @missing_scan_data, [ $query_id, $match_id, $evalue ];

@@ -54,6 +54,7 @@ our @EXPORT = qw/
 	profile_builder_class_from_type
 	profile_scanner_class_from_type
 	raw_sequences_filename_of_starting_clusters
+	really_bad_score
 	run_and_time_filemaking_cmd
 	scan_filebasename_of_cluster_ids
 	scan_filename_of_dir_and_cluster_ids
@@ -149,6 +150,8 @@ sub alignment_suffix           { '.aln' }
 sub sequences_suffix           { '.faa' }
 
 sub default_profile_build_type { 'hhconsensus' }
+
+sub really_bad_score { 100000000 }
 
 =head2 default_cleanup_temp_files 
 
