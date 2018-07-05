@@ -46,7 +46,6 @@ print_date "GEMMA_HOME     $GEMMA_DIR"
 print_date "DATA_HOME      $FF_GEN_ROOTDIR"   
 print_date "DB_VERSION     $DB_VERSION"          
 print_date "RUN_ENV        $RUNNING_METHOD"          
-print_date "PROJECT_FILE   $LOCAL_PROJECT_FILE"  
 
 print_date "Setting up to run GeMMA using the $RUNNING_METHOD method."
 
@@ -74,6 +73,8 @@ if [ ! -f $LOCAL_PROJECT_FILE ]; then
 	echo "! Error: projects file not found: $LOCAL_PROJECT_FILE"
 	exit
 fi
+
+print_date "PROJECT_FILE   $LOCAL_PROJECT_FILE"  
 
 readarray PROJECT_IDS < $LOCAL_PROJECT_FILE
 print_date "PROJECT_IDS        ${PROJECT_IDS[@]}"          
