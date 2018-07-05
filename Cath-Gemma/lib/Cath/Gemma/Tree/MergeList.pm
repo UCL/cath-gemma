@@ -30,6 +30,7 @@ use Try::Tiny;
 use Type::Params        qw/ compile Invocant                                             /;
 use Types::Path::Tiny   qw/ Path                                                         /;
 use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional Str Tuple /;
+use DDP;
 
 # Cath::Gemma
 use Cath::Gemma::Tree::Merge;
@@ -352,8 +353,14 @@ sub to_newick_string {
 		my $mergee_a_id = $newick_str_of_node_id{ $merge->mergee_a_id() } // ( $merge->mergee_a() . '' );
 		my $mergee_b_id = $newick_str_of_node_id{ $merge->mergee_b_id() } // ( $merge->mergee_b() . '' );
 		$last_id = $merge->id();
+		if ( !defined $last_id ) {
+			confess "! Error: id is not defined in merge: " . np( $merge );
+		} 
 		$newick_str_of_node_id{ $last_id } = "($mergee_a_id,$mergee_b_id)";
 	}
+	if ( !defined $last_id ) {
+		confess "! Error: last_id is not defined after merges";
+	} 
 
 	return $newick_str_of_node_id{ $last_id };
 }
