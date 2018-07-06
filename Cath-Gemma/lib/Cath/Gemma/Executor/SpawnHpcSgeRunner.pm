@@ -34,9 +34,14 @@ TODOCUMENT
 =cut
 
 sub _get_submit_host {
-	return ( defined( $ENV{ SGE_CLUSTER_NAME } ) && $ENV{ SGE_CLUSTER_NAME } =~ /leg/i )
-		? 'legion.rc.ucl.ac.uk'
-		: 'bchuckle.cs.ucl.ac.uk';
+	die "! Error: failed to get submit host: ENV{ SGE_CLUSTER_NAME } is not defined" 
+		unless defined $ENV{ SGE_CLUSTER_NAME };
+
+	return 
+		$ENV{ SGE_CLUSTER_NAME } =~ /^legion/   ? 'legion.rc.ucl.ac.uk' : 
+		$ENV{ SGE_CLUSTER_NAME } =~ /^myriad/   ? 'myriad.rc.ucl.ac.uk' :
+		$ENV{ SGE_CLUSTER_NAME } =~ /^bchuckle/ ? 'bchuckle.cs.ucl.ac.uk' :
+		die "Error: failed to get submit host from ENV{ SGE_CLUSTER_NAME }: $ENV{SGE_CLUSTER_NAME}";
 }
 
 
@@ -79,11 +84,13 @@ sub run_job_array {
 		# 'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req, 'hostname=abbott*' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
 		'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req                     ],
 		'legion.rc.ucl.ac.uk'   => [                                         ],
+		'myriad.rc.ucl.ac.uk'   => [                                         ],
 	);
 	my %cluster_extras             = (
 		#'bchuckle.cs.ucl.ac.uk' => [ '-P', 'cath' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
 		'bchuckle.cs.ucl.ac.uk' => [              ],
 		'legion.rc.ucl.ac.uk'   => [              ],
+		'myriad.rc.ucl.ac.uk'   => [              ],
 	);
 
 	my $cluster_specific_resources = $cluster_resources{ $submit_host }
