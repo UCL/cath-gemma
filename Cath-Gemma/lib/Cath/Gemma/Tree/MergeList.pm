@@ -14,6 +14,7 @@ use Carp                qw/ confess                                             
 use English             qw/ -no_match_vars                                               /;
 use List::Util          qw/ max min sum                                                  /;
 use v5.10;
+use Data::Dumper;
 
 # Moo
 use Moo;
@@ -30,7 +31,6 @@ use Try::Tiny;
 use Type::Params        qw/ compile Invocant                                             /;
 use Types::Path::Tiny   qw/ Path                                                         /;
 use Types::Standard     qw/ ArrayRef ClassName CodeRef Int Num Object Optional Str Tuple /;
-use DDP;
 
 # Cath::Gemma
 use Cath::Gemma::Tree::Merge;
@@ -354,7 +354,7 @@ sub to_newick_string {
 		my $mergee_b_id = $newick_str_of_node_id{ $merge->mergee_b_id() } // ( $merge->mergee_b() . '' );
 		$last_id = $merge->id();
 		if ( !defined $last_id ) {
-			confess "! Error: id is not defined in merge: " . np( $merge );
+			confess "! Error: id is not defined in merge: " . Dumper( $merge );
 		} 
 		$newick_str_of_node_id{ $last_id } = "($mergee_a_id,$mergee_b_id)";
 	}
