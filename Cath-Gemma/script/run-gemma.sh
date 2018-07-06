@@ -120,12 +120,13 @@ run_hpc () {
 	echo qrsh -verbose $QRSH_FLAGS
 	echo GEMMA_DATA_ROOT=${REMOTE_DATA_PATH}
 	if [ $ALLOW_CACHE == "false" ]
-	thenssh 
+	then
 		echo rm -rf \$GEMMA_DATA_ROOT/{alignments,profiles,scans}
 	fi
 	echo cd \$GEMMA_DATA_ROOT
 	echo module load perl
-	echo ${REMOTE_CODE_PATH}/script/prepare_research_data.pl --projects-list-file \${REMOTE_DATA_PATH}/projects.txt --output-root-dir \${REMOTE_DATA_PATH}
+	echo ${REMOTE_CODE_PATH}/script/prepare_research_data.pl --projects-list-file \${GEMMA_DATA_ROOT}/projects.txt --output-root-dir \${GEMMA_DATA_ROOT}
+	echo
 }
 
 
