@@ -17,6 +17,7 @@ WriteMakefile(
         'Bio::SeqIO'              => 0,
         'Capture::Tiny'           => 0,
         'Cwd::Guard'              => 0,
+        'DDP'                     => 0,
         'File::AtomicWrite'       => 0,
         'File::chdir'             => 0,
         'File::Which'             => 0,
