@@ -32,8 +32,11 @@ use Types::Standard     qw/ ArrayRef Bool Int Object Str /;
 # Cath::Gemma
 use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Tool::CompassProfileBuilder;
+use Cath::Gemma::Tool::HHSuiteProfileBuilder;
 use Cath::Gemma::Types qw/
+	CathGemmaProfileType
 	CathGemmaCompassProfileType
+	CathGemmaHHSuiteProfileType
 	CathGemmaComputeTaskProfileBuildTask
 	CathGemmaDiskExecutables
 	CathGemmaDiskProfileDirSet
@@ -79,16 +82,16 @@ has starting_cluster_lists => (
 # !!!!!!!!! PLACED BELOW THE ATTRIBUTES THAT ARE USED TO SATISFY THIS ROLE !!!!!!!!!
 with ( 'Cath::Gemma::Compute::Task' );
 
-=head2 compass_profile_build_type
+=head2 profile_build_type
 
 TODOCUMENT
 
 =cut
 
-has compass_profile_build_type => (
+has profile_build_type => (
 	is       => 'ro',
-	isa      => CathGemmaCompassProfileType,
-	default  => sub { default_compass_profile_build_type(); }
+	isa      => CathGemmaProfileType,
+	default  => sub { default_profile_build_type(); }
 );
 
 =head2 skip_profile_build
@@ -115,7 +118,7 @@ TODOCUMENT
 sub id {
 	my $self = shift;
 	return generic_id_of_clusters( [
-		$self->compass_profile_build_type(),
+		$self->profile_build_type(),
 		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
 	] );
 }
@@ -133,7 +136,7 @@ sub remove_already_present {
 	my $starting_cluster_lists = $self->starting_cluster_lists();
 
 	my @del_indices = grep {
-		-s ( '' . $self->dir_set()->compass_file_of_starting_clusters      ( $starting_cluster_lists->[ $ARG ], $self->compass_profile_build_type() ) )
+		-s ( '' . $self->dir_set()->profile_file_of_starting_clusters      ( $starting_cluster_lists->[ $ARG ], $self->profile_build_type() ) )
 		&&
 		-s ( '' . $self->dir_set()->alignment_filename_of_starting_clusters( $starting_cluster_lists->[ $ARG ] ) )
 	} ( 0 .. $#$starting_cluster_lists );
@@ -176,6 +179,7 @@ sub total_num_starting_clusters {
 	return sum0( map { scalar( @$ARG ); } @{ $self->starting_cluster_lists() } );
 }
 
+
 =head2 execute_task
 
 TODOCUMENT
@@ -185,20 +189,23 @@ TODOCUMENT
 sub execute_task {
 	my ( $self, $exes, $subtask_executor ) = @ARG;
 
+	my $profile_builder_class = profile_builder_class_from_type( $self->profile_build_type );
+
 	return [
 		map
 		{
 			my $starting_clusters = $ARG;
-			INFO 'Building profile for '
+			INFO 'Building ' . $profile_builder_class . ' profile for '
 				. scalar( @$starting_clusters )
 				. ' starting cluster(s) (beginning with '
 				. join( ', ', @$starting_clusters[ 0 .. min( 20, $#$starting_clusters ) ] )
 				. ')';
-			Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
+
+			$profile_builder_class->build_alignment_and_profile(
 				$exes,
 				$starting_clusters,
 				$self->dir_set(),
-				$self->compass_profile_build_type(),
+				$self->profile_build_type(),
 				$self->skip_profile_build(),
 			);
 		}
@@ -234,11 +241,11 @@ sub remove_duplicate_build_tasks {
 	my ( $proto, $build_tasks ) = $check->( @ARG );
 
 	if ( scalar( @$build_tasks ) ) {
-		my $compass_profile_build_type = $build_tasks->[ 0 ]->compass_profile_build_type();
+		my $profile_build_type         = $build_tasks->[ 0 ]->profile_build_type();
 		my $dir_set                    = $build_tasks->[ 0 ]->dir_set();
 
-		if ( any { $ARG->compass_profile_build_type() ne $compass_profile_build_type } @$build_tasks ) {
-			confess "Cannot remove_duplicate_build_tasks() for ProfileBuildTasks with inconsistent compass_profile_build_type()s";
+		if ( any { $ARG->profile_build_type() ne $profile_build_type } @$build_tasks ) {
+			confess "Cannot remove_duplicate_build_tasks() for ProfileBuildTasks with inconsistent profile_build_type()s";
 		}
 		if ( any { ! $ARG->dir_set()->is_equal_to( $dir_set ) } @$build_tasks ) {
 			confess "Cannot remove_duplicate_build_tasks() for ProfileBuildTasks with inconsistent dir_set()s";

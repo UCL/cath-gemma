@@ -19,7 +19,7 @@ use MooX::StrictConstructor;
 use strictures 1;
 
 
-
+use Cath::Gemma::Util;
 
 with ( 'Cath::Gemma::TreeBuilder' );
 
@@ -42,11 +42,13 @@ Params checked in Cath::Gemma::TreeBuilder
 =cut
 
 sub build_tree {
-	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
+	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
 
 	my %scores;
 
 	my @nodenames_and_merges;
+
+	my $scanner_class = profile_scanner_class_from_type( $profile_build_type );
 
 	while ( $scans_data->count() > 2 ) {
 		my ( $id1, $id2, $score ) = @{ $scans_data->ids_and_score_of_lowest_score_or_arbitrary() };
@@ -66,12 +68,12 @@ sub build_tree {
 			),
 		];
 
-		my $new_scan_data = Cath::Gemma::Tool::CompassScanner->build_and_scan_merge_cluster_against_others(
+		my $new_scan_data = $scanner_class->build_and_scan_merge_cluster_against_others(
 			$exes,
 			$merged_starting_clusters,
 			$other_ids,
 			$gemma_dir_set,
-			$compass_profile_build_type,
+			$profile_build_type,
 		)->{ result };
 
 		$scans_data->add_scan_data( $new_scan_data );

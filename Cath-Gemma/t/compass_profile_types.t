@@ -48,7 +48,7 @@ sub cmp_compass_profile_type_against_file {
 
 	my $test_out_dir = cath_test_tempdir( TEMPLATE => "test.compass_profile_types.XXXXXXXXXXX" );
 
-	my $got_filename = Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile_in_dir(
+	my $got_filename = Cath::Gemma::Tool::CompassProfileBuilder->build_profile_in_dir(
 		Cath::Gemma::Disk::Executables->new(),
 		$alignment_file,
 		$test_out_dir,

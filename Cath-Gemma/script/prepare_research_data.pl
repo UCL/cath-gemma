@@ -38,6 +38,8 @@ use Cath::Gemma::Executor::SpawnExecutor; # ***** TEMPORARY (use factory) *****
 use Cath::Gemma::Tool::Aligner;
 use Cath::Gemma::Tool::CompassProfileBuilder;
 use Cath::Gemma::Tool::CompassScanner;
+use Cath::Gemma::Tool::HHSuiteProfileBuilder;
+use Cath::Gemma::Tool::HHSuiteScanner;
 use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
@@ -66,7 +68,8 @@ my $trace_files_ext            = '.trace';
 # 	Cath::Gemma::TreeBuilder::WindowedTreeBuilder    ->new(),
 # );
 
-my @COMPASS_PROFILE_TYPES = ( qw/                                           mk_compass_db / );
+#my @COMPASS_PROFILE_TYPES = ( qw/                                           mk_compass_db / );
+my @PROFILE_TYPES         = ( qw/                                            hhconsensus   / );
 my @NODE_ORDERINGS        = ( qw/                  simple_ordering                        / );
 my @TREE_BUILDERS         = ( Cath::Gemma::TreeBuilder::WindowedTreeBuilder->new()          );
 
@@ -204,7 +207,7 @@ sub work_batches_for_mergelist {
 
 	return [
 		map {
-			my $compass_profile_build_type = $ARG;
+			my $profile_build_type = $ARG;
 
 			my $work_batch = Cath::Gemma::Compute::WorkBatch->new(
 				# Build alignments and profiles for...
@@ -213,7 +216,7 @@ sub work_batches_for_mergelist {
 					Cath::Gemma::Compute::Task::ProfileBuildTask->new(
 						starting_cluster_lists     => [ map { [ $ARG ]; } @$starting_clusters ],
 						dir_set                    => $gemma_dir_set->profile_dir_set       (),
-						compass_profile_build_type => $compass_profile_build_type,
+						profile_build_type         => $profile_build_type,
 					)->remove_already_present(),
 
 					# # ...all merge nodes from the source trace file (simple_ordering)
@@ -239,7 +242,7 @@ sub work_batches_for_mergelist {
 							$starting_clusters
 						),
 						dir_set                     => $gemma_dir_set,
-						compass_profile_build_type  => $compass_profile_build_type,
+						profile_build_type          => $profile_build_type,
 					)->remove_already_present(),
 
 					# # ...all merge nodes from the source trace file (simple_ordering)
@@ -259,7 +262,7 @@ sub work_batches_for_mergelist {
 			)->remove_empty_tasks();
 			$work_batch->is_empty() ? (             )
 			                        : ( $work_batch );
-		} @COMPASS_PROFILE_TYPES
+		} @PROFILE_TYPES
 	];
 }
 
@@ -272,7 +275,7 @@ sub treebuild_batches {
 		map {
 			my $tree_builder = $ARG;
 			map {
-				my $compass_profile_build_type = $ARG;
+				my $profile_build_type = $ARG;
 				map {
 					my $clusts_ordering = $ARG;
 
@@ -280,7 +283,7 @@ sub treebuild_batches {
 						treebuild_tasks => [
 							Cath::Gemma::Compute::Task::BuildTreeTask->new(
 								clusts_ordering            => $clusts_ordering,
-								compass_profile_build_type => $compass_profile_build_type,
+								profile_build_type         => $profile_build_type,
 								dir_set                    => $tree_dir_set,
 								starting_cluster_lists     => [ $tree_dir_set->get_starting_clusters() ],
 								tree_builder               => $tree_builder,
@@ -289,7 +292,7 @@ sub treebuild_batches {
 					);
 
 				} @NODE_ORDERINGS;
-			} @COMPASS_PROFILE_TYPES
+			} @PROFILE_TYPES
 		} @TREE_BUILDERS
 	];
 }

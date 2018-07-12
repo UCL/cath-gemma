@@ -39,6 +39,12 @@ use Types::Standard     qw/ Object Str     /;
 use Cath::Gemma::Types qw/ CathGemmaCompassProfileType /;
 use Cath::Gemma::Util;
 
+# HHsuite executables
+my $ffindex_build_exe    = path( "$FindBin::Bin/../tools/hhsuite/bin/ffindex_build"                 )->realpath;
+my $hhconsensus_exe      = path( "$FindBin::Bin/../tools/hhsuite/bin/hhconsensus"                   )->realpath;
+my $hhsearch_exe         = path( "$FindBin::Bin/../tools/hhsuite/bin/hhsearch"                      )->realpath;
+my $hhsuite_data_dir     = path( "$FindBin::Bin/../tools/hhsuite/data"                              )->realpath;
+
 # COMPASS executables
 my $compass_build_exe    = path( "$FindBin::Bin/../tools/compass/compass_wp_245_fixed"              )->realpath;
 my $compass_scan_241_exe = path( "$FindBin::Bin/../tools/compass/compass_db1Xdb2_241"               )->realpath;
@@ -65,36 +71,33 @@ has tmp_dir => (
 
 TODOCUMENT
 
-=cut
+=head2 ffindex_build
 
+TODOCUMENT
+
+=head2 hhconsensus
+
+TODOCUMENT
+
+=head2 hhsearch
+
+TODOCUMENT
 
 =head2 compass_build
 
 TODOCUMENT
 
-=cut
-
-
 =head2 compass_scan_241
 
 TODOCUMENT
-
-=cut
-
 
 =head2 compass_scan_310
 
 TODOCUMENT
 
-=cut
-
-
 =head2 mafft
 
 TODOCUMENT
-
-=cut
-
 
 =head2 mk_compass_db
 
@@ -103,8 +106,7 @@ TODOCUMENT
 =cut
 
 
-
-has [ qw/ _exes_dir compass_build compass_scan_241 compass_scan_310 mafft mk_compass_db / ] => (
+has [ qw/ _exes_dir ffindex_build hhconsensus hhsearch compass_build compass_scan_241 compass_scan_310 mafft mk_compass_db / ] => (
 	is  => 'lazy',
 	isa => Path,
 );
@@ -130,6 +132,38 @@ sub _prepare_mafft_directories {
 	}
 
 	$ENV{ MAFFT_BINARIES } = "$dest_dir";
+}
+
+
+=head2 _prepare_hhsuite_directories
+
+TODOCUMENT
+
+=cut
+
+my $ALREADY_PREPARED_HHSUITE_DIRECTORIES=0;
+
+sub _prepare_hhsuite_directories {
+
+	return if $ALREADY_PREPARED_HHSUITE_DIRECTORIES;
+
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	my $base_dir = $self->_exes_dir()->child( 'hhsuite' );
+	my $dest_dir = $base_dir->child( 'data' );
+	$dest_dir->mkpath;
+
+	my ( $stdout, $stderr, $exit ) = capture {
+		system( 'rsync', '-av', "$hhsuite_data_dir/", "$dest_dir/" );
+	};
+	if ( $stderr || $exit ) {
+		confess "Failed to mirror (rsync) HHSuite data from $hhsuite_data_dir to $dest_dir";
+	}
+
+	$ENV{ HHLIB } = "$base_dir";
+
+	$ALREADY_PREPARED_HHSUITE_DIRECTORIES++;
 }
 
 =head2 _prepare_exe
@@ -165,11 +199,64 @@ sub _build__exes_dir {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
-	return Path::Tiny->tempdir(
-		TEMPLATE => "cath_gemma_exes_dir.XXXXXXXX",
-		DIR      => '/dev/shm',
-	);
+	my $CLEANUP_TMP_FILES = default_cleanup_temp_files();
+
+	if (! $CLEANUP_TMP_FILES) {
+		WARN "DEBUG: using /tmp rather than /dev/shm (and NOT cleaning up)";
+		return Path::Tiny->tempdir(
+			TEMPLATE => "cath_gemma_exes_dir.XXXXXXXX",
+			DIR      => '/tmp',
+			CLEANUP  => 0,
+		);
+	}
+	else {
+		return Path::Tiny->tempdir(
+			TEMPLATE => "cath_gemma_exes_dir.XXXXXXXX",
+			DIR      => '/dev/shm',
+			CLEANUP  => 1,
+		);
+	}
 }
+
+=head2 _build_hhconsensus
+
+TODOCUMENT
+
+=cut
+
+sub _build_hhconsensus {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	$self->_prepare_hhsuite_directories();
+	return $self->_prepare_exe( 'hhconsensus', $hhconsensus_exe );
+}
+
+=head2 _build_ffindex_build
+
+TODOCUMENT
+
+=cut
+
+sub _build_ffindex_build {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	$self->_prepare_hhsuite_directories();
+	return $self->_prepare_exe( 'ffindex_build', $ffindex_build_exe );
+}
+
+=head2 _build_hhsearch
+
+TODOCUMENT
+
+=cut
+
+sub _build_hhsearch {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+	$self->_prepare_hhsuite_directories();
+	return $self->_prepare_exe( 'hhsearch', $hhsearch_exe );
+}
+
 
 =head2 _build_compass_build
 
@@ -242,6 +329,9 @@ sub prepare_all {
 	state $check = compile( Object );
 	my ( $self ) = $check->( @ARG );
 
+	$self->ffindex_build();
+	$self->hhconsensus();
+	$self->hhsearch();
 	$self->compass_build();
 	$self->compass_scan_241();
 	$self->compass_scan_310();

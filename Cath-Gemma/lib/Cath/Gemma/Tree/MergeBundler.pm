@@ -10,6 +10,7 @@ use strict;
 use warnings;
 
 # Core
+use Carp                qw/ confess         /;
 use English             qw/ -no_match_vars  /;
 use v5.10;
 
@@ -24,7 +25,7 @@ use Types::Standard     qw/ Object Optional /;
 # Cath::Gemma
 use Cath::Gemma::Compute::WorkBatchList; # ********** ?? TEMPORARY ?? ************
 use Cath::Gemma::Types  qw/
-	CathGemmaCompassProfileType
+	CathGemmaProfileType
 	CathGemmaDiskGemmaDirSet
 	CathGemmaScanScansData
 /;
@@ -37,15 +38,20 @@ Require that a consumer of the TreeBuilder role must provide a get_execution_bun
 
 requires 'get_execution_bundle';
 
-=head2 before get_execution_bundle
+=head2 around get_execution_bundle
 
 Check the arguments before passing-through to the consuming class's get_execution_bundle()
 
+Check that the returned execution bundle isn't empty
+
 =cut
 
-before get_execution_bundle => sub {
+around get_execution_bundle => sub {
+	my $orig__get_execution_bundle = shift;
+
 	state $check = compile( Object, CathGemmaScanScansData );
 	$check->( @ARG );
+
 	# my ( $self, $scans_data ) = $check->( @ARG );
 	# if ( $index >= $self->num_steps() ) {
 	# 	confess
@@ -53,6 +59,23 @@ before get_execution_bundle => sub {
 	# 		  . $index . ' is out of range in a task of '
 	# 		  . $self->num_steps() . ' steps';
 	# }
+
+	my $result = $orig__get_execution_bundle->( @ARG );
+	if ( scalar( @$result ) == 0 ) {
+		confess <<'EOF' ;
+The bundle of merges returned by the merge bundler is empty.
+This means it has failed to find work to be done and further progress will be impossible.
+
+You will need to investigate this problem and fix it.
+
+Of possible relevance: we have previously seen this occur when the evalue window was being
+chosen such that it inadvertently excluded the value that it was chosen to include.
+This was due to the nuances of floating-point numbers.
+evalue_window_ceiling() and evalue_window_floor() were tweaked to address this problem
+(after tests were added to demonstrate it).
+EOF
+	}
+	return $result;
 };
 
 =head2 get_query_scs_and_match_scs_list_of_bundle
@@ -109,7 +132,7 @@ TODOCUMENT
 =cut
 
 sub make_work_batch_list_of_query_scs_and_match_scs_list {
-	state $check = compile( Object, CathGemmaScanScansData, CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType] );
+	state $check = compile( Object, CathGemmaScanScansData, CathGemmaDiskGemmaDirSet, Optional[CathGemmaProfileType] );
 	my ( $self, $scans_data, $gemma_dir_set, @profile_type ) = $check->( @ARG );
 
 	return Cath::Gemma::Compute::WorkBatchList->make_work_batch_list_of_query_scs_and_match_scs_list(

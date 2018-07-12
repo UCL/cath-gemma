@@ -31,8 +31,11 @@ use Types::Standard    qw/ ArrayRef Object Str Tuple /;
 
 # Cath::Gemma
 use Cath::Gemma::Disk::GemmaDirSet;
+use Cath::Gemma::Tool::HHSuiteScanner;
 use Cath::Gemma::Tool::CompassScanner;
 use Cath::Gemma::Types qw/
+	CathGemmaProfileType
+	CathGemmaHHSuiteProfileType
 	CathGemmaCompassProfileType
 	CathGemmaComputeTaskProfileScanTask
 	CathGemmaDiskExecutables
@@ -80,17 +83,17 @@ has clust_and_clust_list_pairs => (
 # !!!!!!!!! PLACED BELOW THE ATTRIBUTES THAT ARE USED TO SATISFY THIS ROLE !!!!!!!!!
 with ( 'Cath::Gemma::Compute::Task' );
 
-=head2 compass_profile_build_type
+=head2 profile_build_type
 
 TODOCUMENT
 
 =cut
 
-has compass_profile_build_type => (
+has profile_build_type => (
 	is       => 'ro',
-	isa      => CathGemmaCompassProfileType,
+	isa      => CathGemmaProfileType,
 	required => 1,
-	default  => sub { default_compass_profile_build_type(); },
+	default  => sub { default_profile_build_type(); },
 );
 
 # =head2 id
@@ -132,7 +135,7 @@ TODOCUMENT
 sub id {
 	my $self = shift;
 	return generic_id_of_clusters( [
-		$self->compass_profile_build_type(),
+		$self->profile_build_type(),
 		map {
 			(
 				id_of_clusters( [ $ARG->[ 0 ] ] ),
@@ -159,7 +162,7 @@ sub remove_already_present {
 		-s ( '' . $self->dir_set()->scan_filename_of_cluster_ids(
 			[ $starting_cluster_list_pair->[ 0 ] ],
 			  $starting_cluster_list_pair->[ 1 ],
-			$self->compass_profile_build_type()
+			$self->profile_build_type()
 		) )
 	} ( 0 .. $#$clust_and_clust_list_pairs );
 
@@ -193,6 +196,7 @@ sub total_num_starting_clusters {
 
 # }
 
+
 =head2 execute_task
 
 TODOCUMENT
@@ -201,6 +205,8 @@ TODOCUMENT
 
 sub execute_task {
 	my ( $self, $exes, $subtask_executor ) = @ARG;
+
+	my $scanner_class = profile_scanner_class_from_type( $self->profile_build_type );
 
 	return [
 		map
@@ -214,12 +220,12 @@ sub execute_task {
 				. join( ', ', @$match_ids[ 0 .. min( 20, $#$match_ids ) ] )
 				. ')'
 				;
-			Cath::Gemma::Tool::CompassScanner->compass_scan_to_file(
+			$scanner_class->scan_to_file(
 				$exes,
 				[ $query_id ],
 				$match_ids,
 				$self->dir_set(),
-				$self->compass_profile_build_type(),
+				$self->profile_build_type(),
 			);
 		}
 		@{ $self->clust_and_clust_list_pairs() },
@@ -254,11 +260,11 @@ sub remove_duplicate_scan_tasks {
 	my ( $proto, $scan_tasks ) = $check->( @ARG );
 
 	if ( scalar( @$scan_tasks ) ) {
-		my $compass_profile_build_type = $scan_tasks->[ 0 ]->compass_profile_build_type();
-		my $dir_set                    = $scan_tasks->[ 0 ]->dir_set();
+		my $profile_build_type = $scan_tasks->[ 0 ]->profile_build_type();
+		my $dir_set            = $scan_tasks->[ 0 ]->dir_set();
 
-		if ( any { $ARG->compass_profile_build_type() ne $compass_profile_build_type } @$scan_tasks ) {
-			confess "Cannot remove_duplicate_scan_tasks() for ProfileScanTasks with inconsistent compass_profile_build_type()s";
+		if ( any { $ARG->profile_build_type() ne $profile_build_type } @$scan_tasks ) {
+			confess "Cannot remove_duplicate_scan_tasks() for ProfileScanTasks with inconsistent profile_build_type()s";
 		}
 		if ( any { ! $ARG->dir_set()->is_equal_to( $dir_set ) } @$scan_tasks ) {
 			confess "Cannot remove_duplicate_scan_tasks() for ProfileScanTasks with inconsistent dir_set()s";

@@ -53,7 +53,7 @@ sub cmp_compass_profile_type_against_file {
 	my $got_file     = prof_file_of_prof_dir_and_aln_file( $test_out_dir, $aln_file, $prof_type );
 
 	# Build a profile file
-	Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile_in_dir(
+	Cath::Gemma::Tool::CompassProfileBuilder->build_profile_in_dir(
 		Cath::Gemma::Disk::Executables->new(),
 		$aln_file,
 		$test_out_dir,

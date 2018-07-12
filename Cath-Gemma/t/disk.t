@@ -52,9 +52,11 @@ subtest 'Cath::Gemma::Disk::ProfileDirSet' => sub {
 		is( $prof_dirset->starting_cluster_dir(), path( '/my_base/starting_clusters' ) );
 
 		is( $prof_dirset->alignment_filename_of_starting_clusters( $strt_clusts                                       ), path( '/my_base/alignments/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.aln'              ) );
-		is( $prof_dirset->compass_file_of_starting_clusters      ( $strt_clusts                                       ), path( '/my_base/profiles/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
-		is( $prof_dirset->compass_file_of_starting_clusters      ( $strt_clusts, default_compass_profile_build_type() ), path( '/my_base/profiles/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
-		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file'                                      ), path( '/my_base/profiles/my_aln_file.mk_compass_db.prof'                           ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts                                       ), path( '/my_base/profiles/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.hhconsensus.a3m'    ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts, default_profile_build_type()         ), path( '/my_base/profiles/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.hhconsensus.a3m'    ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts, 'mk_compass_db'                      ), path( '/my_base/profiles/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
+		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file'                                      ), path( '/my_base/profiles/my_aln_file.hhconsensus.a3m'                              ) );
+		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file', 'mk_compass_db'                     ), path( '/my_base/profiles/my_aln_file.mk_compass_db.prof'                           ) );
 
 		ok(   $prof_dirset->is_equal_to( dclone( $prof_dirset ) ) );
 		ok( ! $prof_dirset->is_equal_to( Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir( 'other'   ) ) );
@@ -70,9 +72,11 @@ subtest 'Cath::Gemma::Disk::ProfileDirSet' => sub {
 		is( $prof_dirset->starting_cluster_dir(), path( '/my_base/starting_clusters/a_proj' ) );
 
 		is( $prof_dirset->alignment_filename_of_starting_clusters( $strt_clusts                                       ), path( '/my_base/alignments/a_proj/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.aln'              ) );
-		is( $prof_dirset->compass_file_of_starting_clusters      ( $strt_clusts                                       ), path( '/my_base/profiles/a_proj/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
-		is( $prof_dirset->compass_file_of_starting_clusters      ( $strt_clusts, default_compass_profile_build_type() ), path( '/my_base/profiles/a_proj/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
-		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file'                                      ), path( '/my_base/profiles/a_proj/my_aln_file.mk_compass_db.prof'                           ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts                                       ), path( '/my_base/profiles/a_proj/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.hhconsensus.a3m'    ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts, default_profile_build_type()         ), path( '/my_base/profiles/a_proj/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.hhconsensus.a3m'    ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts, 'mk_compass_db'                      ), path( '/my_base/profiles/a_proj/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
+		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file'                                      ), path( '/my_base/profiles/a_proj/my_aln_file.hhconsensus.a3m'                              ) );
+		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file', 'mk_compass_db'                     ), path( '/my_base/profiles/a_proj/my_aln_file.mk_compass_db.prof'                           ) );
 
 		ok(   $prof_dirset->is_equal_to( dclone( $prof_dirset ) ) );
 		ok( ! $prof_dirset->is_equal_to( Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir( 'other' ) ) );
@@ -113,9 +117,11 @@ subtest 'Cath::Gemma::Disk::ProfileDirSet' => sub {
 		is( $prof_dirset->starting_cluster_dir(), path( '/sc_dir' ) );
 
 		is( $prof_dirset->alignment_filename_of_starting_clusters( $strt_clusts                                       ), path( '/al_dir/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.aln'                ) );
-		is( $prof_dirset->compass_file_of_starting_clusters      ( $strt_clusts                                       ), path( '/pr_dir/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
-		is( $prof_dirset->compass_file_of_starting_clusters      ( $strt_clusts, default_compass_profile_build_type() ), path( '/pr_dir/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
-		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file'                                      ), path( '/pr_dir/my_aln_file.mk_compass_db.prof'                           ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts                                       ), path( '/pr_dir/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.hhconsensus.a3m'    ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts, default_profile_build_type()         ), path( '/pr_dir/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.hhconsensus.a3m'    ) );
+		is( $prof_dirset->profile_file_of_starting_clusters      ( $strt_clusts, 'mk_compass_db'                      ), path( '/pr_dir/n0de_a9f487f69b1ace1a7ff19353a9d2e7c4.mk_compass_db.prof' ) );
+		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file'                                      ), path( '/pr_dir/my_aln_file.hhconsensus.a3m'                              ) );
+		is( $prof_dirset->prof_file_of_aln_file                  ( 'my_aln_file', 'mk_compass_db'                     ), path( '/pr_dir/my_aln_file.mk_compass_db.prof'                           ) );
 
 		ok(   $prof_dirset->is_equal_to( dclone( $prof_dirset ) ) );
 		ok( ! $prof_dirset->is_equal_to( Cath::Gemma::Disk::ProfileDirSet->make_profile_dir_set_of_base_dir( 'other' ) ) );

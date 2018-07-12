@@ -30,7 +30,7 @@ use Cath::Gemma::Executor;
 use Cath::Gemma::Scan::ScansDataFactory;
 use Cath::Gemma::Tree::MergeList;
 use Cath::Gemma::Types qw/
-	CathGemmaCompassProfileType
+	CathGemmaProfileType
 	CathGemmaDiskExecutables
 	CathGemmaDiskGemmaDirSet
 	CathGemmaExecutor
@@ -69,11 +69,11 @@ around build_tree => sub {
 
 	require Cath::Gemma::Compute::WorkBatchList;
 
-	state $check = compile( Object, CathGemmaDiskExecutables, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType], Optional[CathGemmaNodeOrdering] );
-	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $compass_profile_build_type, $clusts_ordering ) = $check->( @ARG );
+	state $check = compile( Object, CathGemmaDiskExecutables, CathGemmaExecutor, ArrayRef[Str], CathGemmaDiskGemmaDirSet, Optional[CathGemmaProfileType], Optional[CathGemmaNodeOrdering] );
+	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $profile_build_type, $clusts_ordering ) = $check->( @ARG );
 
-	$clusts_ordering            //= default_clusts_ordering();
-	$compass_profile_build_type //= default_compass_profile_build_type();
+	$clusts_ordering      //= default_clusts_ordering();
+	$profile_build_type   //= default_profile_build_type();
 
 	DEBUG 'About to determine what steps if any are required to prepare all-vs-all scan results of the starting clusters';
 
@@ -85,7 +85,7 @@ around build_tree => sub {
 				Cath::Gemma::Compute::Task::ProfileBuildTask->new(
 					starting_cluster_lists     => [ map { [ $ARG ] } @$starting_clusters ],
 					dir_set                    => $gemma_dir_set->profile_dir_set(),
-					compass_profile_build_type => $compass_profile_build_type,
+					profile_build_type         => $profile_build_type,
 				)->remove_already_present(),
 			],
 
@@ -95,7 +95,7 @@ around build_tree => sub {
 				Cath::Gemma::Compute::Task::ProfileScanTask->new(
 					clust_and_clust_list_pairs => Cath::Gemma::Tree::MergeList->inital_scan_lists_of_starting_clusters( $starting_clusters ),
 					dir_set                    => $gemma_dir_set,
-					compass_profile_build_type => $compass_profile_build_type,
+					profile_build_type         => $profile_build_type,
 				)->remove_already_present(),
 			]
 		) ]
@@ -118,13 +118,13 @@ around build_tree => sub {
 	INFO 'About to load the all-vs-all scans between the starting clusters of the tree';
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_gemma_dir_set(
 		$gemma_dir_set,
-		$compass_profile_build_type,
+		$profile_build_type,
 		$starting_clusters,
 	);
 	INFO 'Finished loading the all-vs-all scans';
 
 	if ( scalar ( @ARG ) < 6 ) {
-		push @ARG, $compass_profile_build_type;
+		push @ARG, $profile_build_type;
 	}
 
 	if ( scalar ( @ARG ) < 7 ) {

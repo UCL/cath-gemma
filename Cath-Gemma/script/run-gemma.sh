@@ -18,7 +18,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ "$#" -ne 2 ];
 then
 	echo
-	echo "Usage: $0 <datadir> <local|legion|chuckle>"
+	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle>"
 	echo
 	echo "The following files are required:"
 	echo
@@ -46,9 +46,6 @@ print_date "GEMMA_HOME     $GEMMA_DIR"
 print_date "DATA_HOME      $FF_GEN_ROOTDIR"   
 print_date "DB_VERSION     $DB_VERSION"          
 print_date "RUN_ENV        $RUNNING_METHOD"          
-print_date "PROJECT_FILE   $LOCAL_PROJECT_FILE"  
-
-print_date "Setting up to run GeMMA using the $RUNNING_METHOD method."
 
 ############################
 # remove cache if required #
@@ -66,7 +63,7 @@ fi
 
 # parameters
 LOCAL_DATA_ROOT=$FF_GEN_ROOTDIR
-# specify the running method (local|legion|chuckle) as $2
+# specify the running method (local|legion|myriad|chuckle) as $2
 
 # print out commands to run:
 LOCAL_PROJECT_FILE="$LOCAL_DATA_ROOT/projects.txt"
@@ -75,14 +72,80 @@ if [ ! -f $LOCAL_PROJECT_FILE ]; then
 	exit
 fi
 
+print_date "PROJECT_FILE   $LOCAL_PROJECT_FILE"  
+
 readarray PROJECT_IDS < $LOCAL_PROJECT_FILE
 print_date "PROJECT_IDS        ${PROJECT_IDS[@]}"          
 
-# run either locally or on legion or chuckle cluster
+run_hpc () {
+
+	REMOTE_LOGIN=${REMOTE_USER}@${REMOTE_HOST}
+	REMOTE_DATA_ROOT=${REMOTE_LOGIN}:${REMOTE_DATA_PATH}
+	REMOTE_CODE_ROOT=${REMOTE_LOGIN}:${REMOTE_CODE_PATH}
+
+	print_date "REMOTE_USER       $REMOTE_USER"      
+	print_date "REMOTE_HOST       $REMOTE_HOST"      
+	print_date "REMOTE_DATA_ROOT  $REMOTE_DATA_ROOT"          
+	print_date "REMOTE_CODE_ROOT  $REMOTE_CODE_ROOT"          
+
+	# make results directory
+	print_date "Making results directory: $REMOTE_DATA_ROOT"
+	ssh $REMOTE_LOGIN mkdir -p ${REMOTE_DATA_PATH} ${REMOTE_DATA_PATH}/starting_clusters
+
+	# send starting cluster data
+	print_date "Sending project.txt file..."
+	set -x
+	rsync -a --delete ${LOCAL_DATA_ROOT}/projects.txt ${REMOTE_DATA_ROOT}/projects.txt
+	set +x
+	for PROJECT_ID in "${PROJECT_IDS[@]}"
+	do
+		# trim white space
+		PROJECT_ID="$(echo -e "${PROJECT_ID}" | tr -d '[:space:]')"
+		print_date "Sending starting cluster data: $PROJECT_ID..."
+		set -x
+		rsync -a --delete ${LOCAL_DATA_ROOT}/starting_clusters/$PROJECT_ID/ ${REMOTE_DATA_ROOT}/starting_clusters/$PROJECT_ID/
+		set +x
+	done
+
+	# send the code
+	print_date "Sending the code: $GEMMA_DIR -> $REMOTE_CODE_ROOT"
+	set -x
+	rsync -a --delete --exclude 'submit_dir.*' --include '*' $GEMMA_DIR/ $REMOTE_CODE_ROOT/
+	set +x
+	print_date "Done"
+
+	echo
+	echo "What happens now?"
+	echo
+
+	# set data environment variables
+	echo "Run the following commands on ${REMOTE_HOST}..."
+	echo "NOTE: uncomment the 'rm' function to delete any existing data files"
+	echo
+	echo ssh ${REMOTE_LOGIN}
+	echo qrsh -verbose -l $SGE_REQUEST_FLAGS
+	echo export SGE_CLUSTER_NAME=${RUNNING_METHOD}
+	echo GEMMA_DATA_ROOT=${REMOTE_DATA_PATH}
+	if [ $ALLOW_CACHE == "false" ]
+	then
+		echo '# rm -rf \$GEMMA_DATA_ROOT/{alignments,profiles,scans}'
+	fi
+	echo mkdir -p \$GEMMA_DATA_ROOT
+	echo cd \$GEMMA_DATA_ROOT
+	echo '( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl'
+	echo ${REMOTE_CODE_PATH}/script/prepare_research_data.pl --projects-list-file \${GEMMA_DATA_ROOT}/projects.txt --output-root-dir \${GEMMA_DATA_ROOT}
+	echo
+}
+
+REMOTE_USER=${CATH_GEMMA_REMOTE_USER:-`whoami`}
+
+# run either locally or on legion/myriad/chuckle cluster
 case "$RUNNING_METHOD" in
 
 # locally
 local)
+	print_date "Run the following commands ..."
+
 	export PATH=/opt/local/perls/build-trunk/bin:$PATH
 	echo $GEMMA_DIR/script/prepare_research_data.pl --projects-list-file $LOCAL_PROJECT_FILE --output-root-dir $LOCAL_DATA_ROOT
 	;;
@@ -91,103 +154,35 @@ local)
 legion)
 	# path to gemma data in legion scratch dir
 
-	LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
-	REMOTE_DATA_PATH=/scratch/scratch/`whoami`/Cath-Gemma
-	REMOTE_DATA_HOST=`whoami`@login05.external.legion.ucl.ac.uk
-	REMOTE_DATA_ROOT=${REMOTE_DATA_HOST}:${REMOTE_DATA_PATH}
+	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/gemma_data
+	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
+	REMOTE_HOST=login05.external.legion.ucl.ac.uk
+	SGE_REQUEST_FLAGS="h_rt=2:0:0,h_vmem=7G"
+	run_hpc
+	;;
 
-	# make results directory
-	print_date "Making results directory: $LEGION_DATA_ROOT"
-	ssh legion.rc.ucl.ac.uk   mkdir -p ${LEGION_DATA_ROOT}
+# on myriad cluster
+myriad)
 
-	# send starting cluster data
-	# rsync --dry-run -av --delete ${LOCAL_DATA_ROOT}/projects.txt               `whoami`@login05.external.legion.ucl.ac.uk:${LEGION_DATA_ROOT}/projects.txt
-	# rsync --dry-run -av --delete ${LOCAL_DATA_ROOT}/starting_clusters/$PROJECT `whoami`@login05.external.legion.ucl.ac.uk:${LEGION_DATA_ROOT}/starting_clusters/
-	print_date "Sending project.txt file..."
-	rsync -a --delete ${LOCAL_DATA_ROOT}/projects.txt               `whoami`@login05.external.legion.ucl.ac.uk:${LEGION_DATA_ROOT}/projects.txt
-	for PROJECT_ID in "${PROJECT_IDS[@]}"
-	do 
-		print_date "Sending starting cluster data: $PROJECT_ID..."
-		rsync -a --delete ${LOCAL_DATA_ROOT}/starting_clusters/$PROJECT_ID `whoami`@login05.external.legion.ucl.ac.uk:${LEGION_DATA_ROOT}/starting_clusters/
-	done
-
-	# send the code
-	print_date "Sending the code: $GEMMA_DIR -> $REMOTE_DATA_ROOT"
-	# rsync --dry-run -av --delete --exclude 'submit_dir.*' --include '*' $GEMMA_DIR/ `whoami`@login05.external.legion.ucl.ac.uk:/scratch/scratch/`whoami`/Cath-Gemma/
-	rsync -a --delete --exclude 'submit_dir.*' --include '*' $GEMMA_DIR/ $REMOTE_DATA_ROOT/
-
-	# set data environment variables
-	# ssh legion.rc.ucl.ac.uk "$( cat <<'EOT'
-	# echo "Running these commands on legion..."
-	print_date "Run the following commands on legion..."
-	echo
-	echo ssh ${REMOTE_DATA_HOST}
-	echo qrsh -verbose
-	echo LEGION_DATA_ROOT=${LEGION_DATA_ROOT}
-	if [ $ALLOW_CACHE == "false" ]
-	then
-		echo rm -rf \$LEGION_DATA_ROOT/{alignments,profiles,scans}
-	fi
-	echo cd ${REMOTE_DATA_PATH}
-	echo module load perl
-	echo script/prepare_research_data.pl --projects-list-file \${LEGION_DATA_ROOT}/projects.txt --output-root-dir \${LEGION_DATA_ROOT}
-# EOT
-# )"
-	# ssh legion.rc.ucl.ac.uk "${SSH_COMMAND}"
+	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/gemma_data
+	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
+	REMOTE_HOST=myriad.rc.ucl.ac.uk
+	SGE_REQUEST_FLAGS="h_rt=2:0:0,mem=7G"
+	run_hpc
 	;;
 
 # on chuckle cluster
 chuckle)
 
-	# separately from this script, need to add perl to path
-	# vim ~/.bashrc
-	# export PATH=/share/apps/perl/bin:$PATH
-
-	# TODO: get dedicated gemma folder
-	export CHUCKLE_DATA_ROOT=/cluster/project8/mg_assembly/gemma_data
-
-	# make results directory
-	print_date "Making results directory: $CHUCKLE_DATA_ROOT"
-	ssh bchuckle.cs.ucl.ac.uk mkdir -p ${CHUCKLE_DATA_ROOT}
-
-	# send starting cluster data
-	# rsync --dry-run -av --delete ${LOCAL_DATA_ROOT}/projects.txt               `whoami`@bchuckle.cs.ucl.ac.uk:${CHUCKLE_DATA_ROOT}/projects.txt
-	# rsync --dry-run -av --delete ${LOCAL_DATA_ROOT}/starting_clusters/$PROJECT `whoami`@bchuckle.cs.ucl.ac.uk:${CHUCKLE_DATA_ROOT}/starting_clusters/
-	print_date "Sending project.txt file..."
-	rsync -a --delete ${LOCAL_DATA_ROOT}/projects.txt               `whoami`@bchuckle.cs.ucl.ac.uk:${CHUCKLE_DATA_ROOT}/projects.txt
-
-	for PROJECT_ID in "${PROJECT_IDS[@]}"
-	do 
-		print_date "Sending starting cluster data: $PROJECT_ID..."
-		rsync -a --delete ${LOCAL_DATA_ROOT}/starting_clusters/$PROJECT_ID `whoami`@bchuckle.cs.ucl.ac.uk:${CHUCKLE_DATA_ROOT}/starting_clusters/
-	done
-
-	# send the code
-	print_date "Sending the code..."
-	# rsync --dry-run -av --delete --exclude 'submit_dir.*' --include '*' $GEMMA_DIR/ `whoami`@bchuckle.cs.ucl.ac.uk:/home/`whoami`/Cath-Gemma/
-	rsync -a --delete --exclude 'submit_dir.*' --include '*' $GEMMA_DIR/ `whoami`@bchuckle.cs.ucl.ac.uk:/home/`whoami`/Cath-Gemma/
-
-	# set data environment variables
-
-	# ssh bchuckle.cs.ucl.ac.uk "$( cat <<'EOT'
-	print_date "Run the following commands on bchuckle..."
-	if [ $ALLOW_CACHE == "false" ]
-	then
-		echo export LEGION_DATA_ROOT=/scratch/scratch/`whoami`/gemma_data
-		echo rm $CHUCKLE_DATA_ROOT/alignments/$PROJECT/*
-		echo rm $CHUCKLE_DATA_ROOT/profiles/$PROJECT/*
-		echo rm $CHUCKLE_DATA_ROOT/scans/$PROJECT/*
-	fi
-	echo qrsh -verbose
-	echo export CHUCKLE_DATA_ROOT=/cluster/project8/mg_assembly/gemma_data
-	echo cd /home/`whoami`/Cath-Gemma
-	echo script/prepare_research_data.pl --projects-list-file ${CHUCKLE_DATA_ROOT}/projects.txt --output-root-dir ${CHUCKLE_DATA_ROOT}
-# EOT
-# )"
+	REMOTE_DATA_PATH=/home/${REMOTE_USER}/gemma_data
+	REMOTE_CODE_PATH=/home/${REMOTE_USER}/Cath-Gemma
+	REMOTE_HOST=bchuckle.cs.ucl.ac.uk
+	SGE_REQUEST_FLAGS="h_rt=4:0:0,h_vmem=7G,tmem=7G"
+	run_hpc
 	;;
 
-# nothing, because option is invalid
 *)
-	print_date "Invalid input. Expected local|legion|chuckle. Got:$RUNNING_METHOD."
+	print_date "Invalid input. Expected local|legion|myriad|chuckle. Got:$RUNNING_METHOD."
 	;;
 esac
+

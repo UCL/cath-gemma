@@ -36,6 +36,9 @@ use Cath::Gemma::Types  qw/
 /;
 use Cath::Gemma::Util;
 
+use Moo;
+with 'Cath::Gemma::Tool::ProfileBuilderInterface';
+
 =head2 _run_compass
 
 TODOCUMENT
@@ -64,13 +67,13 @@ sub _run_compass_build {
 
 }
 
-=head2 build_compass_profile_in_dir
+=head2 build_profile_in_dir
 
 TODOCUMENT
 
 =cut
 
-sub build_compass_profile_in_dir {
+sub build_profile_in_dir {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, Path, CathGemmaCompassProfileType );
 	my ( $class, $exes, $aln_file, $prof_dir, $compass_profile_build_type ) = $check->( @ARG );
 
@@ -195,98 +198,22 @@ sub build_compass_profile_in_dir {
 }
 
 
-=head2 build_compass_profile
+=head2 build_profile
 
 TODOCUMENT
 
 =cut
 
-sub build_compass_profile {
+sub build_profile {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, Path, CathGemmaDiskProfileDirSet, CathGemmaCompassProfileType );
 	my ( $class, $exes, $aln_file, $profile_dir_set, $compass_profile_build_type ) = $check->( @ARG );
 
-	return __PACKAGE__->build_compass_profile_in_dir(
+	return __PACKAGE__->build_profile_in_dir(
 		$exes,
 		$aln_file,
 		$profile_dir_set->prof_dir(),
 		$compass_profile_build_type,
 	);
-}
-
-=head2 build_alignment_and_compass_profile
-
-TODOCUMENT
-
-=cut
-
-sub build_alignment_and_compass_profile {
-	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], CathGemmaDiskProfileDirSet, CathGemmaCompassProfileType, Optional[Bool] );
-	my ( $class, $exes, $starting_clusters, $profile_dir_set, $compass_profile_build_type, $skip_profile_build ) = $check->( @ARG );
-
-	$skip_profile_build //= 0;
-
-	my $aln_file = $profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters );
-	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $exes->tmp_dir() );
-	my $alignment_result = 
-		( -s $aln_file )
-		? {
-			out_filename         => $aln_file,
-			file_already_present => 1,
-		}
-		: Cath::Gemma::Tool::Aligner->make_alignment_file(
-			$exes,
-			$starting_clusters,
-			$profile_dir_set,
-		);
-
-	my $built_aln_file   = $alignment_result->{ out_filename  };
-	my $profile_result   = {};
-	if ( ! $skip_profile_build ) {
-		$profile_result = Cath::Gemma::Tool::CompassProfileBuilder->build_compass_profile(
-			$exes,
-			$built_aln_file,
-			$profile_dir_set,
-			$compass_profile_build_type,
-		);
-	}
-
-	if ( "$built_aln_file" ne "$aln_file" ) {
-		my $aln_atomic_file   = File::AtomicWrite->new( { file => "$aln_file" } );
-		my $atom_tmp_aln_file = path( $aln_atomic_file->filename );
-
-		move( $built_aln_file, $atom_tmp_aln_file )
-			or confess "Cannot move built alignment file \"$built_aln_file\" to atomic temporary \"$atom_tmp_aln_file\" : $OS_ERROR";
-
-		try {
-			$aln_atomic_file->commit();
-		}
-		catch {
-			my $error = $ARG;
-			while ( chomp( $error ) ) {}
-			confess
-				   'Caught error when trying to atomically commit write of temporary file "'
-				 . $aln_atomic_file->filename()
-				 . '" to "'
-				 . $aln_file
-				 . '", original error message: "'
-				 . $error
-				 . '".';
-		};
-	}
-
-	return {
-		( defined( $alignment_result->{ duration             } ) ? ( aln_duration              => $alignment_result->{ duration             } ) : () ),
-		( defined( $alignment_result->{ mean_seq_length      } ) ? ( mean_seq_length           => $alignment_result->{ mean_seq_length      } ) : () ),
-		( defined( $alignment_result->{ num_sequences        } ) ? ( num_sequences             => $alignment_result->{ num_sequences        } ) : () ),
-		( defined( $alignment_result->{ wrapper_duration     } ) ? ( aln_wrapper_duration      => $alignment_result->{ wrapper_duration     } ) : () ),
-		( defined( $alignment_result->{ file_already_present } ) ? ( aln_file_already_present  => $alignment_result->{ file_already_present } ) : () ),
-
-		( defined( $profile_result  ->{ duration             } ) ? ( prof_duration             => $profile_result  ->{ duration             } ) : () ),
-		( defined( $profile_result  ->{ wrapper_duration     } ) ? ( prof_wrapper_duration     => $profile_result  ->{ wrapper_duration     } ) : () ),
-		( defined( $profile_result  ->{ file_already_present } ) ? ( prof_file_already_present => $profile_result  ->{ file_already_present } ) : () ),
-		aln_filename  => $aln_file,
-		prof_filename => $profile_result->{ out_filename  },
-	};
 }
 
 1;

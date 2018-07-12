@@ -36,7 +36,7 @@ use Cath::Gemma::Compute::Task::BuildTreeTask;
 use Cath::Gemma::Compute::Task::ProfileBuildTask;
 use Cath::Gemma::Compute::Task::ProfileScanTask;
 use Cath::Gemma::Types qw/
-	CathGemmaCompassProfileType
+	CathGemmaProfileType
 	CathGemmaComputeTaskBuildTreeTask
 	CathGemmaComputeTaskProfileBuildTask
 	CathGemmaComputeTaskProfileScanTask
@@ -435,17 +435,17 @@ TODOCUMENT
 =cut
 
 sub make_work_batch_of_query_scs_and_match_scs_list {
-	state $check = compile( ClassName, ArrayRef[Tuple[ArrayRef[Str], ArrayRef[Str]]], CathGemmaDiskGemmaDirSet, Optional[CathGemmaCompassProfileType] );
-	my ( $class, $query_scs_and_match_scs_list, $gemma_dir_set, $compass_profile_build_type ) = $check->( @ARG );
+	state $check = compile( ClassName, ArrayRef[Tuple[ArrayRef[Str], ArrayRef[Str]]], CathGemmaDiskGemmaDirSet, Optional[CathGemmaProfileType] );
+	my ( $class, $query_scs_and_match_scs_list, $gemma_dir_set, $profile_build_type ) = $check->( @ARG );
 
-	$compass_profile_build_type //= default_compass_profile_build_type();
+	$profile_build_type //= default_profile_build_type();
 
 	return Cath::Gemma::Compute::WorkBatch->new(
 		profile_tasks => Cath::Gemma::Compute::Task::ProfileBuildTask->remove_duplicate_build_tasks( [
 			Cath::Gemma::Compute::Task::ProfileBuildTask->new(
 				starting_cluster_lists     => [ map { $ARG->[ 0 ]; } @$query_scs_and_match_scs_list ],
 				dir_set                    => $gemma_dir_set->profile_dir_set(),
-				compass_profile_build_type => $compass_profile_build_type,
+				profile_build_type         => $profile_build_type,
 			)->remove_already_present(),
 		] ),
 
@@ -461,7 +461,7 @@ sub make_work_batch_of_query_scs_and_match_scs_list {
 					} @$query_scs_and_match_scs_list
 				],
 				dir_set                    => $gemma_dir_set,
-				compass_profile_build_type => $compass_profile_build_type,
+				profile_build_type         => $profile_build_type,
 			)->remove_already_present(),
 		] ),
 	)->remove_empty_tasks();

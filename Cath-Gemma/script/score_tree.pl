@@ -94,7 +94,7 @@ foreach my $project ( @project_list ) {
 	# 		                           ) {
 
 	foreach my $clusts_ordering ( 'simple_ordering', 'tree_df_ordering' ) {
-		foreach my $compass_profile_build_type ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db / ) {
+		foreach my $profile_build_type ( qw/ compass_wp_dummy_1st compass_wp_dummy_2nd mk_compass_db hhconsensus / ) {
 			foreach my $tree_builder (
 			                           Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder->new(),
 			                           Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder ->new(),
@@ -114,7 +114,7 @@ foreach my $project ( @project_list ) {
 				# ] );
 
 				my $tree_builder_name  = $tree_builder->name();
-				my $flavour            = join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name );
+				my $flavour            = join( '.', $clusts_ordering, $profile_build_type, $tree_builder_name );
 
 				WARN 'About to compute flavour ' . $flavour;
 
@@ -127,7 +127,7 @@ foreach my $project ( @project_list ) {
 					dir_set                    => $tree_dir_set,
 					starting_cluster_lists     => $starting_clusters,
 					tree_builder               => $tree_builder,
-					compass_profile_build_type => $compass_profile_build_type,
+					profile_build_type         => $profile_build_type,
 					clusts_ordering            => $clusts_ordering,
 				)->execute_task(
 					$direct_executor->exes(),

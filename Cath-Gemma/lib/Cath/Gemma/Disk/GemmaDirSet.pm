@@ -27,7 +27,7 @@ use Types::Standard    qw/ ArrayRef Object Str        /;
 # Cath::Gemma
 use Cath::Gemma::Disk::ProfileDirSet;
 use Cath::Gemma::Types qw/
-	CathGemmaCompassProfileType
+	CathGemmaProfileType
 	CathGemmaDiskGemmaDirSet
 	CathGemmaDiskProfileDirSet
 /;
@@ -127,14 +127,14 @@ TODOCUMENT
 =cut
 
 sub scan_filename_of_cluster_ids {
-	state $check = compile( Object, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
-	my ( $self, $query_ids, $match_ids, $compass_profile_build_type ) = $check->( @ARG );
+	state $check = compile( Object, ArrayRef[Str], ArrayRef[Str], CathGemmaProfileType );
+	my ( $self, $query_ids, $match_ids, $profile_build_type ) = $check->( @ARG );
 
 	return scan_filename_of_dir_and_cluster_ids(
 		$self->scan_dir(),
 		$query_ids,
 		$match_ids,
-		$compass_profile_build_type,
+		$profile_build_type,
 	);
 }
 

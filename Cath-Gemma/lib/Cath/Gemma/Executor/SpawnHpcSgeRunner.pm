@@ -34,9 +34,15 @@ TODOCUMENT
 =cut
 
 sub _get_submit_host {
-	return ( defined( $ENV{ SGE_CLUSTER_NAME } ) && $ENV{ SGE_CLUSTER_NAME } =~ /leg/i )
-		? 'legion.rc.ucl.ac.uk'
-		: 'bchuckle.cs.ucl.ac.uk';
+
+	die "! Error: failed to get submit host: ENV{ SGE_CLUSTER_NAME } is not defined" 
+	 	unless defined $ENV{ SGE_CLUSTER_NAME };
+
+	return 
+		$ENV{ SGE_CLUSTER_NAME } =~ /chuckle/   ? 'bchuckle.cs.ucl.ac.uk' :
+		$ENV{ SGE_CLUSTER_NAME } =~ /^legion/   ? 'legion.rc.ucl.ac.uk' : 
+		$ENV{ SGE_CLUSTER_NAME } =~ /^myriad/   ? 'myriad.rc.ucl.ac.uk' :
+		die "Error: failed to get submit host from ENV{ SGE_CLUSTER_NAME }: $ENV{SGE_CLUSTER_NAME}";
 }
 
 
@@ -79,11 +85,13 @@ sub run_job_array {
 		# 'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req, 'hostname=abbott*' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
 		'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req                     ],
 		'legion.rc.ucl.ac.uk'   => [                                         ],
+		'myriad.rc.ucl.ac.uk'   => [                                         ],
 	);
 	my %cluster_extras             = (
 		#'bchuckle.cs.ucl.ac.uk' => [ '-P', 'cath' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
 		'bchuckle.cs.ucl.ac.uk' => [              ],
 		'legion.rc.ucl.ac.uk'   => [              ],
+		'myriad.rc.ucl.ac.uk'   => [              ],
 	);
 
 	my $cluster_specific_resources = $cluster_resources{ $submit_host }
@@ -124,8 +132,15 @@ sub run_job_array {
 		'-N', $job_name,
 		'-e', $stderr_file_pattern,
 		'-o', $stdout_file_pattern,
-		'-v', 'PATH=' . $ENV{ PATH }, # Ensure that the job will pick up the same Perl that's being used to run this (relevant on the CS cluster)
-		                              # Can't just use -v PATH because the qsub is being run through ssh so may be run with a significantly different PATH
+		# Ensure that the job will pick up the same Perl that's being used to run this (relevant on the CS cluster)
+		# Can't just use -v PATH because the qsub is being run through ssh so may be run with a significantly different PATH
+		'-v', 'PATH=' . $ENV{ PATH }, 
+		# It seems that we should not trust SGE_CLUSTER_NAME to be set in a standard way across HPC environments
+		# If this is defined in the parent (eg manually) then we should pass it on to the child processes
+		( defined $ENV{SGE_CLUSTER_NAME}
+			? ('-v', "SGE_CLUSTER_NAME=$ENV{SGE_CLUSTER_NAME}")
+			: ()  
+		),			
 		'-S', '/bin/bash',
 		'-t', '1-' . $num_batches,
 		(

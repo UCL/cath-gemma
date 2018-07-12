@@ -36,6 +36,8 @@ use Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder;
 use Cath::Gemma::TreeBuilder::PureTreeBuilder;
 use Cath::Gemma::TreeBuilder::WindowedTreeBuilder;
 use Cath::Gemma::Types qw/
+	CathGemmaProfileType
+	CathGemmaHHSuiteProfileType
 	CathGemmaCompassProfileType
 	CathGemmaDiskGemmaDirSet
 	CathGemmaDiskProfileDirSet
@@ -99,16 +101,16 @@ has tree_builder => (
 );
 
 
-=head2 compass_profile_build_type
+=head2 profile_build_type
 
 TODOCUMENT
 
 =cut
 
-has compass_profile_build_type =>(
+has profile_build_type =>(
 	is       => 'ro',
-	isa      => CathGemmaCompassProfileType,
-	default  => sub { default_compass_profile_build_type(); },
+	isa      => CathGemmaProfileType,
+	default  => sub { default_profile_build_type(); },
 	required => 1,
 );
 
@@ -135,7 +137,7 @@ sub id {
 	my $self = shift;
 	return generic_id_of_clusters( [
 		$self->tree_builder()->name(),
-		$self->compass_profile_build_type(),
+		$self->profile_build_type(),
 		$self->clusts_ordering(),
 		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() },
 	] );
@@ -167,7 +169,7 @@ sub id {
 # 	state $check = compile( Object );
 # 	my ( $self ) = $check->( @ARG );
 # 	return generic_id_of_clusters( [
-# 		$self->compass_profile_build_type(),
+# 		$self->profile_build_type(),
 # 		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
 # 	] );
 # }
@@ -185,7 +187,7 @@ sub id {
 # 	my $starting_cluster_lists = $self->starting_cluster_lists();
 
 # 	my @del_indices = grep {
-# 		-s ( '' . $self->dir_set()->compass_file_of_starting_clusters      ( $starting_cluster_lists->[ $ARG ], $self->compass_profile_build_type() ) )
+# 		-s ( '' . $self->dir_set()->profile_file_of_starting_clusters      ( $starting_cluster_lists->[ $ARG ], $self->profile_build_type() ) )
 # 		&&
 # 		-s ( '' . $self->dir_set()->alignment_filename_of_starting_clusters( $starting_cluster_lists->[ $ARG ] ) )
 # 	} ( 0 .. $#$starting_cluster_lists );
@@ -250,7 +252,7 @@ sub id {
 # 				$exes,
 # 				$starting_clusters,
 # 				$self->dir_set(),
-# 				$self->compass_profile_build_type(),
+# 				$self->profile_build_type(),
 # 			);
 # 		}
 # 		@{ $self->starting_cluster_lists() },
@@ -304,11 +306,11 @@ sub split_into_singles {
 # 	my ( $proto, $build_tasks ) = $check->( @ARG );
 
 # 	if ( scalar( @$build_tasks ) ) {
-# 		my $compass_profile_build_type = $build_tasks->[ 0 ]->compass_profile_build_type();
-# 		my $dir_set                    = $build_tasks->[ 0 ]->dir_set();
+# 		my $profile_build_type = $build_tasks->[ 0 ]->profile_build_type();
+# 		my $dir_set            = $build_tasks->[ 0 ]->dir_set();
 
-# 		if ( any { $ARG->compass_profile_build_type() ne $compass_profile_build_type } @$build_tasks ) {
-# 			confess "Cannot remove_duplicate_build_tasks() for BuildTreeTasks with inconsistent compass_profile_build_type()s";
+# 		if ( any { $ARG->profile_build_type() ne $profile_build_type } @$build_tasks ) {
+# 			confess "Cannot remove_duplicate_build_tasks() for BuildTreeTasks with inconsistent profile_build_type()s";
 # 		}
 # 		if ( any { ! $ARG->dir_set()->is_equal_to( $dir_set ) } @$build_tasks ) {
 # 			confess "Cannot remove_duplicate_build_tasks() for BuildTreeTasks with inconsistent dir_set()s";
@@ -346,10 +348,12 @@ sub execute_task {
 
 	my $tree_builder               = $self->tree_builder();
 	my $tree_dir_set               = $self->dir_set();
-	my $compass_profile_build_type = $self->compass_profile_build_type();
+	my $profile_build_type         = $self->profile_build_type();
 	my $clusts_ordering            = $self->clusts_ordering();
 	my $tree_builder_name          = $tree_builder->name();
-	my $tree_out_dir               = $self->tree_dir()->child( join( '.', $clusts_ordering, $compass_profile_build_type, $tree_builder_name ) );
+	my $tree_out_dir               = $self->tree_dir()->child( join( '.', $clusts_ordering, $profile_build_type, $tree_builder_name ) );
+
+	my $profile_build_class        = profile_builder_class_from_type( $profile_build_type );
 
 	return [
 		map
@@ -367,7 +371,7 @@ sub execute_task {
 				$subtask_executor,
 				$starting_clusters,
 				$tree_dir_set->gemma_dir_set(),
-				$compass_profile_build_type,
+				$profile_build_type,
 				$clusts_ordering,
 			);
 
@@ -398,11 +402,11 @@ sub execute_task {
 				$tree_out_dir,
 			);
 
-			Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
+			$profile_build_class->build_alignment_and_profile(
 				$exes,
 				$starting_clusters,
 				$tree_dir_set->profile_dir_set(),
-				$self->compass_profile_build_type(),
+				$self->profile_build_type(),
 			);
 		}
 		@{ $self->starting_cluster_lists() },

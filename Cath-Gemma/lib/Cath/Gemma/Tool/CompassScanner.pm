@@ -34,27 +34,9 @@ use Cath::Gemma::Types  qw/
 /;
 use Cath::Gemma::Util;
 
-=head2 _check_all_profile_files_exist
+use Moo;
+with 'Cath::Gemma::Tool::ScannerInterface';
 
-TODOCUMENT
-
-=cut
-
-sub _check_all_profile_files_exist {
-	state $check = compile( ClassName, Path, ArrayRef[Str], ArrayRef[Str], CathGemmaCompassProfileType );
-	my ( $class, $profile_dir, $query_cluster_ids, $match_cluster_ids, $compass_profile_build_type ) = $check->( @ARG );
-
-	foreach my $cluster_id ( @$query_cluster_ids, @$match_cluster_ids ) {
-		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $compass_profile_build_type );
-		if ( ! -s $profile_file ) {
-			confess "Unable to find non-empty profile file $profile_file for cluster $cluster_id when scanning queries ("
-			        . join( ', ', @$query_cluster_ids )
-			        . ') against matches ('
-			        . join( ', ', @$match_cluster_ids )
-			        . ')';
-		}
-	}
-}
 
 =head2 _compass_scan_impl
 
@@ -69,15 +51,16 @@ sub _compass_scan_impl {
 	my $num_query_ids = scalar( @$query_cluster_ids );
 	my $num_match_ids = scalar( @$match_cluster_ids );
 
-	$class->_check_all_profile_files_exist(
+	Cath::Gemma::Util::check_all_profile_files_exist(
 		$profile_dir,
 		$query_cluster_ids,
 		$match_cluster_ids,
 		$compass_profile_build_type
 	);
 
-	my $query_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
-	my $match_prof_lib = __PACKAGE__->build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
+	# builds a profile file from the cluster ids 
+	my $query_prof_lib = build_temp_profile_lib_file( $profile_dir, $query_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
+	my $match_prof_lib = build_temp_profile_lib_file( $profile_dir, $match_cluster_ids, $exes->tmp_dir(), $compass_profile_build_type );
 
 	my $compass_scan_exe =
 		( $compass_profile_build_type eq 'mk_compass_db' )
@@ -115,37 +98,6 @@ sub _compass_scan_impl {
 	return Cath::Gemma::Scan::ScanData->parse_from_raw_compass_scan_output_lines( \@compass_output_lines, $expected_num_results );
 }
 
-=head2 build_temp_profile_lib_file
-
-TODOCUMENT
-
-=cut
-
-sub build_temp_profile_lib_file {
-	state $check = compile( ClassName, Path, ArrayRef[Str], Path, CathGemmaCompassProfileType );
-	my ( $class, $profile_dir, $cluster_ids, $dest_dir, $compass_profile_build_type ) = $check->( @ARG );
-
-	my $lib_filename = Path::Tiny->tempfile( TEMPLATE => '.' . id_of_clusters( $cluster_ids ) . '.XXXXXXXXXXX',
-	                                         DIR      => $dest_dir,
-	                                         SUFFIX   => '.prof_lib',
-	                                         CLEANUP  => 1,
-	                                         );
-	my $lib_fh = $lib_filename->openw()
-		or confess "Unable to open profile library file \"$lib_filename\" for writing : $OS_ERROR";
-
-	foreach my $cluster_id ( @$cluster_ids ) {
-		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $compass_profile_build_type );
-		my $profile_fh = $profile_file->openr()
-			or confess "Unable to open profile file \"$profile_file\" for reading : $OS_ERROR";
-		while (my $line = <$profile_fh>) {
-			print $lib_fh $line;  
-		}
-		$profile_fh->close;
-	}
-
-	return $lib_filename;
-}
-
 =head2 compass_scan
 
 TODOCUMENT
@@ -177,13 +129,13 @@ sub compass_scan {
 	return $result;
 }
 
-=head2 compass_scan_to_file
+=head2 scan_to_file
 
 TODOCUMENT
 
 =cut
 
-sub compass_scan_to_file {
+sub scan_to_file {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType );
 	my ( $class, $exes, $query_ids, $match_ids, $gemma_dir_set, $compass_profile_build_type ) = $check->( @ARG );
 
@@ -231,7 +183,7 @@ sub build_and_scan_merge_cluster_against_others {
 	state $check = compile( ClassName, CathGemmaDiskExecutables, ArrayRef[Str], ArrayRef[Str], CathGemmaDiskGemmaDirSet, CathGemmaCompassProfileType );
 	my ( $class, $exes, $query_starting_cluster_ids, $match_ids, $gemma_dir_set, $compass_profile_build_type ) = $check->( @ARG );
 
-	my $aln_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_compass_profile(
+	my $aln_prof_result = Cath::Gemma::Tool::CompassProfileBuilder->build_alignment_and_profile(
 		$exes,
 		$query_starting_cluster_ids,
 		$gemma_dir_set->profile_dir_set(),
@@ -264,6 +216,45 @@ TODOCUMENT
 
 sub get_pair_scan_score {
 	
+}
+
+=head2 build_temp_profile_lib_file
+
+Create a compass profile library out of the individual profiles for the given cluster ids 
+
+Effectively this concatenates *.prof -> *.prof_lib
+
+=cut
+
+sub build_temp_profile_lib_file {
+	state $check = compile( Path, ArrayRef[Str], Path, CathGemmaCompassProfileType );
+	my ( $profile_dir, $cluster_ids, $dest_dir, $profile_build_type ) = $check->( @ARG );
+
+	my $CLEANUP_TMP_FILES = default_cleanup_temp_files();
+
+	my $lib_file = Path::Tiny->tempfile( TEMPLATE => '.' . id_of_clusters( $cluster_ids ) . '.XXXXXXXXXXX',
+	                                         DIR      => $dest_dir,
+	                                         SUFFIX   => '.prof_lib',
+	                                         CLEANUP  => $CLEANUP_TMP_FILES,
+	                                         );
+
+	if ( ! $CLEANUP_TMP_FILES ) {
+		WARN "NOT cleaning up temp profile lib file: $lib_file";
+	}
+
+	my $lib_fh = $lib_file->openw()
+		or confess "Unable to open profile library file \"$lib_file\" for writing : $OS_ERROR";
+
+	foreach my $cluster_id ( @$cluster_ids ) {
+		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $profile_build_type );
+		my $profile_fh = $profile_file->openr()
+			or confess "Unable to open profile file \"$profile_file\" for reading : $OS_ERROR";
+
+		copy( $profile_fh, $lib_fh )
+			or confess "Failed to copy profile file \"$profile_file\" to profile library file \"$lib_file\" : $OS_ERROR";
+	}
+
+	return $lib_file;
 }
 
 1;

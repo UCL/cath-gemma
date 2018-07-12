@@ -30,14 +30,14 @@ subtest 'example_1.20.5.200' => sub {
 	my $tree       = Cath::Gemma::Tree::MergeList->read_from_tracefile( $tree_file );
 	my $scans_data = Cath::Gemma::Scan::ScansDataFactory->load_scans_data_of_starting_clusters_and_dir(
 		$scans_dir,
-		default_compass_profile_build_type(),
+		default_profile_build_type(),
 		$tree->starting_clusters(),
 	);
 
 	my $id_and_score_a = $scans_data->ids_and_score_of_lowest_score_result();
 	is( $id_and_score_a->[ 0 ], '1',        'Lowest score in data involves starting cluster 1' );
 	is( $id_and_score_a->[ 1 ], '2',        'Lowest score in data involves starting cluster 2' );
-	is( $id_and_score_a->[ 2 ], '2.47e-15', 'Lowest score in data has score 2.47e-15'          );
+	ok( $id_and_score_a->[ 2 ] < '1e-14',   'Lowest score in data has score < 1e-14'           ); # compass=2.47e-15, hhsearch=5.2E-15 
 
 	my $premerge_scans_data = dclone( $scans_data );
 	my $merge_1_2_dry_run   = $scans_data->no_op_merge_pair( qw/ 1 2 / );
@@ -51,7 +51,7 @@ subtest 'example_1.20.5.200' => sub {
 	my $id_and_score_b = $scans_data->ids_and_score_of_lowest_score_result();
 	is( $id_and_score_b->[ 0 ], '3',        'Lowest score in data involves starting cluster 3' );
 	is( $id_and_score_b->[ 1 ], '4',        'Lowest score in data involves starting cluster 4' );
-	is( $id_and_score_b->[ 2 ], '1.44e-09', 'Lowest score in data has score 5.19e-09'          );
+	ok( $id_and_score_b->[ 2 ] < '1e-06',   'Lowest score in data has score < 1e-06'           ); # compass=1.44e-09, hhsearch=1E-07
 };
 
 subtest 'toy_data' => sub {
@@ -76,3 +76,5 @@ subtest 'toy_data' => sub {
 	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( '2' ), [ '1', 5.0 ], 'gets correct lowest result' );
 	is_deeply( $scans_data->get_id_and_score_of_lowest_score_of_id( '3' ), [ '1', 5.0 ], 'gets correct lowest result' );
 };
+
+

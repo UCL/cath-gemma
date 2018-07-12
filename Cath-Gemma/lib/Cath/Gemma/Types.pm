@@ -10,6 +10,8 @@ use Type::Library
 	-base,
 	-declare => qw(
 		CathGemmaCompassProfileType
+		CathGemmaHHSuiteProfileType
+		CathGemmaProfileType
 		CathGemmaComputeBatchingPolicy
 		CathGemmaExecSync
 		CathGemmaSpawnMode
@@ -46,6 +48,17 @@ enum       CathGemmaCompassProfileType,  [ qw/
 	compass_wp_dummy_1st
 	compass_wp_dummy_2nd
 	mk_compass_db
+/ ];
+
+enum       CathGemmaHHSuiteProfileType,  [ qw/
+	hhconsensus
+/ ];
+
+enum       CathGemmaProfileType,         [ qw/ 
+	compass_wp_dummy_1st
+	compass_wp_dummy_2nd
+	mk_compass_db
+	hhconsensus
 / ];
 
 enum       CathGemmaComputeBatchingPolicy,  [ qw/
