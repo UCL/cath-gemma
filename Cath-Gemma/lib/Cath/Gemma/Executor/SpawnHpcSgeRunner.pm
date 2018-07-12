@@ -38,9 +38,13 @@ sub _get_submit_host {
 		unless defined $ENV{ SGE_CLUSTER_NAME };
 
 	return 
-		$ENV{ SGE_CLUSTER_NAME } =~ /^legion/   ? 'legion.rc.ucl.ac.uk' : 
+		# IS: 12/07/2018
+		# Tony has emailed RCS and CS to request that they provide
+		# standard environments for legion and bchuckle.
+		# The following hack will have to remain until we hear back from them.
+		$ENV{ SGE_CLUSTER_NAME } =~ /^LegProd/  ? 'legion.rc.ucl.ac.uk' : 
 		$ENV{ SGE_CLUSTER_NAME } =~ /^myriad/   ? 'myriad.rc.ucl.ac.uk' :
-		$ENV{ SGE_CLUSTER_NAME } =~ /^bchuckle/ ? 'bchuckle.cs.ucl.ac.uk' :
+		! $ENV{ SGE_CLUSTER_NAME }              ? 'bchuckle.cs.ucl.ac.uk' :
 		die "Error: failed to get submit host from ENV{ SGE_CLUSTER_NAME }: $ENV{SGE_CLUSTER_NAME}";
 }
 
