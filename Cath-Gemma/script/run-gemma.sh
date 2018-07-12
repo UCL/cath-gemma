@@ -129,6 +129,7 @@ run_hpc () {
 	echo
 }
 
+REMOTE_USER=${CATH_GEMMA_REMOTE_USER:-`whoami`}
 
 # run either locally or on legion/myriad/chuckle cluster
 case "$RUNNING_METHOD" in
@@ -145,7 +146,6 @@ local)
 legion)
 	# path to gemma data in legion scratch dir
 
-	REMOTE_USER=`whoami`
 	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/gemma_data
 	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=login05.external.legion.ucl.ac.uk
@@ -156,7 +156,6 @@ legion)
 # on myriad cluster
 myriad)
 
-	REMOTE_USER=`whoami`
 	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/gemma_data
 	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=myriad.rc.ucl.ac.uk
@@ -167,7 +166,6 @@ myriad)
 # on chuckle cluster
 chuckle)
 
-	REMOTE_USER=`whoami`
 	REMOTE_DATA_PATH=/cluster/project8/mg_assembly/gemma_data
 	REMOTE_CODE_PATH=/home/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=bchuckle.cs.ucl.ac.uk
