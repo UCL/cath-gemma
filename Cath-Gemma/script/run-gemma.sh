@@ -18,7 +18,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ "$#" -ne 2 ];
 then
 	echo
-	echo "Usage: $0 <datadir> <local|legion|chuckle>"
+	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle>"
 	echo
 	echo "The following files are required:"
 	echo
@@ -63,7 +63,7 @@ fi
 
 # parameters
 LOCAL_DATA_ROOT=$FF_GEN_ROOTDIR
-# specify the running method (local|legion|chuckle) as $2
+# specify the running method (local|legion|myriad|chuckle) as $2
 
 # print out commands to run:
 LOCAL_PROJECT_FILE="$LOCAL_DATA_ROOT/projects.txt"
@@ -130,7 +130,7 @@ run_hpc () {
 }
 
 
-# run either locally or on legion or chuckle cluster
+# run either locally or on legion/myriad/chuckle cluster
 case "$RUNNING_METHOD" in
 
 # locally
@@ -153,6 +153,7 @@ legion)
 	run_hpc
 	;;
 
+# on myriad cluster
 myriad)
 
 	REMOTE_USER=`whoami`
@@ -163,6 +164,7 @@ myriad)
 	run_hpc
 	;;
 
+# on chuckle cluster
 chuckle)
 
 	REMOTE_USER=`whoami`
