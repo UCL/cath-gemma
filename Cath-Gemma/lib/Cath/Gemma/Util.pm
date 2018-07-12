@@ -587,13 +587,22 @@ sub default_temp_dir {
 Return the ceiling of the relevant evalue window (where the edges of each window are integer powers of 10^10)
 (ie evalue_window_ceiling( 1.2e-15 ) is 1e-10)
 
+After the calculation is performed, the number is converted to a string and back again.
+This is to ensure, eg, evalue_window_ceiling( 1e-60 ) >= 1e-60 because without this
+conversion, the result can be a tiny amount on the wrong side of that expression.
+
+And we've seen that if these functions violate those expectations, it can break GeMMA code.
+In the example we saw, code selected a window of ( 1e-70, 1e-60 ] for processing because it had
+one result of 1e-60 but then couldn't find any results within that window (and started
+infinite looping).
+
 =cut
 
 sub evalue_window_ceiling {
 	state $check = compile( Num );
 	my ( $evalue ) = $check->( @ARG );
 
-	( 10 ** ( ceil( log10( $evalue ) / 10 ) * 10 ) );
+	( ( 10 ** ( ceil( log10( $evalue ) / 10 ) * 10 ) ) . '' ) + 0.0;
 }
 
 =head2 evalue_window_floor
@@ -601,13 +610,22 @@ sub evalue_window_ceiling {
 Return the floor of the relevant evalue window (where the edges of each window are integer powers of 10^10)
 (ie evalue_window_floor( 1.2e-15 ) is 1e-20)
 
+After the calculation is performed, the number is converted to a string and back again.
+This is to ensure, eg, evalue_window_floor( 1e-50 ) <= 1e-50 because without this
+conversion, the result can be a tiny amount on the wrong side of that expression.
+
+And we've seen that if these functions violate those expectations, it can break GeMMA code.
+In the example we saw, code selected a window of ( 1e-70, 1e-60 ] for processing because it had
+one result of 1e-60 but then couldn't find any results within that window (and started
+infinite looping).
+
 =cut
 
 sub evalue_window_floor {
 	state $check = compile( Num );
 	my ( $evalue ) = $check->( @ARG );
 
-	( 10 ** ( floor( log10( $evalue ) / 10 ) * 10 ) );
+	( ( 10 ** ( floor( log10( $evalue ) / 10 ) * 10 ) ) . '' ) + 0.0;
 }
 
 

@@ -187,6 +187,30 @@ subtest 'default_temp_dir' => sub {
 subtest 'evalue_window_ceiling() / evalue_window_floor()' => sub {
 	is( evalue_window_ceiling( 1.2e-15 ), 1e-10, 'evalue_window_ceiling() calculates correctly' );
 	is( evalue_window_floor  ( 1.2e-15 ), 1e-20, 'evalue_window_floor  () calculates correctly' );
+
+	ok( evalue_window_ceiling( 1e-90 ) >= 1e-90, 'evalue_window_ceiling() of boundary 1e-70 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e-80 ) >= 1e-80, 'evalue_window_ceiling() of boundary 1e-70 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e-70 ) >= 1e-70, 'evalue_window_ceiling() of boundary 1e-70 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e-60 ) >= 1e-60, 'evalue_window_ceiling() of boundary 1e-60 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e-50 ) >= 1e-50, 'evalue_window_ceiling() of boundary 1e-50 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e-40 ) >= 1e-40, 'evalue_window_ceiling() of boundary 1e-40 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e-30 ) >= 1e-30, 'evalue_window_ceiling() of boundary 1e-30 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e-20 ) >= 1e-20, 'evalue_window_ceiling() of boundary 1e-20 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e-10 ) >= 1e-10, 'evalue_window_ceiling() of boundary 1e-10 is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1.0   ) >= 1.0,   'evalue_window_ceiling() of boundary 1.0   is at least as big   as the value' );
+	ok( evalue_window_ceiling( 1e10  ) >= 1e10,  'evalue_window_ceiling() of boundary 1e10  is at least as big   as the value' );
+
+	ok( evalue_window_floor  ( 1e-90 ) <= 1e-90, 'evalue_window_floor  () of boundary 1e-70 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e-80 ) <= 1e-80, 'evalue_window_floor  () of boundary 1e-70 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e-70 ) <= 1e-70, 'evalue_window_floor  () of boundary 1e-70 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e-60 ) <= 1e-60, 'evalue_window_floor  () of boundary 1e-60 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e-50 ) <= 1e-50, 'evalue_window_floor  () of boundary 1e-50 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e-40 ) <= 1e-40, 'evalue_window_floor  () of boundary 1e-40 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e-30 ) <= 1e-30, 'evalue_window_floor  () of boundary 1e-30 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e-20 ) <= 1e-20, 'evalue_window_floor  () of boundary 1e-20 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e-10 ) <= 1e-10, 'evalue_window_floor  () of boundary 1e-10 is at least as small as the value' );
+	ok( evalue_window_floor  ( 1.0   ) <= 1.0,   'evalue_window_floor  () of boundary 1.0   is at least as small as the value' );
+	ok( evalue_window_floor  ( 1e10  ) <= 1e10,  'evalue_window_floor  () of boundary 1e10  is at least as small as the value' );
 };
 
 subtest 'scandata_suffix' => sub {
