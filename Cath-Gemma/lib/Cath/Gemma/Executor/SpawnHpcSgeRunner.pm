@@ -34,14 +34,16 @@ TODOCUMENT
 =cut
 
 sub _get_submit_host {
-	die "! Error: failed to get submit host: ENV{ SGE_CLUSTER_NAME } is not defined" 
-		unless defined $ENV{ SGE_CLUSTER_NAME };
+
+	# IS: 12/07/2018
+	# Tony has emailed RCS and CS to request that they provide
+	# standard environments for legion and bchuckle.
+	# The following hack will have to remain until we hear back from them.
+
+	# die "! Error: failed to get submit host: ENV{ SGE_CLUSTER_NAME } is not defined" 
+	# 	unless defined $ENV{ SGE_CLUSTER_NAME };
 
 	return 
-		# IS: 12/07/2018
-		# Tony has emailed RCS and CS to request that they provide
-		# standard environments for legion and bchuckle.
-		# The following hack will have to remain until we hear back from them.
 		$ENV{ SGE_CLUSTER_NAME } =~ /^LegProd/  ? 'legion.rc.ucl.ac.uk' : 
 		$ENV{ SGE_CLUSTER_NAME } =~ /^myriad/   ? 'myriad.rc.ucl.ac.uk' :
 		! $ENV{ SGE_CLUSTER_NAME }              ? 'bchuckle.cs.ucl.ac.uk' :
