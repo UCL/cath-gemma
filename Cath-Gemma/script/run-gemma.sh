@@ -120,13 +120,15 @@ run_hpc () {
 
 	# set data environment variables
 	echo "Run the following commands on ${REMOTE_HOST}..."
+	echo "NOTE: uncomment the 'rm' function to delete any existing data files"
 	echo
 	echo ssh ${REMOTE_LOGIN}
 	echo qrsh -verbose -l $SGE_REQUEST_FLAGS
+	echo export SGE_CLUSTER_NAME=${RUNNING_METHOD}
 	echo GEMMA_DATA_ROOT=${REMOTE_DATA_PATH}
 	if [ $ALLOW_CACHE == "false" ]
 	then
-		echo rm -rf \$GEMMA_DATA_ROOT/{alignments,profiles,scans}
+		echo '# rm -rf \$GEMMA_DATA_ROOT/{alignments,profiles,scans}'
 	fi
 	echo mkdir -p \$GEMMA_DATA_ROOT
 	echo cd \$GEMMA_DATA_ROOT
