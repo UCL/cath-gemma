@@ -16,7 +16,7 @@ use v5.10;
 
 # Moo
 use Moo::Role;
-use strictures 1;
+use strictures 2;
 
 # Non-core (local)
 use Type::Params        qw/ compile         /;

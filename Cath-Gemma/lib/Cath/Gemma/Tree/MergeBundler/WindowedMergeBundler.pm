@@ -16,7 +16,7 @@ use English            qw/ -no_match_vars          /;
 use Moo;
 use MooX::HandlesVia;
 use MooX::StrictConstructor;
-use strictures 1;
+use strictures 2;
 
 with ( 'Cath::Gemma::Tree::MergeBundler' );
 

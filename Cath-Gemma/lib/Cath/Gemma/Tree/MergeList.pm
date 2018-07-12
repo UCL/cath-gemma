@@ -20,7 +20,7 @@ use Data::Dumper;
 use Moo;
 use MooX::HandlesVia;
 use MooX::StrictConstructor;
-use strictures 1;
+use strictures 2;
 
 # Non-core (local)
 use List::MoreUtils     qw/ first_index                                                  /;

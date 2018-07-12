@@ -16,7 +16,7 @@ use Storable qw/ dclone         /;
 # Moo
 use Moo;
 use MooX::StrictConstructor;
-use strictures 1;
+use strictures 2;
 
 
 

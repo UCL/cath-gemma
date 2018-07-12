@@ -18,7 +18,7 @@ use List::Util          qw/ any max min    /;
 # Moo
 use Moo;
 use MooX::StrictConstructor;
-use strictures 1;
+use strictures 2;
 
 # Non-core (local)
 use Capture::Tiny       qw/ capture        /;

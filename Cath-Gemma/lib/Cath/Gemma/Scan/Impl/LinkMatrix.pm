@@ -52,7 +52,7 @@ use v5.10;
 use Moo;
 use MooX::HandlesVia;
 use MooX::StrictConstructor;
-use strictures 1;
+use strictures 2;
 
 # Non-core (local)
 use List::UtilsBy       qw/ min_by                                                                     /;

@@ -16,7 +16,7 @@ use English  qw/ -no_match_vars /;
 # Moo
 use Moo;
 use MooX::StrictConstructor;
-use strictures 1;
+use strictures 2;
 
 
 

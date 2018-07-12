@@ -19,7 +19,7 @@ use Carp qw/ confess /;
 # Moo
 use Moo;
 use MooX::StrictConstructor;
-use strictures 1;
+use strictures 2;
 
 with ( 'Cath::Gemma::Executor' );
 
