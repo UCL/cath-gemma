@@ -86,7 +86,7 @@ run_hpc () {
 	print_date "REMOTE_USER       $REMOTE_USER"      
 	print_date "REMOTE_HOST       $REMOTE_HOST"      
 	print_date "REMOTE_DATA_ROOT  $REMOTE_DATA_ROOT"          
-	print_date "REMOTE_CODE_ROOT  $REMOTE_DATA_ROOT"          
+	print_date "REMOTE_CODE_ROOT  $REMOTE_CODE_ROOT"          
 
 	# make results directory
 	print_date "Making results directory: $REMOTE_DATA_ROOT"
@@ -112,19 +112,25 @@ run_hpc () {
 	set -x
 	rsync -a --delete --exclude 'submit_dir.*' --include '*' $GEMMA_DIR/ $REMOTE_CODE_ROOT/
 	set +x
+	print_date "Done"
+
+	echo
+	echo "What happens now?"
+	echo
 
 	# set data environment variables
-	print_date "Run the following commands on ${REMOTE_HOST}..."
+	echo "Run the following commands on ${REMOTE_HOST}..."
 	echo
 	echo ssh ${REMOTE_LOGIN}
-	echo qrsh -verbose $QRSH_FLAGS
+	echo qrsh -verbose -l $SGE_REQUEST_FLAGS
 	echo GEMMA_DATA_ROOT=${REMOTE_DATA_PATH}
 	if [ $ALLOW_CACHE == "false" ]
 	then
 		echo rm -rf \$GEMMA_DATA_ROOT/{alignments,profiles,scans}
 	fi
+	echo mkdir -p \$GEMMA_DATA_ROOT
 	echo cd \$GEMMA_DATA_ROOT
-	echo module load perl
+	echo '( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl'
 	echo ${REMOTE_CODE_PATH}/script/prepare_research_data.pl --projects-list-file \${GEMMA_DATA_ROOT}/projects.txt --output-root-dir \${GEMMA_DATA_ROOT}
 	echo
 }
@@ -149,7 +155,7 @@ legion)
 	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/gemma_data
 	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=login05.external.legion.ucl.ac.uk
-	QRSH_FLAGS="-l h_rt=1:0:0 -l mem=2G"
+	SGE_REQUEST_FLAGS="h_rt=2:0:0,h_vmem=7G"
 	run_hpc
 	;;
 
@@ -159,17 +165,17 @@ myriad)
 	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/gemma_data
 	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=myriad.rc.ucl.ac.uk
-	QRSH_FLAGS="-l h_rt=1:0:0 -l mem=2G"
+	SGE_REQUEST_FLAGS="h_rt=2:0:0,mem=7G"
 	run_hpc
 	;;
 
 # on chuckle cluster
 chuckle)
 
-	REMOTE_DATA_PATH=/cluster/project8/mg_assembly/gemma_data
+	REMOTE_DATA_PATH=/home/${REMOTE_USER}/gemma_data
 	REMOTE_CODE_PATH=/home/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=bchuckle.cs.ucl.ac.uk
-	QRSH_FLAGS="-l h_rt=1:0:0 -l tmem=2G"
+	SGE_REQUEST_FLAGS="h_rt=4:0:0,h_vmem=7G,tmem=7G"
 	run_hpc
 	;;
 
