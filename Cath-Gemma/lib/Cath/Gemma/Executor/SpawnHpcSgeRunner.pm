@@ -65,7 +65,7 @@ sub run_job_array {
 
 	my $memy_req                   = '15G';
 
-	# Clam time between 6 hours and 72 hours
+	# Clamp time between 6 hours and 72 hours
 	# (legion rejects jobs longer than 72 hours with:
 	#  `Unable to run job: Rejected by policyjsv Reason:Unable to find a policy compliant place to run job`)
 	my $duration_in_seconds        = min(
