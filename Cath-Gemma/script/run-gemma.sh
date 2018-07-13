@@ -147,7 +147,7 @@ local)
 	print_date "Run the following commands ..."
 
 	export PATH=/opt/local/perls/build-trunk/bin:$PATH
-	echo $GEMMA_DIR/script/prepare_research_data.pl --projects-list-file $LOCAL_PROJECT_FILE --output-root-dir $LOCAL_DATA_ROOT
+	echo $GEMMA_DIR/script/prepare_research_data.pl --local --projects-list-file $LOCAL_PROJECT_FILE --output-root-dir $LOCAL_DATA_ROOT
 	;;
 
 # on legion cluster
