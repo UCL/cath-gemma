@@ -14,7 +14,7 @@ use Test::More;
 
 # Moo
 use Moo;
-use strictures 1;
+use strictures 2;
 
 with 'Role::Singleton';
 
