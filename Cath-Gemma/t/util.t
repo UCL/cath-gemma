@@ -306,6 +306,7 @@ subtest 'time_seconds_to_sge_string()' => sub {
 };
 
 subtest 'unique_by_hashing()' => sub {
+	is_deeply( [ unique_by_hashing(                  ) ], [      ], 'unique_by_hashing() is correct on:  '                );
 	is_deeply( [ unique_by_hashing( 0                ) ], [ 0    ], 'unique_by_hashing() is correct on: 0'                );
 	is_deeply( [ unique_by_hashing( 0, 0, 0          ) ], [ 0    ], 'unique_by_hashing() is correct on: 0, 0, 0'          );
 	is_deeply( [ unique_by_hashing( 1, 2             ) ], [ 1, 2 ], 'unique_by_hashing() is correct on: 1, 2'             );
