@@ -27,9 +27,12 @@ use Cath::Gemma::Types  qw/
 	TimeSeconds
 	/;
 
-=head2 requires execute
 
-TODOCUMENT
+=head1 BEHAVIOURS
+
+=head2 requires run_job_array
+
+Consuming packages must implement this subroutine
 
 =cut
 
@@ -48,7 +51,7 @@ before run_job_array => sub {
 
 =head2 requires wait_for_jobs
 
-TODOCUMENT
+Consuming packages must implement this subroutine
 
 =cut
 

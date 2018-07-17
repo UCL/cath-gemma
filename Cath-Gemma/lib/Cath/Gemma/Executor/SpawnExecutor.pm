@@ -40,7 +40,22 @@ use Cath::Gemma::Types qw/
 	/;
 use Cath::Gemma::Util;
 
+=head1 ROLES
+
+=over
+
+=item L<Cath::Gemma::Executor::SpawnRunner>
+
+=item L<Cath::Gemma::Executor::HasGemmaClusterName>
+
+=back
+
+=cut
+
 with ( 'Cath::Gemma::Executor' );
+with ( 'Cath::Gemma::Executor::HasGemmaClusterName' );
+
+=head1 ATTRIBUTES
 
 =head2 submission_dir
 
@@ -129,6 +144,8 @@ sub execute_batch_list {
 
 	my $submit_script = path( "$FindBin::Bin/../script/sge_submit_script.bash" )->realpath;
 
+	my $cluster_name = $self->get_cluster_name( assume_local_if_not_set => 1 );
+
 	warn "WARNING: TEMPORARILY NOT REBATCHING";
 	# $batches = $self->_work_batcher()->rebatch( $batches );
 
@@ -201,7 +218,7 @@ sub execute_batch_list {
 			$stdout_file_pattern,
 			$num_batches,
 			[ @job_dependencies[ @$dependencies ] ],
-			[ "$execute_batch_script", "$batch_files_file" ],
+			[ "$execute_batch_script", "$batch_files_file", "$cluster_name" ],
 			$max_est_batch_exe_time,
 		);
 	}

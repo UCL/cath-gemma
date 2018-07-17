@@ -124,14 +124,14 @@ run_hpc () {
 	echo
 	echo ssh ${REMOTE_LOGIN}
 	echo qrsh -verbose -l $SGE_REQUEST_FLAGS
-	echo export SGE_CLUSTER_NAME=${RUNNING_METHOD}
+	echo export GEMMA_CLUSTER_NAME=${RUNNING_METHOD}
 	echo GEMMA_DATA_ROOT=${REMOTE_DATA_PATH}
 	if [ $ALLOW_CACHE == "false" ]
 	then
-		echo '# rm -rf \$GEMMA_DATA_ROOT/{alignments,profiles,scans}'
+		echo '# rm -rf $GEMMA_DATA_ROOT/{alignments,profiles,scans}'
 	fi
-	echo mkdir -p \$GEMMA_DATA_ROOT
-	echo cd \$GEMMA_DATA_ROOT
+	echo 'mkdir -p $GEMMA_DATA_ROOT'
+	echo 'cd $GEMMA_DATA_ROOT'
 	echo '( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl'
 	echo ${REMOTE_CODE_PATH}/script/prepare_research_data.pl --projects-list-file \${GEMMA_DATA_ROOT}/projects.txt --output-root-dir \${GEMMA_DATA_ROOT}
 	echo

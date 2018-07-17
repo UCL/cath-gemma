@@ -27,26 +27,20 @@ use Log::Log4perl::Tiny qw/ :easy          /;
 # Cath::Gemma
 use Cath::Gemma::Util;
 
-=head2 _get_submit_host
+=head1 ROLES
 
-TODOCUMENT
+=over
+
+=item L<Cath::Gemma::Executor::SpawnRunner>
+
+=item L<Cath::Gemma::Executor::HasGemmaClusterName>
+
+=back
 
 =cut
 
-sub _get_submit_host {
-
-	die "! Error: failed to get submit host: ENV{ SGE_CLUSTER_NAME } is not defined" 
-	 	unless defined $ENV{ SGE_CLUSTER_NAME };
-
-	return 
-		$ENV{ SGE_CLUSTER_NAME } =~ /chuckle/   ? 'bchuckle.cs.ucl.ac.uk' :
-		$ENV{ SGE_CLUSTER_NAME } =~ /^legion/   ? 'legion.rc.ucl.ac.uk' : 
-		$ENV{ SGE_CLUSTER_NAME } =~ /^myriad/   ? 'myriad.rc.ucl.ac.uk' :
-		die "Error: failed to get submit host from ENV{ SGE_CLUSTER_NAME }: $ENV{SGE_CLUSTER_NAME}";
-}
-
-
 with ( 'Cath::Gemma::Executor::SpawnRunner' );
+with ( 'Cath::Gemma::Executor::HasGemmaClusterName' );
 
 =head2 run_job_array
 
@@ -61,7 +55,8 @@ sub run_job_array {
 		confess 'Cannot perform a job with zero/negative number of batches : ' . $num_batches;
 	}
 
-	my $submit_host = _get_submit_host();
+	my $cluster_name = $self->cluster_name;
+	my $submit_host = $self->cluster_submit_host;
 
 	my $memy_req                   = '15G';
 
@@ -122,6 +117,7 @@ sub run_job_array {
 	# 	});
 	# }
 
+
 	# TODO: Consider adding a parameter that allows users to specify the location of the
 	#       Perl to run the jobs with and then prepend it to the PATH here
 	my @qsub_command = (
@@ -135,12 +131,6 @@ sub run_job_array {
 		# Ensure that the job will pick up the same Perl that's being used to run this (relevant on the CS cluster)
 		# Can't just use -v PATH because the qsub is being run through ssh so may be run with a significantly different PATH
 		'-v', 'PATH=' . $ENV{ PATH }, 
-		# It seems that we should not trust SGE_CLUSTER_NAME to be set in a standard way across HPC environments
-		# If this is defined in the parent (eg manually) then we should pass it on to the child processes
-		( defined $ENV{SGE_CLUSTER_NAME}
-			? ('-v', "SGE_CLUSTER_NAME=$ENV{SGE_CLUSTER_NAME}")
-			: ()  
-		),			
 		'-S', '/bin/bash',
 		'-t', '1-' . $num_batches,
 		(
@@ -153,9 +143,12 @@ sub run_job_array {
 		@$job_args,
 	);
 
+	DEBUG( "Executing qsub command: " . join( " ", @qsub_command ) );
+
 	my ( $qsub_stdout, $qsub_stderr, $qsub_exit ) = capture {
 		system( @qsub_command );
 	};
+
 
 	my $job_id;
 	if ( $qsub_stdout =~ /Your job-array (\d+)\.\d+\-\d+:\d+.*? has been submitted/ ) {
@@ -189,15 +182,18 @@ sub wait_for_jobs {
 	my @wanted_jobs = sort { $a <=> $b } grep { defined( $ARG ); } @$jobs;
 	my %wanted_jobs = map { ( $ARG, 1 ); } @wanted_jobs;
 
+	# this will die if GEMMA_CLUSTER_NAME is not set
+	my $submit_host = $self->get_cluster_submit_host;
+
 	while ( 1 ) {
 		my $wait_in_seconds = Time::Seconds->new( 60 );
 		DEBUG "Waiting ' . $wait_in_seconds->seconds() . ' seconds before (re)checking for submitted jobs : ". join( ', ', @wanted_jobs );
 		sleep $wait_in_seconds->seconds();
 
-		DEBUG "Submit host is : " . _get_submit_host();
+		DEBUG "Submit host is : " . $submit_host;
 
 		my @qstat_command = (
-			'ssh', _get_submit_host(),
+			'ssh', $submit_host,
 			'qstat',
 		);
 		DEBUG "qstat command is : " . join( ' ', @qstat_command );
