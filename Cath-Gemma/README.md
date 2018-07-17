@@ -177,7 +177,7 @@ To add a new module as a dependency:
 
 ~~~bash
 vim Makefile.PL
-cpanm -L extlib --installdeps .
+cpanm -L extlib --installdeps --pureperl .
 ~~~
 
 To force the install of a module:
