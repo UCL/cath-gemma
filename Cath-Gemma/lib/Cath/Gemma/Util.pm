@@ -151,6 +151,12 @@ sub sequences_suffix           { '.faa' }
 
 sub default_profile_build_type { 'hhconsensus' }
 
+=head2 really_bad_score
+
+Define a value to be used as a default really bad score
+
+=cut
+
 sub really_bad_score { 100000000 }
 
 =head2 default_cleanup_temp_files 

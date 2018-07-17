@@ -30,6 +30,7 @@ use Path::Tiny;
 use Types::Path::Tiny   qw/ Path           /;
 
 # Cath::Gemma
+use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Compute::WorkBatcher;
 use Cath::Gemma::Executor::SpawnHpcSgeRunner;
 use Cath::Gemma::Executor::SpawnLocalRunner;
@@ -185,6 +186,12 @@ sub execute_batch_list {
 		}
 
 		my $id                     = $batches->id_of_batch_indices( $batch_indices );
+
+		# Check that all batch IDs are distinct
+		my $batches_have_distinct_ids = Cath::Gemma::Compute::WorkBatch->batches_have_distinct_ids( $group_batches );
+		if ( ! $batches_have_distinct_ids ) {
+			confess 'The ' . scalar( @$group_batches ) . ' batches do not all have distinct IDs. This means that some of the batch .freeze files would overwrite others. Aborting.';
+		}
 
 		my @batch_files;
 		foreach my $batch ( @$group_batches ) {

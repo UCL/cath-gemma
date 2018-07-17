@@ -129,13 +129,15 @@ has clusts_ordering =>(
 
 =head2 id
 
-TODOCUMENT
+Return an ID for the Task, which should be different if there are differences in
+any of the properties specifying what work should be done
 
 =cut
 
 sub id {
 	my $self = shift;
 	return generic_id_of_clusters( [
+		$self->dir_set()->id(),
 		$self->tree_builder()->name(),
 		$self->profile_build_type(),
 		$self->clusts_ordering(),
@@ -158,21 +160,6 @@ sub id {
 # 		step_of_index  => 'get',
 # 	},
 # );
-
-# =head2 id
-
-# TODOCUMENT
-
-# =cut
-
-# sub id {
-# 	state $check = compile( Object );
-# 	my ( $self ) = $check->( @ARG );
-# 	return generic_id_of_clusters( [
-# 		$self->profile_build_type(),
-# 		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
-# 	] );
-# }
 
 # =head2 remove_already_present
 

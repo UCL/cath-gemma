@@ -111,13 +111,16 @@ has skip_profile_build => (
 
 =head2 id
 
-TODOCUMENT
+Return an ID for the Task, which should be different if there are differences in
+any of the properties specifying what work should be done
 
 =cut
 
 sub id {
 	my $self = shift;
+
 	return generic_id_of_clusters( [
+		$self->dir_set()->id(),
 		$self->profile_build_type(),
 		map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() }
 	] );

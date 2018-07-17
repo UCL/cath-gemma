@@ -96,18 +96,6 @@ has profile_build_type => (
 	default  => sub { default_profile_build_type(); },
 );
 
-# =head2 id
-
-# TODOCUMENT
-
-# =cut
-
-# sub id {
-# 	state $check = compile( Object );
-# 	my ( $self ) = $check->( @ARG );
-# 	return generic_id_of_clusters( [ map { id_of_clusters( $ARG ) } @{ $self->starting_cluster_lists() } ] );
-# }
-
 # =head2 get_sub_task
 
 # TODOCUMENT
@@ -128,13 +116,15 @@ has profile_build_type => (
 
 =head2 id
 
-TODOCUMENT
+Return an ID for the Task, which should be different if there are differences in
+any of the properties specifying what work should be done
 
 =cut
 
 sub id {
 	my $self = shift;
 	return generic_id_of_clusters( [
+		$self->dir_set()->id(),
 		$self->profile_build_type(),
 		map {
 			(

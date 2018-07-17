@@ -102,10 +102,6 @@ sub test_build_profile {
 		prof_dir             => $prof_dir,
 	);
 
-	diag( "aln_dir: " . $profile_dir_set->aln_dir );
-	diag( "prof_dir: " . $profile_dir_set->prof_dir );
-	diag( "starting_cluster_dir: " . $profile_dir_set->starting_cluster_dir );
-
 	# Try building a profile, handling whether the executor should confess
 	check_sub_if_die(
 		sub {
