@@ -58,6 +58,18 @@ with ( 'Cath::Gemma::Executor::HasGemmaClusterName' );
 
 =head1 ATTRIBUTES
 
+=head2 child_tmp_dir
+
+The child_tmp_dir that any child jobs should use
+
+=cut
+
+has child_tmp_dir => (
+	is       => 'ro',
+	isa      => Path,
+	required => 1,
+);
+
 =head2 submission_dir
 
 TODOCUMENT
@@ -80,16 +92,7 @@ has hpc_mode => (
 	is       => 'ro',
 	isa      => CathGemmaSpawnMode,
 	required => 1,
-	default  => sub {
-		my $running_on_sge = guess_if_running_on_sge();
-		if ( $running_on_sge ) {
-			INFO __PACKAGE__ . ' has deduced this is genuinely running in an SGE environment and so will submit job scripts via qsub';
-		}
-		else {
-			INFO __PACKAGE__ . ' has deduced this isn\'t running in an SGE environment and so will run job scripts itself';
-		}
-		( $running_on_sge ? 'spawn_hpc_sge' : 'spawn_local' );
-	}
+	default  => sub { default_hpc_mode() }
 );
 
 =head2 _runner
@@ -114,6 +117,23 @@ has _work_batcher => (
 	isa     => CathGemmaComputeWorkBatcher,
 	default => sub { Cath::Gemma::Compute::WorkBatcher->new(); }
 );
+
+=head2 default_hpc_mode
+
+Calculate the default HPC mode to use: spawn_hpc_sge or spawn_local
+
+=cut
+
+sub default_hpc_mode() {
+	my $running_on_sge = guess_if_running_on_sge();
+	if ( $running_on_sge ) {
+		INFO __PACKAGE__ . ' has deduced this is genuinely running in an SGE environment and so will submit job scripts via qsub';
+	}
+	else {
+		INFO __PACKAGE__ . ' has deduced this isn\'t running in an SGE environment and so will run job scripts itself';
+	}
+	return ( $running_on_sge ? 'spawn_hpc_sge' : 'spawn_local' );
+}
 
 =head2
 
@@ -225,7 +245,12 @@ sub execute_batch_list {
 			$stdout_file_pattern,
 			$num_batches,
 			[ @job_dependencies[ @$dependencies ] ],
-			[ "$execute_batch_script", "$batch_files_file", "$cluster_name" ],
+			[
+				"$execute_batch_script",
+				"$batch_files_file",
+				"$cluster_name",
+				'--tmp-dir', $self->child_tmp_dir()->stringify(),
+			],
 			$max_est_batch_exe_time,
 		);
 	}

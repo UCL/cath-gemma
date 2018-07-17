@@ -8,6 +8,7 @@ use Carp                qw/ confess        /;
 use Cwd;
 use English             qw/ -no_match_vars /;
 use FindBin;
+use Getopt::Long;
 use Sys::Hostname;
 use v5.10;
 
@@ -27,6 +28,7 @@ use lib path( "$FindBin::Bin/../lib" )->realpath()->stringify();
 use Cath::Gemma::Compute::WorkBatch;
 use Cath::Gemma::Disk::Executables;
 use Cath::Gemma::Executor::SpawnExecutor;
+use Cath::Gemma::Util;
 use TimeSecondsToJson;
 
 Log::Log4perl->easy_init( {
@@ -34,6 +36,16 @@ Log::Log4perl->easy_init( {
 } );
 
 INFO 'Starting ' . $PROGRAM_NAME . ' on machine ' . hostname;
+
+my $TMP_DIR;
+GetOptions(
+	'tmp-dir=s' => \$TMP_DIR,
+);
+
+if ( ! defined( $TMP_DIR ) ) {
+	confess "Must specify a tmp-dir that should be used for storing executables and temporary data files";
+}
+INFO "Setting TMP_DIR to '$TMP_DIR'";
 
 state $check = compile( Path );
 my ( $batch_file ) = $check->( @ARGV );
@@ -52,10 +64,15 @@ my $sge_submission_dir = Path::Tiny->tempdir(
 	TEMPLATE => 'subtask_XXXXXXXXXX',
 );
 INFO __PACKAGE__ . ' has deduced this is genuinely running on SGE and will launch child jobs with a SpawnExecutor (running in ' . $sge_submission_dir . ')';
-my $result = Cath::Gemma::Compute::WorkBatch->execute_from_file(
+my $result      = Cath::Gemma::Compute::WorkBatch->execute_from_file(
 	$batch_file,
-	Cath::Gemma::Disk::Executables->new(),
-	Cath::Gemma::Executor::SpawnExecutor->new( submission_dir => $sge_submission_dir ),
+	Cath::Gemma::Disk::Executables->new(
+		tmp_dir => Path::Tiny->tempdir( TEMPLATE => 'cath-gemma.execute.XXXXXXXX', DIR => $TMP_DIR, CLEANUP => default_cleanup_temp_files() ),
+	),
+	Cath::Gemma::Executor::SpawnExecutor->new(
+		submission_dir => $sge_submission_dir,
+		child_tmp_dir  => path( $TMP_DIR ),
+	),
 );
 
 # Consider using Tree::Simple::VisitorFactory (or Data::Traverse or Data::Visitor?) if this breaks

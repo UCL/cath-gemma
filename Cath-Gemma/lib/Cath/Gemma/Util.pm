@@ -582,7 +582,7 @@ This should keep stuff very fast. However it does mean that code must:
 =cut
 
 sub default_temp_dir {
-	my $base_path = '/dev/shm'; # /tmp 
+	my $base_path = '/dev/shm'; # /tmp
 	my $CLEANUP_TMP_FILES = default_cleanup_temp_files();
 	my $tmp_dir = Path::Tiny->tempdir( TEMPLATE => 'cath-gemma-util.XXXXXXXX', DIR => $base_path, CLEANUP => $CLEANUP_TMP_FILES );
 	return $tmp_dir;

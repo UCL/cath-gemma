@@ -8,8 +8,8 @@ echo "To repeat this run, use:"
 echo "/bin/bash -c 'SGE_TASK_ID=$SGE_TASK_ID $this_cmnd'"
 echo
 
-if [ "$#" -ne 3 ]; then
-	echo "GeMMA submit bash script expects three arguments (the execute perl script; the job batch file; the cluster environment name) but got $#";
+if [ "$#" -lt 3 ]; then
+	echo "GeMMA submit bash script expects at least three arguments (the execute perl script; the job batch file; the cluster environment name) but got $#";
 	exit;
 fi
 
@@ -40,10 +40,12 @@ echo
 echo "EXECUTE_BATCH_SCRIPT : $EXECUTE_BATCH_SCRIPT"
 echo "BATCH_FILES_FILE     : $BATCH_FILES_FILE"
 echo "GEMMA_CLUSTER_NAME   : $GEMMA_CLUSTER_NAME"
+echo
+echo "REMAINING ARGS       : ${@:4}"
 
 BATCH_FILE=$(awk "NR==$SGE_TASK_ID" $BATCH_FILES_FILE)
 echo "BATCH_FILE           : $BATCH_FILE"
 
 export GEMMA_CLUSTER_NAME
 
-$EXECUTE_BATCH_SCRIPT $BATCH_FILE
+$EXECUTE_BATCH_SCRIPT $BATCH_FILE "${@:4}"

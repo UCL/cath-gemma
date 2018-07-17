@@ -212,7 +212,7 @@ sub _build__exes_dir {
 	else {
 		return Path::Tiny->tempdir(
 			TEMPLATE => "cath_gemma_exes_dir.XXXXXXXX",
-			DIR      => '/dev/shm',
+			DIR      => $self->tmp_dir(),
 			CLEANUP  => 1,
 		);
 	}

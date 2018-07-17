@@ -29,7 +29,6 @@ use Types::Standard     qw/ ArrayRef Object Optional Str /;
 
 # Cath::Gemma
 use Cath::Gemma::Executor::DirectExecutor;
-use Cath::Gemma::Executor::SpawnExecutor;
 use Cath::Gemma::TreeBuilder::NaiveHighestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveLowestTreeBuilder;
 use Cath::Gemma::TreeBuilder::NaiveMeanTreeBuilder;

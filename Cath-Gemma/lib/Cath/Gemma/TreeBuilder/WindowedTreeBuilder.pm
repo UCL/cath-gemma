@@ -71,9 +71,6 @@ Params checked in Cath::Gemma::TreeBuilder
 sub build_tree {
 	my ( $self, $exes, $executor, $starting_clusters, $gemma_dir_set, $profile_build_type, $clusts_ordering, $scans_data ) = ( @ARG );
 
-	# TODONOW: Sort this out
-	my $local_executor = Cath::Gemma::Executor::DirectExecutor->new();
-
 	my $really_bad_score = really_bad_score();
 	my %scores;
 

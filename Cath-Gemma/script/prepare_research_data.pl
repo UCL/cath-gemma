@@ -90,6 +90,8 @@ my $output_rootdir;
 # my $output_scan_rootdir;
 # my $trace_files_rootdir;
 
+my $TMP_DIR;
+
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
 	'help'                        => \$help,
@@ -99,6 +101,8 @@ GetOptions(
 	# 'starting-cluster-root-dir=s' => \$starting_clusters_rootdir,
 	'projects-list-file=s'        => \$projects_list_file,
 
+	'tmp-dir=s'                   => \$TMP_DIR,
+
 	'output-root-dir=s'           => \$output_rootdir,
 	# 'submit-dir=s'                => \$submission_dir_name,
 	# 'submit-dir=s'                => \$submission_dir_name,
@@ -106,6 +110,7 @@ GetOptions(
 if ( $help ) {
 	pod2usage( 1 );
 }
+
 
 # if ( ! defined( $starting_clusters_rootdir ) ) {
 # 	confess "Must specify a starting-cluster-root-dir";
@@ -132,9 +137,15 @@ my $projects_list_data = $projects_list_file->slurp()
 	or confess "Was unable to read any projects from project list file $projects_list_file";
 my @projects = grep( ! /^#/, split( /\n+/, $projects_list_data ) );
 
+my $executables = Cath::Gemma::Disk::Executables->new( (
+	$TMP_DIR
+		? ( tmp_dir => Path::Tiny->tempdir( TEMPLATE => 'cath-gemma.prepare.XXXXXXXX', DIR => $TMP_DIR, CLEANUP => default_cleanup_temp_files() ) )
+		: ( ) )
+);
 my $executor =
 	$local
 		? Cath::Gemma::Executor::DirectExecutor->new(
+			exes            => $executables,
 			max_num_threads => $max_num_threads,
 		)
 		: Cath::Gemma::Executor::SpawnExecutor->new(
@@ -143,6 +154,7 @@ my $executor =
 				DIR      => $submission_dir_pattern->parent(),
 				CLEANUP  => 0,
 			),
+			child_tmp_dir => ( $TMP_DIR ? path( $TMP_DIR ) : $executables->tmp_dir()->parent() ),
 			# hpc_mode => 'spawn_hpc_sge',
 		);
 
@@ -308,7 +320,9 @@ prepare_research_data.pl - TODOCUMENT
 prepare_research_data.pl [options]
 
  Options:
-   --help            brief help message
+   --help               Print brief help message
+
+   --tmp-dir <dir>      Write temporary executables and data to directory <dir>
 
 =head1 OPTIONS
 
