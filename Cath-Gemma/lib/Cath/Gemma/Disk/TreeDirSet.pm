@@ -11,6 +11,7 @@ use warnings;
 
 # Core
 use Carp               qw/ confess                    /;
+use Digest::MD5        qw/ md5_hex                    /;
 use English            qw/ -no_match_vars             /;
 use v5.10;
 
@@ -90,6 +91,21 @@ sub _build_tree_dir {
 	return $self->_insist_base_dir_and_project()->get_project_subdir_of_subdir( 'trees' );
 }
 
+=head2 id
+
+Get an ID for this DirSet, which can be used in filenames to differentiate DirSets
+
+=cut
+
+sub id {
+	state $check = compile( Object );
+	my ( $self ) = $check->( @ARG );
+
+	return md5_hex(
+		$self->gemma_dir_set->id(),
+		$self->tree_dir(),
+	);
+}
 
 =head2 is_equal_to
 

@@ -13,7 +13,7 @@ use warnings;
 
 # Core
 use English             qw/ -no_match_vars                                      /;
-use List::Util          qw/ sum0                                                /;
+use List::Util          qw/ sum0 uniq                                           /;
 use Storable            qw/ freeze thaw                                         /;
 use Storable            qw/ thaw                                                /;
 use v5.10;
@@ -519,6 +519,24 @@ sub make_from_build_tree_task_ctor_args {
 	return Cath::Gemma::Compute::WorkBatch->new(
 		treebuild_tasks => [ Cath::Gemma::Compute::Task::BuildTreeTask->new( @$other_args ) ]
 	);
+}
+
+=head2 batches_have_distinct_ids
+
+Return whether the specified WorkBatches have distinct IDs
+
+if ( ! Cath::Gemma::Compute::WorkBatch->batches_have_distinct_ids( [ $batch_a, $batch_b, $batch_c ] ) ) {
+	panic();
+}
+
+=cut
+
+sub batches_have_distinct_ids {
+	state $check = compile( ClassName, ArrayRef[CathGemmaComputeWorkBatch] );
+	my ( $class, $batches ) = $check->( @ARG );
+
+	my $num_distinct_ids = scalar( uniq( sort( map { $ARG->id() } @$batches ) ) );
+	return $num_distinct_ids == scalar( @$batches );
 }
 
 1;
