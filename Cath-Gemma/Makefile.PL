@@ -42,6 +42,7 @@ WriteMakefile(
         'Test::Exception'         => 0,
         'Test::Files'             => 0,
         'Test::More'              => 0,
+        'Test::Trap'              => 0,
     },
     dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
     clean               => { FILES => 'Cath-Gemma-*' },
