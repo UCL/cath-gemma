@@ -13,7 +13,7 @@ use warnings;
 
 # Core
 use English             qw/ -no_match_vars                                      /;
-use List::Util          qw/ sum0 uniq                                           /;
+use List::Util          qw/ sum0                                                /;
 use Storable            qw/ freeze thaw                                         /;
 use Storable            qw/ thaw                                                /;
 use v5.10;
@@ -535,7 +535,7 @@ sub batches_have_distinct_ids {
 	state $check = compile( ClassName, ArrayRef[CathGemmaComputeWorkBatch] );
 	my ( $class, $batches ) = $check->( @ARG );
 
-	my $num_distinct_ids = scalar( uniq( sort( map { $ARG->id() } @$batches ) ) );
+	my $num_distinct_ids = scalar( unique_by_hashing( sort( map { $ARG->id() } @$batches ) ) );
 	return $num_distinct_ids == scalar( @$batches );
 }
 

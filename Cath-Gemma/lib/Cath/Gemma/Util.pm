@@ -760,11 +760,13 @@ sub time_seconds_to_sge_string {
 
 =head2 unique_by_hashing
 
-Return (a reference to) an array of the uniqued (and sorted) values in the specified
-(reference to) array
+Return a list of the uniqued (and sorted) values in the specified
+array
 
 TODOCUMENT: why is this needed above using `uniq( sort() )` (with `uniq()`
 from List::Util)?
+
+ANSWER: because the version of List::Util on the cluster (1.41) does not have C<uniq>. 
 
 =cut
 
