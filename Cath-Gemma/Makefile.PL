@@ -30,7 +30,7 @@ WriteMakefile(
         'MooX::StrictConstructor' => 0,
         'Object::Util'            => 0,
         'Parallel::Iterator'      => 0,
-        'Path::Tiny'              => '0.105',
+        'Path::Tiny'              => '0.106',
         'Role::Singleton'         => 0,
         'Switch'                  => 0,
         'Thread::Pool::Simple'    => 0,
