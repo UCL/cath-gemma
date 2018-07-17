@@ -55,8 +55,8 @@ sub run_job_array {
 		confess 'Cannot perform a job with zero/negative number of batches : ' . $num_batches;
 	}
 
-	my $cluster_name = $self->cluster_name;
-	my $submit_host = $self->cluster_submit_host;
+	my $cluster_name = $self->get_cluster_name;
+	my $submit_host = $self->get_cluster_submit_host;
 
 	my $memy_req                   = '15G';
 
