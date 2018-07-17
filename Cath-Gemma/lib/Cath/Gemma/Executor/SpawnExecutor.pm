@@ -145,7 +145,7 @@ sub execute_batch_list {
 
 	my $submit_script = path( "$FindBin::Bin/../script/sge_submit_script.bash" )->realpath;
 
-	my $cluster_name = $self->get_cluster_name( assume_local_if_not_set => 1 );
+	my $cluster_name = $self->get_cluster_name( assume_local_if_undefined => 1 );
 
 	warn "WARNING: TEMPORARILY NOT REBATCHING";
 	# $batches = $self->_work_batcher()->rebatch( $batches );

@@ -10,7 +10,8 @@ use strict;
 use warnings;
 
 # Core
-use English           qw/ -no_match_vars                /;
+use Carp              qw/ confess                                     /;
+use English           qw/ -no_match_vars                              /;
 use v5.10;
 
 # Moo
@@ -18,9 +19,9 @@ use Moo::Role;
 use strictures 2;
 
 # Non-core (local)
-use Type::Params      qw/ compile                       /;
-use Types::Path::Tiny qw/ Path                          /;
-use Types::Standard   qw/ ArrayRef Int Maybe Object Str /;
+use Type::Params      qw/ compile compile_named                       /;
+use Types::Path::Tiny qw/ Path                                        /;
+use Types::Standard   qw/ ArrayRef Bool Int Maybe Object Optional Str /;
 
 # Cath::Gemma
 use Cath::Gemma::Types  qw/
@@ -40,17 +41,22 @@ Defaults
 
 sub get_cluster_name {
 	my $self = shift;
-    my %params = @_;
-    my $assume_local_if_not_set = $params{assume_local_if_undefined} //= 0;
+
+	state $check = compile_named(
+		assume_local_if_undefined => Optional[Bool],
+	);
+	my ( $args ) = $check->( @ARG );
+
+	my $assume_local_if_undefined = $args->{ assume_local_if_undefined } // 0;
 
 	my $cluster_name = $ENV{ GEMMA_CLUSTER_NAME };
 
     if ( ! defined $cluster_name ) {
-        if ( $assume_local_if_not_set ) {
+        if ( $assume_local_if_undefined ) {
             $cluster_name = 'local';
         }
         else {
-            die "! Error: failed to get cluster name (ENV{ GEMMA_CLUSTER_NAME } is not defined)" 
+            confess "! Error: failed to get cluster name (ENV{ GEMMA_CLUSTER_NAME } is not defined)"
         }
     }
 
