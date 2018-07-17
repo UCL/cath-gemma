@@ -3,8 +3,7 @@ package URI::ldaps;
 use strict;
 use warnings;
 
-our $VERSION = '1.71';
-$VERSION = eval $VERSION;
+our $VERSION = '1.74';
 
 use parent 'URI::ldap';
 

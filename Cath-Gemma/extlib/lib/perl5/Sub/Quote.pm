@@ -12,10 +12,11 @@ use Carp qw(croak);
 BEGIN { our @CARP_NOT = qw(Sub::Defer) }
 use B ();
 BEGIN {
+  *_HAVE_IS_UTF8 = defined &utf8::is_utf8 ? sub(){1} : sub(){0};
   *_HAVE_PERLSTRING = defined &B::perlstring ? sub(){1} : sub(){0};
 }
 
-our $VERSION = '2.003001';
+our $VERSION = '2.005001';
 $VERSION = eval $VERSION;
 
 our @EXPORT = qw(quote_sub unquote_sub quoted_from_sub qsub);
@@ -24,15 +25,17 @@ our @EXPORT_OK = qw(quotify capture_unroll inlinify sanitize_identifier);
 our %QUOTED;
 
 sub quotify {
+  my $value = $_[0];
   no warnings 'numeric';
-  ! defined $_[0]     ? 'undef()'
+  ! defined $value     ? 'undef()'
   # numeric detection
-  : (length( (my $dummy = '') & $_[0] )
-    && 0 + $_[0] eq $_[0]
-    && $_[0] * 0 == 0
-  ) ? $_[0]
-  : _HAVE_PERLSTRING  ? B::perlstring($_[0])
-  : qq["\Q$_[0]\E"];
+  : (!(_HAVE_IS_UTF8 && utf8::is_utf8($value))
+    && length( (my $dummy = '') & $value )
+    && 0 + $value eq $value
+    && $value * 0 == 0
+  ) ? $value
+  : _HAVE_PERLSTRING  ? B::perlstring($value)
+  : qq["\Q$value\E"];
 }
 
 sub sanitize_identifier {
@@ -104,7 +107,11 @@ sub quote_sub {
       unless $subname =~ /^[^\d\W]\w*$/;
   }
   my @caller = caller(0);
-  my $attributes = $options->{attributes};
+  my ($attributes, $file, $line) = @{$options}{qw(attributes file line)};
+  if ($attributes) {
+    /\A\w+(?:\(.*\))?\z/s || croak "invalid attribute $_"
+      for @$attributes;
+  }
   my $quoted_info = {
     name     => $name,
     code     => $code,
@@ -114,6 +121,8 @@ sub quote_sub {
     warning_bits => (exists $options->{warning_bits} ? $options->{warning_bits} : $caller[9]),
     hintshash    => (exists $options->{hintshash}    ? $options->{hintshash}    : $caller[10]),
     ($attributes ? (attributes => $attributes) : ()),
+    ($file       ? (file => $file) : ()),
+    ($line       ? (line => $line) : ()),
   };
   my $unquoted;
   weaken($quoted_info->{unquoted} = \$unquoted);
@@ -125,10 +134,17 @@ sub quote_sub {
     return $sub;
   }
   else {
-    my $deferred = defer_sub +($options->{no_install} ? undef : $name) => sub {
-      $unquoted if 0;
-      unquote_sub($quoted_info->{deferred});
-    }, ($attributes ? { attributes => $attributes } : ());
+    my $deferred = defer_sub(
+      ($options->{no_install} ? undef : $name),
+      sub {
+        $unquoted if 0;
+        unquote_sub($quoted_info->{deferred});
+      },
+      {
+        ($attributes ? ( attributes => $attributes ) : ()),
+        ($name ? () : ( package => $quoted_info->{package} )),
+      },
+    );
     weaken($quoted_info->{deferred} = $deferred);
     weaken($QUOTED{$deferred} = $quoted_info);
     return $deferred;
@@ -138,8 +154,20 @@ sub quote_sub {
 sub _context {
   my $info = shift;
   $info->{context} ||= do {
-    my ($package, $hints, $warning_bits, $hintshash)
-      = @{$info}{qw(package hints warning_bits hintshash)};
+    my ($package, $hints, $warning_bits, $hintshash, $file, $line)
+      = @{$info}{qw(package hints warning_bits hintshash file line)};
+
+    $line ||= 1
+      if $file;
+
+    my $line_mark = '';
+    if ($line) {
+      $line_mark = "#line ".($line-1);
+      if ($file) {
+        $line_mark .= qq{ "$file"};
+      }
+      $line_mark .= "\n";
+    }
 
     $info->{context}
       ="# BEGIN quote_sub PRELUDE\n"
@@ -153,6 +181,7 @@ sub _context {
         keys %$hintshash)
       ."  );\n"
       ."}\n"
+      .$line_mark
       ."# END quote_sub PRELUDE\n";
   };
 }
@@ -216,6 +245,9 @@ sub unquote_sub {
         $e = $@;
       }
       unless ($success) {
+        my $space = length($make_sub =~ tr/\n//);
+        my $line = 0;
+        $make_sub =~ s/^/sprintf "%${space}d: ", ++$line/emg;
         croak "Eval went very, very wrong:\n\n${make_sub}\n\n$e";
       }
       weaken($QUOTED{$$unquoted} = $quoted_info);
@@ -229,10 +261,11 @@ sub qsub ($) {
 }
 
 sub CLONE {
-  %QUOTED = map { defined $_ ? (
+  my @quoted = map { defined $_ ? (
     $_->{unquoted} && ${$_->{unquoted}} ? (${ $_->{unquoted} } => $_) : (),
     $_->{deferred} ? ($_->{deferred} => $_) : (),
   ) : () } values %QUOTED;
+  %QUOTED = @quoted;
   weaken($_) for values %QUOTED;
 }
 
@@ -243,7 +276,7 @@ __END__
 
 =head1 NAME
 
-Sub::Quote - efficient generation of subroutines via string eval
+Sub::Quote - Efficient generation of subroutines via string eval
 
 =head1 SYNOPSIS
 
@@ -311,7 +344,40 @@ good idea.  For a sub that will most likely be inlined, it is not recommended.
 =item C<package>
 
 The package that the quoted sub will be evaluated in.  If not specified, the
-sub calling C<quote_sub> will be used.
+package from sub calling C<quote_sub> will be used.
+
+=item C<hints>
+
+The value of L<< C<$^H> | perlvar/$^H >> to use for the code being evaluated.
+This captures the settings of the L<strict> pragma.  If not specified, the value
+from the calling code will be used.
+
+=item C<warning_bits>
+
+The value of L<< C<${^WARNING_BITS}> | perlvar/${^WARNING_BITS} >> to use for
+the code being evaluated.  This captures the L<warnings> set.  If not specified,
+the warnings from the calling code will be used.
+
+=item C<%^H>
+
+The value of L<< C<%^H> | perlvar/%^H >> to use for the code being evaluated.
+This captures additional pragma settings.  If not specified, the value from the
+calling code will be used if possible (on perl 5.10+).
+
+=item C<attributes>
+
+The L<perlsub/Subroutine Attributes> to apply to the sub generated.  Should be
+specified as an array reference.  The attributes will be applied to both the
+generated sub and the deferred wrapper, if one is used.
+
+=item C<file>
+
+The apparent filename to use for the code being evaluated.
+
+=item C<line>
+
+The apparent line number
+to use for the code being evaluated.
 
 =back
 
@@ -488,6 +554,8 @@ getty - Torsten Raudssus (cpan:GETTY) <torsten@raudss.us>
 arcanez - Justin Hunter (cpan:ARCANEZ) <justin.d.hunter@gmail.com>
 
 kanashiro - Lucas Kanashiro (cpan:KANASHIRO) <kanashiro.duarte@gmail.com>
+
+djerius - Diab Jerius (cpan:DJERIUS) <djerius@cfa.harvard.edu>
 
 =head1 COPYRIGHT
 

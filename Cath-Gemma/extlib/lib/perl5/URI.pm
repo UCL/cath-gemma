@@ -3,8 +3,7 @@ package URI;
 use strict;
 use warnings;
 
-our $VERSION = '1.71';
-$VERSION = eval $VERSION;
+our $VERSION = '1.74';
 
 our ($ABS_REMOTE_LEADING_DOTS, $ABS_ALLOW_RELATIVE_SCHEME, $DEFAULT_QUERY_FORM_DELIMITER);
 
@@ -357,6 +356,8 @@ __END__
 URI - Uniform Resource Identifiers (absolute and relative)
 
 =head1 SYNOPSIS
+
+ use URI;
 
  $u1 = URI->new("http://www.perl.com");
  $u2 = URI->new("foo", "http");
