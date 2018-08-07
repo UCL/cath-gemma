@@ -70,7 +70,7 @@ sub read_from_file {
 		if ( $tries == 0 ) {
 			my $host = hostname;
 			my $df_sys = "/bin/df '$scan_data_file'";
-			my $df_out = `$df_com`;
+			my $df_out = `$df_sys`;
 			confess "Failed to get ScanData file '$scan_data_file'\n"
 				. "HOST: $host\n"
 				. "Results of `$df_sys`:\n" . $df_out;
@@ -78,7 +78,7 @@ sub read_from_file {
 	}
 
 	if ( ! -s $scan_data_file ) {
-		push @errors, "ScanData file $scan_data_file is empty";
+		confess "ScanData file $scan_data_file is empty";
 	}
 
 	my $scan_data_data = $scan_data_file->slurp()
