@@ -114,17 +114,15 @@ run_hpc () {
 	set +x
 	print_date "Done"
 
-	echo
-	echo "What happens now?"
-	echo
-
 	# set data environment variables
-	echo "Run the following commands on ${REMOTE_HOST}..."
-	echo "NOTE: uncomment the 'rm' function to delete any existing data files"
+	echo
+	echo "Copy/paste the following commands to submit this GeMMA project on ${REMOTE_HOST}..."
 	echo
 	echo ssh ${REMOTE_LOGIN}
 	echo qrsh -verbose -l $SGE_REQUEST_FLAGS
+	echo 
 	echo export GEMMA_CLUSTER_NAME=${RUNNING_METHOD}
+	echo export GEMMA_CLUSTER_MEM=15G
 	echo GEMMA_DATA_ROOT=${REMOTE_DATA_PATH}
 	if [ $ALLOW_CACHE == "false" ]
 	then
@@ -134,6 +132,11 @@ run_hpc () {
 	echo 'cd $GEMMA_DATA_ROOT'
 	echo '( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl'
 	echo ${REMOTE_CODE_PATH}/script/prepare_research_data.pl --projects-list-file \${GEMMA_DATA_ROOT}/projects.txt --output-root-dir \${GEMMA_DATA_ROOT}
+	echo
+	echo "NOTES:" 
+	echo "- uncomment the 'rm' function in the commands above to delete any existing data files"
+	echo "- change the value of GEMMA_CLUSTER_MEM if you require more memory (eg '31G', '63G', '127G')"
+	echo "- do not run more than one gemma project in the same data directory"
 	echo
 }
 
