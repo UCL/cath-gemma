@@ -60,7 +60,7 @@ sub run_job_array {
 
 	my $memy_req = '15G';
 	if ( exists $ENV{GEMMA_CLUSTER_MEM} ) {
-		INFO "Overriding the default memory requirement ($memy_req) with a custom value from \$GEMMA_CLUSTER_MEM=$ENV{GEMMA_CLUSTER_MEM}"
+		INFO "Overriding the default memory requirement ($memy_req) with a custom value from \$GEMMA_CLUSTER_MEM=$ENV{GEMMA_CLUSTER_MEM}";
 		$memy_req = $ENV{GEMMA_CLUSTER_MEM};
 	}
 
