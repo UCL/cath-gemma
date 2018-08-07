@@ -12,6 +12,7 @@ use warnings;
 # Core
 use Carp              qw/ confess                           /;
 use English           qw/ -no_match_vars                    /;
+use Sys::Hostname;
 use v5.10;
 
 # Moo
@@ -50,11 +51,34 @@ sub read_from_file {
 	state $check = compile( Invocant, Path );
 	my ( $proto, $scan_data_file ) = $check->( @ARG );
 
-	if ( ! -e $scan_data_file ) {
-		confess "No such ScanData file $scan_data_file exists";
+	# Seems that there are times where the file reports to be missing
+	# at this point in the code, but is on the file system when we check.
+	#
+	# Possible reasons:
+	#  - the compute node doesn't have access to the shared area
+	#  - there's a race condition that means the file isn't available straight away (eg lustre)
+	#
+	# I'm adding a loop here to avoid the second issue (we can't do much about the first)
+	# https://github.com/UCL/cath-gemma/issues/17
+	 
+	my $tries = 5;
+	while ( $tries-- > 0 ) {
+		if ( ! -e $scan_data_file ) {
+			WARN "Failed to find ScanData file '$scan_data_file'. Will wait a second then try again (count $retries) ...";
+			sleep(1);
+		}
+		if ( $tries == 0 ) {
+			my $host = hostname;
+			my $df_sys = "/bin/df '$scan_data_file'";
+			my $df_out = `$df_com`;
+			confess "Failed to get ScanData file '$scan_data_file'\n"
+				. "HOST: $host\n"
+				. "Results of `$df_sys`:\n" . $df_out;
+		}
 	}
+
 	if ( ! -s $scan_data_file ) {
-		confess "ScanData file $scan_data_file is empty";
+		push @errors, "ScanData file $scan_data_file is empty";
 	}
 
 	my $scan_data_data = $scan_data_file->slurp()
