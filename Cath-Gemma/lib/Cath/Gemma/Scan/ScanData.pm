@@ -64,7 +64,7 @@ sub read_from_file {
 	my $tries = 5;
 	while ( $tries-- > 0 ) {
 		if ( ! -e $scan_data_file ) {
-			WARN "Failed to find ScanData file '$scan_data_file'. Will wait a second then try again (count $retries) ...";
+			WARN "Failed to find ScanData file '$scan_data_file'. Will wait a second then try again (count $tries) ...";
 			sleep(1);
 		}
 		if ( $tries == 0 ) {
