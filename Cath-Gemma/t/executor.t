@@ -244,14 +244,17 @@ sub test_build_tree {
 	}
 }
 
+my $child_tmp_dir = Path::Tiny->tempdir( '/tmp/gemma.tmp_child_dir.XXXXXXXX', CLEANUP => $CLEANUP );
+
 # Test each of the Executors
 foreach my $executor_details (
                             [ 'Cath::Gemma::Executor::ConfessExecutor'      ],
-                            [ 'Cath::Gemma::Executor::SpawnExecutor', [
-                            	submission_dir => Path::Tiny->tempdir( CLEANUP  => $CLEANUP ),
-                            	hpc_mode       => 'spawn_local',
-                            ] ],
                             [ 'Cath::Gemma::Executor::DirectExecutor'        ],
+                            [ 'Cath::Gemma::Executor::SpawnExecutor', [
+                            	submission_dir => Path::Tiny->tempdir( CLEANUP => $CLEANUP ),
+                            	hpc_mode       => 'spawn_local',
+								child_tmp_dir  => $child_tmp_dir,
+                            ] ],
                             ) {
 	my ( $executor_name, $executor_args ) = @$executor_details;
 

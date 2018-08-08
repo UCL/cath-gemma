@@ -206,7 +206,10 @@ subtest 'by default, ensure_all_alignments() ensures all alignments before finis
 	$merge_list->ensure_all_alignments(
 		default_clusts_ordering(),
 		Cath::Gemma::Disk::Executables->new(),
-		Cath::Gemma::Executor::SpawnExecutor->new( submission_dir => Path::Tiny->tempdir( CLEANUP => 1 ) ),
+		Cath::Gemma::Executor::SpawnExecutor->new( 
+			submission_dir => Path::Tiny->tempdir( 'cath-gemma.submission_dir.XXXXXXXX', CLEANUP => 1 ),
+			child_tmp_dir => Path::Tiny->tempdir( 'cath-gemma.child_tmp_dir.XXXXXXXX', CLEANUP => 1 ),
+		),
 		Cath::Gemma::Disk::ProfileDirSet->new(
 			aln_dir              => $temp_out_dir,
 			prof_dir             => $temp_out_dir,
