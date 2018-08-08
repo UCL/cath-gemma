@@ -62,19 +62,18 @@ sub read_from_file {
 	# https://github.com/UCL/cath-gemma/issues/17
 	 
 	my $tries = 5;
-	while ( $tries-- > 0 ) {
-		if ( ! -e $scan_data_file ) {
-			WARN "Failed to find ScanData file '$scan_data_file'. Will wait a second then try again (count $tries) ...";
-			sleep(1);
-		}
-		if ( $tries == 0 ) {
-			my $host = hostname;
-			my $df_sys = "/bin/df '$scan_data_file'";
-			my $df_out = `$df_sys`;
-			confess "Failed to get ScanData file '$scan_data_file'\n"
-				. "HOST: $host\n"
-				. "Results of `$df_sys`:\n" . $df_out;
-		}
+	while ( ! -e $scan_data_file && $tries-- > 0 ) {
+		WARN "Failed to find ScanData file '$scan_data_file'. Will wait a second then try again (count $tries) ...";
+		sleep(1);
+	}
+
+	if ( ! -e $scan_data_file ) {
+		my $host = hostname;
+		my $df_sys = "/bin/df '$scan_data_file'";
+		my $df_out = `$df_sys`;
+		confess "Failed to get ScanData file '$scan_data_file'\n"
+			. "HOST: $host\n"
+			. "Results of `$df_sys`:\n" . $df_out;
 	}
 
 	if ( ! -s $scan_data_file ) {
