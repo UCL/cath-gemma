@@ -59,7 +59,7 @@ sub run_job_array {
 	my $submit_host = $self->get_cluster_submit_host;
 
 	my $memy_req = '15G';
-	if ( exists $ENV{GEMMA_CLUSTER_MEM} ) {
+	if ( exists $ENV{GEMMA_CLUSTER_MEM} && $ENV{GEMMA_CLUSTER_MEM} ) {
 		INFO "Overriding the default memory requirement ($memy_req) with a custom value from \$GEMMA_CLUSTER_MEM=$ENV{GEMMA_CLUSTER_MEM}";
 		$memy_req = $ENV{GEMMA_CLUSTER_MEM};
 	}
@@ -121,8 +121,12 @@ sub run_job_array {
 	# 	});
 	# }
 
-	# pass any GEMMA_* environment variables through to child jobs
-	my @gemma_env_args = map { ('-v', $_) } grep { /^GEMMA/ } keys %ENV;
+	# pass GEMMA_* environment variables through to child jobs
+
+	my @gemma_env_args = map { ('-v', "$_='$ENV{$_}'") } # map to '-v key=value'
+		grep { $ENV{$_} }                                # only env keys that have trueish values
+		grep { /^GEMMA/ }                                # only GEMMA env keys
+		keys %ENV;
 
 	# TODO: Consider adding a parameter that allows users to specify the location of the
 	#       Perl to run the jobs with and then prepend it to the PATH here
