@@ -64,7 +64,7 @@ sub read_from_file {
 	my $tries = 30;
 	while ( ! -e $scan_data_file && $tries-- > 0 ) {
 		WARN "Failed to find ScanData file '$scan_data_file'. It seems that files are not always available "
-		     "immediately on the lustre file system. Will wait a second then try again (count $tries) ...";
+		     ."immediately on the lustre file system. Will wait a second then try again (count $tries) ...";
 		sleep(1);
 	}
 
