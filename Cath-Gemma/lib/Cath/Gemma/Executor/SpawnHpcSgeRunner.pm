@@ -237,7 +237,7 @@ sub wait_for_jobs {
 		}
 
 		my @stdout_lines   = split( /\n/, $qstat_stdout );
-		my @active_job_ids = map { $ARG =~ /^(\d+)\s/; $1; } grep { $ARG =~ /^\d+\s/ } @stdout_lines;
+		my @active_job_ids = map { $ARG =~ /^\s*(\d+)\s/; $1; } grep { $ARG =~ /^\s*\d+\s/ } @stdout_lines;
 
 		my $any_running_jobs_wanted = any { $wanted_jobs{ $ARG } } @active_job_ids;
 		DEBUG sprintf( "Found active running jobs are : %s (there are %d wanted jobs; any_running_jobs_wanted is: %s)",
