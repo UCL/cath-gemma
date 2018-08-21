@@ -61,7 +61,14 @@ sub read_from_file {
 	# I'm adding a loop here to avoid the second issue (we can't do much about the first)
 	# https://github.com/UCL/cath-gemma/issues/17
 	 
-	my $tries = 30;
+	if ( ! -d $scan_data_file->parent ) {
+		confess sprintf( "! Error: trying to read scan data file '%s', however parent directory '%s' does not exist.",
+			$scan_data_file->stringify,
+			$scan_data_file->parent->stringify,
+		);
+	}
+
+	my $tries = 60;
 	while ( ! -e $scan_data_file && $tries-- > 0 ) {
 		WARN "Failed to find ScanData file '$scan_data_file'. It seems that files are not always available "
 		     ."immediately on the lustre file system. Will wait a second then try again (count $tries) ...";
