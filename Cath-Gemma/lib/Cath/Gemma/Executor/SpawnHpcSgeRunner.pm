@@ -183,7 +183,7 @@ sub run_job_array {
 
 =head2 wait_for_jobs
 
-TODOCUMENT
+This will wait for all active jobs to finish (using C<ssh qstat> to check status every 60 seconds)
 
 =cut
 
@@ -198,7 +198,7 @@ sub wait_for_jobs {
 
 	while ( 1 ) {
 		my $wait_in_seconds = Time::Seconds->new( 60 );
-		DEBUG "Waiting ' . $wait_in_seconds->seconds() . ' seconds before (re)checking for submitted jobs : ". join( ', ', @wanted_jobs );
+		DEBUG "Waiting $wait_in_seconds seconds before (re)checking for submitted jobs : ". join( ', ', @wanted_jobs );
 		sleep $wait_in_seconds->seconds();
 
 		DEBUG "Submit host is : " . $submit_host;
@@ -209,24 +209,24 @@ sub wait_for_jobs {
 		);
 		DEBUG "qstat command is : " . join( ' ', @qstat_command );
 
-		warn localtime() . ' : About to run     command ' . join( ' ', @qstat_command );
+		# warn localtime() . ' : About to run     command ' . join( ' ', @qstat_command );
 		my ( $qstat_stdout, $qstat_stderr, $qstat_exit ) = capture {
 			system( @qstat_command );
 		};
-		warn localtime() . ' : Finished running command ' . join( ' ', @qstat_command );
-		warn localtime() . ' : \$qstat_stdout : ' . $qstat_stdout;
-		warn localtime() . ' : \$qstat_exit   : ' . $qstat_exit;
-		warn localtime() . ' : \$qstat_stderr : ' . $qstat_stderr;
-		DEBUG 'Dumper is ' . Dumper( {
-			command_arr => \@qstat_command,
-			command_str => join( ' ', @qstat_command ),
-			exit        => $qstat_exit,
-			stderr      => $qstat_stderr,
-			stdout      => $qstat_stdout,
-		} );
+		# warn localtime() . ' : Finished running command ' . join( ' ', @qstat_command );
+		# warn localtime() . ' : \$qstat_stdout : ' . $qstat_stdout;
+		# warn localtime() . ' : \$qstat_exit   : ' . $qstat_exit;
+		# warn localtime() . ' : \$qstat_stderr : ' . $qstat_stderr;
+		# DEBUG 'Dumper is ' . Dumper( {
+		# 	command_arr => \@qstat_command,
+		# 	command_str => join( ' ', @qstat_command ),
+		# 	exit        => $qstat_exit,
+		# 	stderr      => $qstat_stderr,
+		# 	stdout      => $qstat_stdout,
+		# } );
 
 		if ( $qstat_exit != 0 ) {
-			warn Dumper( {
+			WARN "qstat returned non-zero status:\n". Dumper( {
 				command_arr => \@qstat_command,
 				command_str => join( ' ', @qstat_command ),
 				exit        => $qstat_exit,
@@ -242,8 +242,8 @@ sub wait_for_jobs {
 		DEBUG
 			"Found active running jobs are : "
 			. join( ', ', @active_job_ids )
-			. ' (so any_running_jobs_wanted is : '
-			. $any_running_jobs_wanted
+			. ' (there are ' . scalar(@wanted_jobs). ' wanted jobs; any_running_jobs_wanted is : '
+			. ($any_running_jobs_wanted ? 'TRUE' : 'FALSE')
 			. ')';
 		if ( ! $any_running_jobs_wanted ) {
 			warn localtime() . ' : Jobs complete - will now return';
