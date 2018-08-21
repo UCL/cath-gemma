@@ -209,21 +209,22 @@ sub wait_for_jobs {
 		);
 		DEBUG "qstat command is : " . join( ' ', @qstat_command );
 
-		# warn localtime() . ' : About to run     command ' . join( ' ', @qstat_command );
+		DEBUG "About to run command " . join( ' ', @qstat_command );
 		my ( $qstat_stdout, $qstat_stderr, $qstat_exit ) = capture {
 			system( @qstat_command );
 		};
-		# warn localtime() . ' : Finished running command ' . join( ' ', @qstat_command );
+		DEBUG "Finished running command " . join( ' ', @qstat_command );
 		# warn localtime() . ' : \$qstat_stdout : ' . $qstat_stdout;
 		# warn localtime() . ' : \$qstat_exit   : ' . $qstat_exit;
 		# warn localtime() . ' : \$qstat_stderr : ' . $qstat_stderr;
-		# DEBUG 'Dumper is ' . Dumper( {
-		# 	command_arr => \@qstat_command,
-		# 	command_str => join( ' ', @qstat_command ),
-		# 	exit        => $qstat_exit,
-		# 	stderr      => $qstat_stderr,
-		# 	stdout      => $qstat_stdout,
-		# } );
+
+		DEBUG 'Dumper is ' . Dumper( {
+			command_arr => \@qstat_command,
+			command_str => join( ' ', @qstat_command ),
+			exit        => $qstat_exit,
+			stderr      => $qstat_stderr,
+			stdout      => $qstat_stdout,
+		} );
 
 		if ( $qstat_exit != 0 ) {
 			WARN "qstat returned non-zero status:\n". Dumper( {
@@ -239,12 +240,12 @@ sub wait_for_jobs {
 		my @active_job_ids = map { $ARG =~ /^(\d+)\s/; $1; } grep { $ARG =~ /^\d+\s/ } @stdout_lines;
 
 		my $any_running_jobs_wanted = any { $wanted_jobs{ $ARG } } @active_job_ids;
-		DEBUG
-			"Found active running jobs are : "
-			. join( ', ', @active_job_ids )
-			. ' (there are ' . scalar(@wanted_jobs). ' wanted jobs; any_running_jobs_wanted is : '
-			. ($any_running_jobs_wanted ? 'TRUE' : 'FALSE')
-			. ')';
+		DEBUG sprintf( "Found active running jobs are : %s (there are %d wanted jobs; any_running_jobs_wanted is: %s)",
+				join( ', ', @active_job_ids ),
+				scalar( @wanted_jobs ),
+				$any_running_jobs_wanted ? 'TRUE' : 'FALSE',
+			)
+			
 		if ( ! $any_running_jobs_wanted ) {
 			warn localtime() . ' : Jobs complete - will now return';
 			return;
