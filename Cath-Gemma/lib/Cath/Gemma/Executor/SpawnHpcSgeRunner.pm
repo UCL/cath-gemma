@@ -244,7 +244,7 @@ sub wait_for_jobs {
 				join( ', ', @active_job_ids ),
 				scalar( @wanted_jobs ),
 				$any_running_jobs_wanted ? 'TRUE' : 'FALSE',
-			)
+			);
 			
 		if ( ! $any_running_jobs_wanted ) {
 			warn localtime() . ' : Jobs complete - will now return';
