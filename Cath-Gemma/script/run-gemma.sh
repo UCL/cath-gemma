@@ -13,12 +13,14 @@ set -e
 
 # https://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
 
+# The default project folder name is 'gemma_data'. The user can define the project folder name by providing the third argument.
+
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-if [ "$#" -ne 2 ];
+if [ "$#" -lt 2 ];
 then
 	echo
-	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle>"
+	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle> <OPTIONAL: project_folder_name ( default: gemma_data )>"
 	echo
 	echo "The following files are required:"
 	echo
@@ -40,12 +42,15 @@ FF_GEN_ROOTDIR=$1            # e.g. /export/ucbtnld/gemma
 # TODO: add database version to wiki
 DB_VERSION=gene3d_16
 RUNNING_METHOD=$2
+PROJECT_NAME=$3
+PROJECT_NAME=${PROJECT_NAME:-gemma_data}
 
 print_date "GIT_HOME       $GITHUB_HOME_DIR"  
 print_date "GEMMA_HOME     $GEMMA_DIR"
 print_date "DATA_HOME      $FF_GEN_ROOTDIR"   
 print_date "DB_VERSION     $DB_VERSION"          
-print_date "RUN_ENV        $RUNNING_METHOD"          
+print_date "RUN_ENV        $RUNNING_METHOD"
+print_date "PROJECT_NAME   $PROJECT_NAME"
 
 ############################
 # remove cache if required #
@@ -157,7 +162,7 @@ local)
 legion)
 	# path to gemma data in legion scratch dir
 
-	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/gemma_data
+	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/${PROJECT_NAME}
 	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=login05.external.legion.ucl.ac.uk
 	SGE_REQUEST_FLAGS="h_rt=2:0:0,h_vmem=7G"
@@ -167,7 +172,7 @@ legion)
 # on myriad cluster
 myriad)
 
-	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/gemma_data
+	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/${PROJECT_NAME}
 	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=myriad.rc.ucl.ac.uk
 	SGE_REQUEST_FLAGS="h_rt=2:0:0,mem=7G"
@@ -177,7 +182,7 @@ myriad)
 # on chuckle cluster
 chuckle)
 
-	REMOTE_DATA_PATH=/home/${REMOTE_USER}/gemma_data
+	REMOTE_DATA_PATH=/home/${REMOTE_USER}/${PROJECT_NAME}
 	REMOTE_CODE_PATH=/home/${REMOTE_USER}/Cath-Gemma
 	REMOTE_HOST=bchuckle.cs.ucl.ac.uk
 	SGE_REQUEST_FLAGS="h_rt=4:0:0,h_vmem=7G,tmem=7G"
