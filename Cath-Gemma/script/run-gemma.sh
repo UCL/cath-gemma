@@ -6,7 +6,7 @@
 # should also remove superfamilies with one starting cluster as at least two
 # are needed for GeMMA
 
-ALLOW_CACHE=false
+ALLOW_CACHE="${ALLOW_CACHE:-1}"
 
 # any commands that fail (eg mkdir, rsync) will cause the shell script to fail
 set -e
@@ -20,12 +20,16 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ "$#" -lt 2 ];
 then
 	echo
-	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle> <OPTIONAL: project_folder_name ( default: gemma_data )>"
+	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle> [<project_folder_name>]"
 	echo
 	echo "The following files are required:"
 	echo
 	echo "   \${datadir}/projects.txt"
 	echo "   \${datadir}/starting_clusters/\${project_id}/*.faa"
+	echo
+	echo "The <project_folder_name> is optional (default: 'gemma_data')"
+	echo
+	echo "Set ALLOW_CACHE=0 to delete any existing alignments, profiles, scans (!)"
 	echo
 	exit
 fi
@@ -45,22 +49,29 @@ RUNNING_METHOD=$2
 PROJECT_NAME=$3
 PROJECT_NAME=${PROJECT_NAME:-gemma_data}
 
+############################
+# remove cache if required #
+############################
+
+if [ $RUNNING_METHOD == "local" ]; then
+	if [ $ALLOW_CACHE ]; then
+		print_date "Cache is allowed (ALLOW_CACHE=1) so not removing contents of cache files"
+	else
+		print_date "Removing contents of cache files: $FF_GEN_ROOTDIR/{alignments,profiles,scans}/$PROJECT"
+		rm -rf $FF_GEN_ROOTDIR/{alignments,profiles,scans}/$PROJECT
+	fi
+fi
+
+
+print_date "--------------------------------------"
+print_date "ALLOW_CACHE    $ALLOW_CACHE"
 print_date "GIT_HOME       $GITHUB_HOME_DIR"  
 print_date "GEMMA_HOME     $GEMMA_DIR"
 print_date "DATA_HOME      $FF_GEN_ROOTDIR"   
 print_date "DB_VERSION     $DB_VERSION"          
 print_date "RUN_ENV        $RUNNING_METHOD"
 print_date "PROJECT_NAME   $PROJECT_NAME"
-
-############################
-# remove cache if required #
-############################
-
-if [ $ALLOW_CACHE == "false" ] && [ $RUNNING_METHOD == "local" ]
-then
-	echo "Removing contents of cache files: $FF_GEN_ROOTDIR/{alignments,profiles,scans}/$PROJECT"
-	rm -rf $FF_GEN_ROOTDIR/{alignments,profiles,scans}/$PROJECT
-fi
+print_date "--------------------------------------"
 
 ########################
 # build the gemma tree # # https://github.com/UCL/cath-gemma/wiki/Running-GeMMA
@@ -129,10 +140,7 @@ run_hpc () {
 	echo export GEMMA_CLUSTER_NAME=${RUNNING_METHOD}
 	echo export GEMMA_CLUSTER_MEM=15G
 	echo GEMMA_DATA_ROOT=${REMOTE_DATA_PATH}
-	if [ $ALLOW_CACHE == "false" ]
-	then
-		echo '# rm -rf $GEMMA_DATA_ROOT/{alignments,profiles,scans}'
-	fi
+	echo '# rm -rf $GEMMA_DATA_ROOT/{alignments,profiles,scans}'
 	echo 'mkdir -p $GEMMA_DATA_ROOT'
 	echo 'cd $GEMMA_DATA_ROOT'
 	echo '( ( module avail perl ) 2>&1 | grep -q perl ) && module load perl'
