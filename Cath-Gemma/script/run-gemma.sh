@@ -54,11 +54,11 @@ PROJECT_NAME=${PROJECT_NAME:-gemma_data}
 ############################
 
 if [ $RUNNING_METHOD == "local" ]; then
-	if [ $ALLOW_CACHE ]; then
-		print_date "Cache is allowed (ALLOW_CACHE=1) so not removing contents of cache files"
-	else
+	if [ "$ALLOW_CACHE" = "0" ]; then
 		print_date "Removing contents of cache files: $FF_GEN_ROOTDIR/{alignments,profiles,scans}/$PROJECT"
 		rm -rf $FF_GEN_ROOTDIR/{alignments,profiles,scans}/$PROJECT
+	else
+		print_date "Cache is allowed (ALLOW_CACHE=1) so not removing contents of cache files"
 	fi
 fi
 
