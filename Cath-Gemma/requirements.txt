@@ -1,0 +1,2 @@
+cathpy==0.0.1
+cx-Oracle==7.0.0
