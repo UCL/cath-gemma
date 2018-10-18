@@ -17,3 +17,7 @@ sqlnet.log
 submit_dir.*
 MYMETA.json
 MYMETA.yml
+
+
+venv/
+.vscode/
