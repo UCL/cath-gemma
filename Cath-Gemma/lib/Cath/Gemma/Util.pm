@@ -40,6 +40,7 @@ our @EXPORT = qw/
 	evalue_window_ceiling
 	evalue_window_floor
 	generic_id_of_clusters
+	get_milestone_string_to_log
 	get_starting_clusters_of_starting_cluster_dir
 	guess_if_running_on_sge
 	hhsuite_profile_suffix
@@ -159,7 +160,7 @@ Define a value to be used as a default really bad score
 
 sub really_bad_score { 100000000 }
 
-=head2 default_cleanup_temp_files 
+=head2 default_cleanup_temp_files
 
 Whether or not to cleanup temporary files
 
@@ -564,7 +565,7 @@ sub _id_of_nodelist {
 sub suffix_for_profile_type {
 	state $check = compile( CathGemmaProfileType );
 	my ( $profile_type ) = $check->( @ARG );
-	return 
+	return
 		CathGemmaCompassProfileType->check( $profile_type ) ? compass_profile_suffix() :
 		CathGemmaHHSuiteProfileType->check( $profile_type ) ? hhsuite_profile_suffix() :
 		confess "Failed to recognise profile type $profile_type";
@@ -766,7 +767,7 @@ array
 TODOCUMENT: why is this needed above using `uniq( sort() )` (with `uniq()`
 from List::Util)?
 
-ANSWER: because the version of List::Util on the cluster (1.41) does not have C<uniq>. 
+ANSWER: because the version of List::Util on the cluster (1.41) does not have C<uniq>.
 
 =cut
 
@@ -813,7 +814,7 @@ sub build_alignment_and_profile {
 
 	my $aln_file = $profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters );
 	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $exes->tmp_dir() );
-	my $alignment_result = 
+	my $alignment_result =
 		( -s $aln_file )
 		? {
 			out_filename         => $aln_file,
@@ -828,11 +829,11 @@ sub build_alignment_and_profile {
 	my $built_aln_file   = $alignment_result->{ out_filename  };
 	my $profile_result   = {};
 	if ( ! $skip_profile_build ) {
-		my $builder_class = 
+		my $builder_class =
 		    CathGemmaCompassProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::CompassProfileBuilder" :
 		    CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::HHSuiteProfileBuilder" :
 			confess "Unknown profile build type $profile_build_type";
-		
+
 		$profile_result = $builder_class->build_profile(
 			$exes,
 			$built_aln_file,
@@ -891,7 +892,7 @@ sub profile_builder_class_from_type {
 	my $maybe_class;
 	$maybe_class = shift if ($ARG[0] =~ /^Cath::Gemma::/ || blessed $ARG[0] =~ /^Cath::Gemma::/ );
 	my $profile_build_type = shift;
-	my $builder_class = 
+	my $builder_class =
 		CathGemmaCompassProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::CompassProfileBuilder" :
 		CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::HHSuiteProfileBuilder" :
 		confess "Unknown profile build type $profile_build_type";
@@ -909,13 +910,26 @@ sub profile_scanner_class_from_type {
 	my $maybe_class;
 	$maybe_class = shift if ($ARG[0] =~ /^Cath::Gemma::/ || blessed $ARG[0] =~ /^Cath::Gemma::/ );
 	my $profile_build_type = shift;
-	my $scanner_class = 
-		CathGemmaCompassProfileType->check( $profile_build_type ) ? 'Cath::Gemma::Tool::CompassScanner' : 
-		CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? 'Cath::Gemma::Tool::HHSuiteScanner' : 
+	my $scanner_class =
+		CathGemmaCompassProfileType->check( $profile_build_type ) ? 'Cath::Gemma::Tool::CompassScanner' :
+		CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? 'Cath::Gemma::Tool::HHSuiteScanner' :
 		confess "! Error: not able to get scanner class for profile build type '$profile_build_type'";
 	return $scanner_class;
 }
 
+=head2 get_milestone_string_to_log
+
+Return the string that will be logged as a MILESTONE step
+
+=cut
+
+sub get_milestone_string_to_log{
+	my ($step_name, $start_stop_tag) = @ARG;
+	$step_name =~ s/\s+//g;
+	$start_stop_tag = uc($start_stop_tag);
+	my $milestone_string = "[MILESTONE] " . "$step_name" . "_" . "$start_stop_tag";
+	return $milestone_string;
+}
 
 
 1;
