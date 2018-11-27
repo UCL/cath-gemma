@@ -110,7 +110,8 @@ my $sequences_extra_for_superfamily_sql = <<"_SQL";
 SELECT
   u.accession                         AS uniprot_acc,
   c.sequence_md5 || '/' || c.resolved AS domain_id,
-  s.aa_sequence                       AS sequence
+  s.aa_sequence                       AS sequence,
+	c.resolved                          AS resolved
 FROM
   $tablespace.CATH_DOMAIN_PREDICTIONS_EXTRA c
 INNER JOIN
@@ -132,7 +133,8 @@ my $sequences_for_superfamily_sql = <<"_SQL";
 SELECT
   u.accession                         AS uniprot_acc,
   c.sequence_md5 || '/' || c.resolved AS domain_id,
-  s.aa_sequence                       AS sequence
+  s.aa_sequence                       AS sequence,
+	c.resolved                          AS resolved
 FROM
   $tablespace.CATH_DOMAIN_PREDICTIONS c
 INNER JOIN
