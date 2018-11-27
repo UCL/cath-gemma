@@ -40,7 +40,7 @@ our @EXPORT = qw/
 	evalue_window_ceiling
 	evalue_window_floor
 	generic_id_of_clusters
-	get_milestone_string_to_log
+	get_milestone_log_string
 	get_starting_clusters_of_starting_cluster_dir
 	guess_if_running_on_sge
 	hhsuite_profile_suffix
@@ -917,17 +917,17 @@ sub profile_scanner_class_from_type {
 	return $scanner_class;
 }
 
-=head2 get_milestone_string_to_log
+=head2 get_milestone_log_string
 
 Return the string that will be logged as a MILESTONE step
 
 =cut
 
-sub get_milestone_string_to_log{
+sub get_milestone_log_string {
 	my ($step_name, $start_stop_tag) = @ARG;
 	$step_name =~ s/\s+//g;
-	$start_stop_tag = uc($start_stop_tag);
-	my $milestone_string = "[MILESTONE] " . "$step_name" . "_" . "$start_stop_tag";
+
+	my $milestone_string = sprintf( "[MILESTONE] %s %s", $step_name, uc($start_stop_tag) );
 	return $milestone_string;
 }
 

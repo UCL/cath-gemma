@@ -46,13 +46,13 @@ sub run_tasks {
 	);
 
 	my $log_milestone_str;
-	$log_milestone_str = Cath::Gemma::Util::get_milestone_string_to_log("$name", "START");
+	$log_milestone_str = Cath::Gemma::Util::get_milestone_log_string("$name", "START");
 	INFO "$log_milestone_str";
 	
 	# Wait until all tasks are complete
 	while ( my ( $index, $value ) = $iter->() ) {}
 
-	$log_milestone_str = Cath::Gemma::Util::get_milestone_string_to_log("$name", "STOP");
+	$log_milestone_str = Cath::Gemma::Util::get_milestone_log_string("$name", "STOP");
 	INFO "$log_milestone_str";
 }
 
