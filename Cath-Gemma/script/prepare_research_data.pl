@@ -11,6 +11,7 @@ use FindBin;
 use Getopt::Long;
 use Pod::Usage;
 use v5.10;
+use Scalar::Util        qw/ blessed                                                        /;
 
 # Find non-core external lib directory using FindBin
 use lib "$FindBin::Bin/../extlib/lib/perl5";
@@ -20,6 +21,10 @@ use Log::Log4perl::Tiny qw/ :easy                   /;
 use Path::Tiny;
 use Type::Params        qw/ compile                 /;
 use Types::Standard     qw/ ArrayRef Int Object Str /; # ***** TEMPORARY *****
+
+Log::Log4perl->easy_init({
+  level  => $DEBUG,
+});
 
 # Find Gemma lib directory using FindBin (and tidy using Path::Tiny)
 use lib path( $FindBin::Bin . '/../lib' )->realpath()->stringify();
@@ -158,6 +163,9 @@ my $executor =
 			# hpc_mode => 'spawn_hpc_sge',
 		);
 
+my $executor_class= blessed ($executor);
+my $executor_name= (split(/::/,$executor_class))[-1];
+
 if ( 0 ) {
 	my $work_batch_list = Cath::Gemma::Compute::WorkBatchList->new(
 		batches => [ map {
@@ -178,7 +186,15 @@ if ( 0 ) {
 	else {
 		my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $work_batch_list );
 		INFO "".( $rebatched->num_batches() . " build/scan batches to process" );
+
+    my $log_milestone_str;
+    $log_milestone_str = Cath::Gemma::Util::get_milestone_string_to_log($executor_name, "START");
+    INFO "$log_milestone_str";
+
 		$executor->execute_batch_list( $work_batch_list, 'permit_async_launch' );
+
+    $log_milestone_str = Cath::Gemma::Util::get_milestone_string_to_log($executor_name, "STOP");
+    INFO "$log_milestone_str";
 	}
 }
 
@@ -204,7 +220,15 @@ if ( 1 ) {
 		# my $rebatched = Cath::Gemma::Compute::WorkBatcher->new()->rebatch( $treebuild_batch_list );
 		# INFO "".( $rebatched->num_batches() . " treebuild batches to process" );
 		INFO "".( $treebuild_batch_list->num_batches() . " build/scan batches to process" );
+
+    my $log_milestone_str;
+    $log_milestone_str = Cath::Gemma::Util::get_milestone_string_to_log($executor_name, "START");
+    INFO "$log_milestone_str";
+
 		$executor->execute_batch_list( $treebuild_batch_list, 'permit_async_launch' );
+
+    $log_milestone_str = Cath::Gemma::Util::get_milestone_string_to_log($executor_name, "STOP");
+    INFO "$log_milestone_str";
 	}
 }
 

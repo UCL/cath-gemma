@@ -20,6 +20,10 @@ use Parallel::Iterator  qw/ iterate                  /;
 use Type::Params        qw/ compile Invocant         /;
 use Types::Standard     qw/ ArrayRef CodeRef Int Str /;
 
+Log::Log4perl->easy_init({
+  level  => $DEBUG,
+});
+
 =head2 run_tasks
 
 Execute the specified CodeRef for each of the elements in the specified array of data.
@@ -41,8 +45,15 @@ sub run_tasks {
 		[ 0 .. $#$data ]
 	);
 
+	my $log_milestone_str;
+	$log_milestone_str = Cath::Gemma::Util::get_milestone_string_to_log("$name", "START");
+	INFO "$log_milestone_str";
+	
 	# Wait until all tasks are complete
 	while ( my ( $index, $value ) = $iter->() ) {}
+
+	$log_milestone_str = Cath::Gemma::Util::get_milestone_string_to_log("$name", "STOP");
+	INFO "$log_milestone_str";
 }
 
 1;
