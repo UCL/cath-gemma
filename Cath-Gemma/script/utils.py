@@ -272,7 +272,7 @@ class GenerateMdaSequences(object):
         
         placeholders = ','.join(':x{}'.format(i) for i,_ in enumerate(uniprot_ids))
         sequences_for_uniprot_sql = "{} WHERE uniprot_acc IN ({})".format(
-            all_sequences_for_uniprot_sql, placeholders)
+            self.all_sequences_for_uniprot_sql, placeholders)
 
         proteins = self._proteins
 
@@ -295,11 +295,11 @@ class GenerateMdaSequences(object):
 
         logger.info("Getting all proteins for superfamily {} ... ".format(sfam_id))
 
-        proteins = self._get_proteins_for_sfam_sql(sequences_for_superfamily_sql, sfam_id=sfam_id)
+        proteins = self._get_proteins_for_sfam_sql(self.sequences_for_superfamily_sql, sfam_id=sfam_id)
 
         logger.info("Getting all 'extra' proteins for superfamily {} ... ".format(sfam_id))
 
-        proteins_extra = self._get_proteins_for_sfam_sql(sequences_extra_for_superfamily_sql, sfam_id=sfam_id)
+        proteins_extra = self._get_proteins_for_sfam_sql(self.sequences_extra_for_superfamily_sql, sfam_id=sfam_id)
 
         proteins.update(proteins_extra)
 
@@ -319,7 +319,7 @@ class GenerateMdaSequences(object):
     def _get_proteins_for_sfam_sql(self, sql, *, sfam_id):
 
         cur = self.db_conn.cursor()
-        cur.prepare(sequences_for_superfamily_sql)
+        cur.prepare(self.sequences_for_superfamily_sql)
 
         proteins = {}
 
