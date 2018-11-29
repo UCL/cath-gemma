@@ -11,6 +11,7 @@ use warnings;
 
 # Core
 use Carp                qw/ confess                                                        /;
+use Data::Dumper;
 use Digest::MD5         qw/ md5_hex                                                        /;
 use English             qw/ -no_match_vars                                                 /;
 use Exporter            qw/ import                                                         /;
@@ -814,57 +815,70 @@ sub build_alignment_and_profile {
 
 	my $aln_file = $profile_dir_set->alignment_filename_of_starting_clusters( $starting_clusters );
 	my $temp_aln_dir = Path::Tiny->tempdir( TEMPLATE => "aln_tempdir.XXXXXXXXXXX", DIR => $exes->tmp_dir() );
-	my $alignment_result =
-		( -s $aln_file )
-		? {
-			out_filename         => $aln_file,
-			file_already_present => 1,
+
+	my $alignment_result = {};
+	my $profile_result = {};
+
+	my $do_work = sub {
+
+		$alignment_result = ( -s $aln_file )
+			? {
+				out_filename         => $aln_file,
+				file_already_present => 1,
+			}
+			: Cath::Gemma::Tool::Aligner->make_alignment_file(
+				$exes,
+				$starting_clusters,
+				$profile_dir_set,
+			);
+
+		my $built_aln_file   = $alignment_result->{ out_filename  };
+		if ( ! $skip_profile_build ) {
+			my $builder_class =
+				CathGemmaCompassProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::CompassProfileBuilder" :
+				CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::HHSuiteProfileBuilder" :
+				confess "Unknown profile build type $profile_build_type";
+
+			$profile_result = $builder_class->build_profile(
+				$exes,
+				$built_aln_file,
+				$profile_dir_set,
+				$profile_build_type
+			);
 		}
-		: Cath::Gemma::Tool::Aligner->make_alignment_file(
-			$exes,
-			$starting_clusters,
-			$profile_dir_set,
-		);
 
-	my $built_aln_file   = $alignment_result->{ out_filename  };
-	my $profile_result   = {};
-	if ( ! $skip_profile_build ) {
-		my $builder_class =
-		    CathGemmaCompassProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::CompassProfileBuilder" :
-		    CathGemmaHHSuiteProfileType->check( $profile_build_type ) ? "Cath::Gemma::Tool::HHSuiteProfileBuilder" :
-			confess "Unknown profile build type $profile_build_type";
+		if ( "$built_aln_file" ne "$aln_file" ) {
+			my $aln_atomic_file   = File::AtomicWrite->new( { file => "$aln_file" } );
+			my $atom_tmp_aln_file = path( $aln_atomic_file->filename );
 
-		$profile_result = $builder_class->build_profile(
-			$exes,
-			$built_aln_file,
-			$profile_dir_set,
-			$profile_build_type
-		);
+			move( $built_aln_file, $atom_tmp_aln_file )
+				or confess "Cannot move built alignment file \"$built_aln_file\" to atomic temporary \"$atom_tmp_aln_file\" : $OS_ERROR";
+
+			try {
+				$aln_atomic_file->commit();
+			}
+			catch {
+				my $error = $ARG;
+				while ( chomp( $error ) ) {}
+				confess
+					'Caught error when trying to atomically commit write of temporary file "'
+					. $aln_atomic_file->filename()
+					. '" to "'
+					. $aln_file
+					. '", original error message: "'
+					. $error
+					. '".';
+			};
+		}
+	};
+
+	my $total_result = time_fn( $do_work );
+
+	if ( ! defined( $total_result ) || ref( $total_result ) ne 'HASH' ) {
+		confess "Invalid result returned by function time_fn: " . Dumper($total_result);
 	}
 
-	if ( "$built_aln_file" ne "$aln_file" ) {
-		my $aln_atomic_file   = File::AtomicWrite->new( { file => "$aln_file" } );
-		my $atom_tmp_aln_file = path( $aln_atomic_file->filename );
-
-		move( $built_aln_file, $atom_tmp_aln_file )
-			or confess "Cannot move built alignment file \"$built_aln_file\" to atomic temporary \"$atom_tmp_aln_file\" : $OS_ERROR";
-
-		try {
-			$aln_atomic_file->commit();
-		}
-		catch {
-			my $error = $ARG;
-			while ( chomp( $error ) ) {}
-			confess
-				   'Caught error when trying to atomically commit write of temporary file "'
-				 . $aln_atomic_file->filename()
-				 . '" to "'
-				 . $aln_file
-				 . '", original error message: "'
-				 . $error
-				 . '".';
-		};
-	}
+	my $total_duration = $total_result->{duration};
 
 	return {
 		( defined( $alignment_result->{ duration             } ) ? ( aln_duration              => $alignment_result->{ duration             } ) : () ),
@@ -877,8 +891,11 @@ sub build_alignment_and_profile {
 		( defined( $profile_result  ->{ duration             } ) ? ( prof_duration             => $profile_result  ->{ duration             } ) : () ),
 		( defined( $profile_result  ->{ wrapper_duration     } ) ? ( prof_wrapper_duration     => $profile_result  ->{ wrapper_duration     } ) : () ),
 		( defined( $profile_result  ->{ file_already_present } ) ? ( prof_file_already_present => $profile_result  ->{ file_already_present } ) : () ),
+
+		( defined( $total_duration )                             ? ( duration                  => $total_duration                             ) : () ),
+
 		aln_filename  => $aln_file,
-		prof_filename => $profile_result->{ out_filename  },
+		prof_filename => $profile_result->{ out_filename },
 	};
 }
 
@@ -927,8 +944,9 @@ Return the string that will be logged as a MILESTONE step
 sub get_milestone_log_string {
 	my ($step_name, $start_stop_tag) = @ARG;
 	$step_name =~ s/\s+/_/g;
+	$step_name = uc($step_name);
 
-	my $milestone_string = sprintf( "MILESTONE %s %s", uc($step_name), uc($start_stop_tag) );
+	my $milestone_string = sprintf( "MILESTONE %s %s", $step_name, uc($start_stop_tag) );
 	return $milestone_string;
 }
 
