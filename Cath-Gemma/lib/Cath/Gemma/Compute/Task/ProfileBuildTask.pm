@@ -12,7 +12,7 @@ use warnings;
 # Core
 use Carp               qw/ confess                       /;
 use English            qw/ -no_match_vars                /;
-use List::Util         qw/ any min                       /;
+use List::Util         qw/ any min sum0                  /;
 use v5.10;
 
 # Moo
