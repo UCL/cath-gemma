@@ -123,6 +123,7 @@ sub make_alignment_file {
 			my @mafft_params_slow_high_qual = ( qw/ --amino --anysymbol --localpair --maxiterate 1000 --quiet / );
 			my @mafft_params_fast_low_qual  = ( qw/ --amino --anysymbol --parttree  --retree     1    --quiet / );
 
+			my $gap_percentage = 0;
 			if ( $num_sequences  > 1 ) {
 				my $mafft_params = ( $num_sequences <= 200 ) ? [ @mafft_params_slow_high_qual, "$raw_seqs_filename" ]
 				                                             : [ @mafft_params_fast_low_qual,  "$raw_seqs_filename" ];
@@ -166,9 +167,16 @@ sub make_alignment_file {
 					'-width'  => 32000,
 				);
 
+				my $total_residue_count=0;
+				my $total_gap_count=0;
 				while ( my $seq = $fasta_in->next_seq() ) {
+					my $seqstr = $seq->seq;					
+					$total_residue_count += length($seqstr);
+					my $gaps += $seqstr =~ tr/-./-./;
+					$total_gap_count += $gaps;
 					$fasta_out->write_seq( $seq );
 				}
+				$gap_percentage = sprintf( "%.1f", 100 * $total_gap_count / $total_residue_count );
 			}
 			else {
 				INFO 'Copying single sequence for cluster ' . $id_of_clusters;
@@ -180,6 +188,7 @@ sub make_alignment_file {
 				mean_seq_length      => $build_raw_seqs_result->{ mean_seq_length },
 				num_sequences        => $num_sequences,
 				file_already_present => 0,
+				gap_percentage       => $gap_percentage,
 			};
 		}
 	);
