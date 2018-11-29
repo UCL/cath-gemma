@@ -12,7 +12,7 @@ use warnings;
 # Core
 use Carp               qw/ confess                   /;
 use English            qw/ -no_match_vars            /;
-use List::Util         qw/ any min                   /;
+use List::Util         qw/ any min sum0              /;
 use v5.10;
 
 # Moo
@@ -161,19 +161,6 @@ sub remove_already_present {
 	}
 
 	return $self;
-}
-
-=head2 total_num_starting_clusters
-
-TODOCUMENT
-
-=cut
-
-sub total_num_starting_clusters {
-	state $check = compile( Object );
-	my ( $self ) = $check->( @ARG );
-
-	return sum0( map { scalar( @{ $ARG->[ 0 ] } ) + scalar( @{ $ARG->[ 1 ] } ); } @{ $self->starting_cluster_lists() } );
 }
 
 # =head2 total_num_comparisons
