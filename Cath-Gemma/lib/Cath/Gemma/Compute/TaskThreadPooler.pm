@@ -116,7 +116,7 @@ sub _get_task_meta {
 		);
 
 		if ( exists $task_result->{gap_percentage} ) {
-			$task_meta{ gap_per  } = sprintf( "%.1f", $task_result->{gap_percentage} );
+			$task_meta{ gap_per  } = 0 + sprintf( "%.1f", $task_result->{gap_percentage} );
 		}
 		if ( exists $task_result->{num_sequences} ) {
 			$task_meta{ seqs     } = 0 + $task_result->{num_sequences};
