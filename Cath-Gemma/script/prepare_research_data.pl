@@ -9,6 +9,7 @@ use English             qw/ -no_match_vars          /;
 use feature             qw/ say                     /;
 use FindBin;
 use Getopt::Long;
+use IO::Handle;
 use Pod::Usage;
 use v5.10;
 use Scalar::Util        qw/ blessed                                                        /;
@@ -22,8 +23,11 @@ use Path::Tiny;
 use Type::Params        qw/ compile                 /;
 use Types::Standard     qw/ ArrayRef Int Object Str /; # ***** TEMPORARY *****
 
+STDERR->autoflush(1);
+STDOUT->autoflush(1);
+
 Log::Log4perl->easy_init({
-  level  => $DEBUG,
+  level  => $INFO,
 });
 
 # Find Gemma lib directory using FindBin (and tidy using Path::Tiny)
