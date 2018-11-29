@@ -388,12 +388,14 @@ sub execute_task {
 				$tree_out_dir,
 			);
 
-			$profile_build_class->build_alignment_and_profile(
+			my $result = $profile_build_class->build_alignment_and_profile(
 				$exes,
 				$starting_clusters,
 				$tree_dir_set->profile_dir_set(),
 				$self->profile_build_type(),
 			);
+
+			$result;
 		}
 		@{ $self->starting_cluster_lists() },
 	];
