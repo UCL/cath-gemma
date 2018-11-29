@@ -787,7 +787,7 @@ sub check_all_profile_files_exist {
 
 	foreach my $cluster_id ( @$query_cluster_ids, @$match_cluster_ids ) {
 		my $profile_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $cluster_id, $profile_build_type );
-		DEBUG "Profile file exists: $profile_file";
+		# DEBUG "Profile file exists: $profile_file";
 		if ( ! -s $profile_file ) {
 			confess "Unable to find non-empty profile file $profile_file for cluster $cluster_id when scanning queries ("
 			        . join( ', ', @$query_cluster_ids )
@@ -870,6 +870,7 @@ sub build_alignment_and_profile {
 		( defined( $alignment_result->{ duration             } ) ? ( aln_duration              => $alignment_result->{ duration             } ) : () ),
 		( defined( $alignment_result->{ mean_seq_length      } ) ? ( mean_seq_length           => $alignment_result->{ mean_seq_length      } ) : () ),
 		( defined( $alignment_result->{ num_sequences        } ) ? ( num_sequences             => $alignment_result->{ num_sequences        } ) : () ),
+		( defined( $alignment_result->{ gap_percentage       } ) ? ( gap_percentage            => $alignment_result->{ gap_percentage       } ) : () ),
 		( defined( $alignment_result->{ wrapper_duration     } ) ? ( aln_wrapper_duration      => $alignment_result->{ wrapper_duration     } ) : () ),
 		( defined( $alignment_result->{ file_already_present } ) ? ( aln_file_already_present  => $alignment_result->{ file_already_present } ) : () ),
 
@@ -925,9 +926,9 @@ Return the string that will be logged as a MILESTONE step
 
 sub get_milestone_log_string {
 	my ($step_name, $start_stop_tag) = @ARG;
-	$step_name =~ s/\s+//g;
+	$step_name =~ s/\s+/_/g;
 
-	my $milestone_string = sprintf( "[MILESTONE] %s %s", $step_name, uc($start_stop_tag) );
+	my $milestone_string = sprintf( "MILESTONE %s %s", uc($step_name), uc($start_stop_tag) );
 	return $milestone_string;
 }
 
