@@ -1,0 +1,244 @@
+#!/usr/bin/env perl
+
+=head1 NAME
+
+gemma-partitioned-starting-clusters.pl - generates starting clusters from paritioned project
+
+=head1 SYNOPSIS
+
+    gemma-partitioned-starting-clusters.pl <dir1> <dir2> ...
+
+=cut
+
+use strict;
+use warnings;
+use Carp qw/ croak /;
+
+use Bio::SeqIO;
+use Path::Tiny;
+use IPC::Run3;
+
+my @PROJECT_DIRS = map { path($_)->absolute } @ARGV;
+my $ORIG_DIR = $ENV{PWD}; 
+my $GEMMA_DIR = "/cath/homes2/ucbcisi/git/cath-gemma/Cath-Gemma";
+
+sub INFO {
+    printf("%s\n", "@_");
+}
+
+sub run_process {
+    my ($name, $infiles, $outfiles, $cmd) = @_;
+
+    # can be "file.txt", [ "file1.txt", "file2.txt", ... ]
+    $infiles =  ref $infiles eq 'ARRAY'    ? $infiles : 
+                [ $infiles ];
+
+    # can be undef, "file.txt", [ "file1.txt", "file2.txt", ... ]
+    $outfiles = !defined($outfiles)        ? undef     :
+                ref $outfiles eq 'ARRAY'   ? $outfiles : 
+                [ $outfiles ];
+
+    INFO("STEP: $name...");
+    INFO("  pwd:      ".path('.')->absolute);
+    INFO("  infiles:  " . (defined($infiles) ? join(", ", map { "$_" } @$infiles) : 'N/A'));
+    INFO("  outfiles: " . (defined($outfiles) ? join(", ", map { "$_" } @$outfiles) : 'N/A'));
+
+    my $newest_infile; 
+    my $newest_infile_mtime; 
+    for my $infile (@$infiles) {
+        my $instat = path($infile)->stat
+            or croak "infile '$infile' does not exist";
+        $newest_infile //= $infile;
+        $newest_infile_mtime //= $instat->mtime;
+        if ( $instat->mtime > $newest_infile_mtime ) {
+            $newest_infile = $infile;
+            $newest_infile_mtime = $instat->mtime;
+        }
+    }
+
+    my $reason_to_run;
+    my $outfile_oldest_mtime;
+    if ( !defined $outfiles ) {
+        $reason_to_run = "outfiles has not been defined";
+    }
+    else {
+        for my $outfile (@$outfiles) {
+            if (-e $outfile) {
+                my $outstat = path($outfile)->stat;
+                if ( $newest_infile_mtime > $outstat->mtime ) {
+                    $reason_to_run = sprintf "infile '%s' was modified more recently than outfile '%s' (mtime: %s > %s)'",
+                        $newest_infile, $outfile, $newest_infile_mtime, $outstat->mtime;
+                }
+            }
+            else {
+                $reason_to_run = sprintf "outfile '%s' does not yet exist", $outfile;
+            }
+        }
+    }
+
+    if ( ! defined $reason_to_run ) {
+        INFO("  cache:   SKIP - files look up to date, no reason to run this process");
+        return;
+    }
+    else {
+        INFO("  cache:   RUN - $reason_to_run");
+    }
+
+    my $out;
+    my $success = 0;
+    if (!ref($cmd)) {
+        INFO("  action:  `$cmd`");
+        $out = `$cmd`;
+        $success = defined($out) ? 1 : 0;
+    }
+    elsif(ref($cmd) eq 'CODE') {
+        INFO("  action:  <inline function>");
+        $success = $cmd->();
+    }
+    else {
+        croak "expected cmd to be string or CODE (got $cmd)";
+    }
+
+    croak sprintf("failed to run: %s, out: $out", $cmd)
+        unless $success;
+    
+    INFO("  success: $success");
+
+    return $success;
+}
+
+
+foreach my $project_dir (@PROJECT_DIRS) {
+
+    INFO("Project: $project_dir");
+    chdir($project_dir) or die "failed to chdir: $!";
+    
+    my $project_id = path($project_dir)->basename;
+
+    {
+        my $infile = "${project_id}-mda.seq";
+        my $outfile = "${project_id}.uniprot_accs";
+        run_process("generating unique uniprot accessions", 
+            $infile, $outfile,
+            "/usr/bin/awk '{print \$1}' $infile | /usr/bin/sort -u > $outfile",
+        );
+    }
+    
+    {
+        my $infile = "${project_id}.uniprot_accs";
+        my $outfile = "${project_id}.uniprot_acc_go_terms.out";
+        run_process("retrieving GO annotations",
+            $infile, $outfile,
+            "/usr/local/svn/source/update/trunk/utilities/UniprotToGo.pl --force --threads=20 $infile 1> $outfile 2> ${project_id}.uniprot_acc_go_terms.err"
+        );
+    }
+
+    {
+        my $infile = "${project_id}.uniprot_acc_go_terms.err";
+        my $outfile = "${project_id}.invalid_uniprot_accs";
+        run_process("generating list of invalid uniprot accs",
+            $infile, $outfile,
+            "grep -Pio \"API response failed for uniprot accession '\\S+'\" $infile | tr \"'\" \" \" | awk '{print \$7}' > $outfile"
+        );
+    }
+
+    INFO("Parsing partition information from 'projects.txt'");
+    my @partition_ids = path('projects.txt')->lines({chomp => 1});
+
+    INFO("Filtering out GO sequences for each partition");
+    for my $pid (@partition_ids) {
+
+        {
+            my $infile = "${project_id}.invalid_uniprot_accs";
+            my $seqfile = path("sequences", "${pid}.fasta");
+            my $outfile = path("sequences", "${pid}.valid.fasta");
+            run_process("partition: $pid [generating sequences]",
+                $infile, $outfile,
+                # "grep -Fvwf $infile $mdaseqfile | uniq -f 1 | awk '{print \">\" $2 \"\n\" $3 }' > $outfile"
+                sub {
+                    my %uni_accs_without_go = map { ($_ => 1) } path($infile)->lines({chomp => 1});
+                    my $seqio = Bio::SeqIO->new( -file => $seqfile, -format => 'FASTA');
+                    my $outfh = path($outfile)->openw;
+                    while (my $seq = $seqio->next_seq) {
+                        my ($uni_acc, $seg_str) = split(/\//, $seq->id);
+                        next if exists $uni_accs_without_go{$uni_acc};
+                        printf $outfh ">%s\n%s\n", $seq->id, $seq->seq;
+                    }
+                    close($outfh);
+                    return 1;
+                }
+            );
+        }
+
+        {
+            my $seqfile = path("sequences", "${pid}.valid.fasta");
+            my $gotermsfile = "${project_id}.uniprot_acc_go_terms.out";
+            my $outfile = path("sequences", "${pid}.ids_go_terms.out");
+            run_process(
+                "partition: $pid [generating id / go term lookup]",
+                $gotermsfile, 
+                $outfile,
+                sub {
+                    # get ids from fasta file
+                    my %uni_lookup;
+                    my $seqio = path($seqfile)->openr;
+                    while(my $line = <$seqio>) {
+                        chomp($line);
+                        next unless $line =~ m{^>((\S+)/([0-9\-_]+))\b}xms;
+                        my $id = $1;
+                        my $uni_acc = $2;
+                        my $segs = $3;
+                        $uni_lookup{$uni_acc} //= [];
+                        push @{ $uni_lookup{$uni_acc} }, {
+                            id => $id,
+                            segs => $segs,
+                        };
+                    }
+                    close($seqio);
+                    
+                    my $outfh = path($outfile)->openw;
+                    my $gofh = path($gotermsfile)->openr;
+                    while(my $line = <$gofh>) {
+                        chomp($line);
+                        my ($uni_acc, $go_id, $go_evi, $go_term) = split /\s+/, $line;
+                        if ( exists $uni_lookup{$uni_acc} ) {
+                            for my $seq_info ( @{$uni_lookup{$uni_acc}} ) {
+                                printf $outfh "%s %s %s %s\n", $seq_info->{id}, $go_id, $go_evi, $go_term;
+                            }    
+                        }
+                    }
+                    close($outfh);
+                    close($gofh);
+                }
+            );
+        }
+
+        {
+            my $infile = path("sequences", "${pid}.valid.fasta");
+            my $outfile = path("sequences", "${pid}.nr90.out");
+            run_process(
+                "partition [$pid]: generating sequence clusters",
+                $infile,
+                $outfile,
+                "/opt/local/apps/linux/bin/cd-hit -i $infile -o $outfile -c 0.9 -s 0.95 -n 5 -d 9999"
+            );
+        }
+
+        {
+            my $seqfile = path("sequences", "${pid}.valid.fasta");
+            my $clstrfile = path("sequences", "${pid}.nr90.out.clstr");
+            my $gofile = path("sequences", "${pid}.ids_go_terms.out");
+
+            my $outdir = path("starting_clusters", $pid);
+            $outdir->mkpath;
+
+            run_process(
+                "partition [$pid]: generating starting clusters",
+                $seqfile,
+                undef,
+                "/usr/bin/env perl -I $GEMMA_DIR/extlib/lib/perl5 $GEMMA_DIR/script/make_starting_clusters.pl --cluster-infile $clstrfile --ids-go-terms-infile $gofile --sequences-infile $seqfile -o $outdir"
+            );
+        }
+
+    }
+}
