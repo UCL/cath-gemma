@@ -98,8 +98,7 @@ sub add_batch {
 	}
 	my $new_build_batches = $self->_add_build_tasks( $build_tasks, $estimate_duration_per_batch );
 	if ( scalar( @$scan_tasks ) > 0 ) {
-		use Data::Dumper;
-		INFO 'Rebatching: adding ' . scalar( @$scan_tasks ) . ' scan tasks with dependencies ' . Dumper( $new_build_batches );
+		INFO 'Rebatching: adding ' . scalar( @$scan_tasks ) . ' scan tasks with dependencies';
 	}
 	$self->_add_scan_tasks( $scan_tasks, $new_build_batches, $estimate_duration_per_batch );
 }
