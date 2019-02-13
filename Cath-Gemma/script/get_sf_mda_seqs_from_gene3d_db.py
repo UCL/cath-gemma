@@ -10,29 +10,47 @@ import re
 # include
 import cx_Oracle
 
-from . import utils
+import utils
+
+DEFAULT_DB_NAME='gene3d_16'
+DEFAULT_MIN_EVALUE=0.001
+DEFAULT_MIN_PARTITION_SIZE=100
 
 parser = argparse.ArgumentParser(
     description="Write CATH domain sequences (with MDA info)")
 
-parser.add_argument('--dbname', type=str, default='gene3d_16', dest='tablespace',
-    help='database name')
+output_group = parser.add_mutually_exclusive_group(required=True)
 
-parser.add_argument('--out', '-o', type=str, dest='out_file', required=True,
+output_group.add_argument('--out', '-o', type=str, dest='out_file', required=False,
     help='output file')
 
-parser.add_argument('--sfam', '-s', type=str, dest='sfam_id', required=False,
+output_group.add_argument('--basedir', type=str, default=None, dest='base_dir', required=False,
+    help='base directory')
+
+filter_group = parser.add_argument_group('filter options')
+
+filter_group.add_argument('--sfam', '-s', type=str, dest='sfam_id', required=False,
     help='superfamily id (eg "3.30.1360.30")')
 
-parser.add_argument('--taxon', '-t', type=str, dest='taxon_id', required=False,
+filter_group.add_argument('--taxon', '-t', type=str, dest='taxon_id', required=False,
     help='taxon id (eg "9606")')
 
-parser.add_argument('--evalue', '-e', type=str, default='0.001', dest='max_evalue',
+db_group = parser.add_argument_group('database options')
+
+db_group.add_argument('--dbname', type=str, default=DEFAULT_DB_NAME, dest='tablespace',
+    help='database name')
+
+db_group.add_argument('--evalue', '-e', type=str, default=DEFAULT_MIN_EVALUE, dest='max_evalue',
     help='maximum evalue allowed for predicted CATH domain')
+
+db_group.add_argument('--maxrows', type=int, required=False, dest='max_rows', default=None,
+    help='limit the number of rows returned (only useful to speed up testing)')
+
+db_group.add_argument('--minpartition', type=int, default=DEFAULT_MIN_PARTITION_SIZE, dest='min_partition_size',
+    help='min number of sequences that a MDA must have before creating a new partition')
 
 parser.add_argument('--verbose', '-v', required=False, action='count', default=0,
     help='more verbose logging')
-
 
 if __name__ == '__main__':
     args = parser.parse_args()
@@ -61,15 +79,14 @@ if __name__ == '__main__':
     #       for the moment, it's encapsulated in functions..
 
     dbargs = { n: getattr(args, n) for n in 
-        ["tablespace", "max_evalue", "sfam_id", "taxon_id"] }
+        ["tablespace", "max_evalue", "min_partition_size", "sfam_id", "taxon_id", "max_rows"] }
 
     dsn=cx_Oracle.makedsn(dbhost, dbport, dbsid)
     conn=cx_Oracle.connect(user=dbuser, password=dbpass, dsn=dsn)
 
     logger.info("DSN: %s", dsn)
 
-    sfam_id = args.sfam_id
-
+    logger.debug("ARGS: %s", dbargs)
     runner = utils.GenerateMdaSequences(db_conn=conn, **dbargs)
 
     runner.run()
@@ -77,11 +94,12 @@ if __name__ == '__main__':
     logger.info("Getting MDA Summary...")
     mda_summary = runner.get_mda_summary()
     logger.info("Found {} unique MDAs".format(len(mda_summary)) )
-    for mda, mda_count in sorted(mda_summary.items(), key=lambda kv: kv[1], reverse=True):
-        logger.info("MDA_COUNT {:>7}  {}".format(mda_count, mda))
-
-    logger.info("Writing {} domain sequences to {}".format(runner.count_domains(), args.out_file) )
-
-    runner.write_to_file(args.out_file)
+    
+    if args.base_dir:
+        logger.info("Creating project files in %s ...", args.base_dir)
+        runner.write_project_files(args.base_dir)
+    else:
+        logger.info("Writing {} domain sequences to {}".format(runner.count_domains(), args.out_file))
+        runner.write_to_file(args.out_file)
 
     conn.close()
