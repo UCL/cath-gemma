@@ -14,6 +14,7 @@ use Carp                qw/ confess                  /;
 use English             qw/ -no_match_vars           /;
 use v5.10;
 use Scalar::Util        qw/ blessed /;
+use Time::HiRes qw/ gettimeofday /;
 
 # Non-core (local)
 use Log::Log4perl::Tiny qw/ :easy                    /;
@@ -92,7 +93,7 @@ sub run_tasks {
 		INFO Cath::Gemma::Util::get_milestone_log_string( $name, "END" );
 	}
 }
-
+ 
 sub _get_task_meta {
 	state $check = compile( InstanceOf[
 			CathGemmaComputeTaskProfileScanTask,
