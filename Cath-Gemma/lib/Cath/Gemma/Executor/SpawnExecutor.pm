@@ -249,6 +249,7 @@ sub execute_batch_list {
 		my $stdout_file_stem    = $job_dir->child( $id );
 		my $stderr_file_suffix  = '.stderr';
 		my $stdout_file_suffix  = '.stdout';
+		#21/03/19 if run with the -no_initial_ssh flag it outputs a \ in the stderr and stout filename - TOFIX
 		my $stderr_file_pattern = $stderr_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stderr_file_suffix;
 		my $stdout_file_pattern = $stdout_file_stem . '.job_\$JOB_ID.task_\$TASK_ID' . $stdout_file_suffix;
 
