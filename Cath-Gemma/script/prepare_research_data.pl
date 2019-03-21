@@ -100,13 +100,15 @@ my $output_rootdir;
 # my $trace_files_rootdir;
 
 my $TMP_DIR;
+my $NO_INITIAL_SSH=0;
 
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
 	'help'                        => \$help,
 	'local'                       => \$local,
 	'submit-dir-pattern=s'        => \$submission_dir_pattern,
-
+	# qsub from login node instead of through qrsh
+	'no-initial-ssh'              => \$NO_INITIAL_SSH,
 	# 'starting-cluster-root-dir=s' => \$starting_clusters_rootdir,
 	'projects-list-file=s'        => \$projects_list_file,
 
@@ -164,6 +166,7 @@ my $executor =
 				CLEANUP  => 0,
 			),
 			child_tmp_dir => ( $TMP_DIR ? path( $TMP_DIR ) : $executables->tmp_dir()->parent() ),
+			no_initial_ssh => $NO_INITIAL_SSH,
 			# hpc_mode => 'spawn_hpc_sge',
 		);
 

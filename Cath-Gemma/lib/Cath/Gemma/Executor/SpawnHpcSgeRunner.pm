@@ -49,7 +49,9 @@ TODOCUMENT
 =cut
 
 sub run_job_array {
-	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps, $job_args, $max_est_time ) = @ARG;
+	my ( $self, $submit_script, $job_name, $stderr_file_pattern, $stdout_file_pattern, $num_batches, $deps, $job_args, $max_est_time , $ssh_to_login_node) = @ARG;
+	#default is to ssh to login node for qsub
+	$ssh_to_login_node //= 1;
 
 	if ( $num_batches <= 0 ) {
 		confess 'Cannot perform a job with zero/negative number of batches : ' . $num_batches;
@@ -131,7 +133,7 @@ sub run_job_array {
 	# TODO: Consider adding a parameter that allows users to specify the location of the
 	#       Perl to run the jobs with and then prepend it to the PATH here
 	my @qsub_command = (
-		'ssh', $submit_host,
+		($ssh_to_login_node ? ('ssh', $submit_host) : ()),
 		# 'ssh', '-v', $submit_host,
 		'qsub',
 		'-l', join( ',', @$default_resources, @$cluster_specific_resources ),

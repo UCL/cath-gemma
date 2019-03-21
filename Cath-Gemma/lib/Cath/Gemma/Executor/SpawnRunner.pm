@@ -20,7 +20,7 @@ use strictures 2;
 # Non-core (local)
 use Type::Params      qw/ compile                       /;
 use Types::Path::Tiny qw/ Path                          /;
-use Types::Standard   qw/ ArrayRef Int Maybe Object Str /;
+use Types::Standard   qw/ ArrayRef Int Maybe Object Str Bool /;
 
 # Cath::Gemma
 use Cath::Gemma::Types  qw/
@@ -45,7 +45,7 @@ TODOCUMENT
 =cut
 
 before run_job_array => sub {
-	state $check = compile( Object, Path, Str, Path, Path, Int, ArrayRef[Maybe[Int]], ArrayRef[Str], TimeSeconds );
+	state $check = compile( Object, Path, Str, Path, Path, Int, ArrayRef[Maybe[Int]], ArrayRef[Str], TimeSeconds, Maybe[Bool] );
 	$check->( @ARG );
 };
 

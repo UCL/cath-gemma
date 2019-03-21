@@ -27,6 +27,7 @@ use strictures 2;
 # Non-core (local)
 use Log::Log4perl::Tiny qw/ :easy          /;
 use Path::Tiny;
+use Types::Standard     qw/ Bool           /;
 use Types::Path::Tiny   qw/ Path           /;
 
 # Cath::Gemma
@@ -69,6 +70,19 @@ has child_tmp_dir => (
 	isa      => Path,
 	required => 1,
 );
+
+=head2 no_initial_ssh
+
+Assumes the master job is not being run in qrsh (avoids initial ssh to hpc)
+
+=cut
+
+has no_initial_ssh => (
+	is       => 'ro',
+	isa      => Bool,
+	default  => 0,
+);
+
 
 =head2 submission_dir
 
@@ -164,7 +178,7 @@ sub execute_batch_list {
 	# cluck "\n\n\n****** In SpawnExecutor::execute_batch_list";
 
 	my $submit_script = path( "$FindBin::Bin/../script/sge_submit_script.bash" )->realpath;
-
+	my $ssh_to_login_node = !$self->no_initial_ssh;
 	my $cluster_name = $self->get_cluster_name( assume_local_if_undefined => 1 );
 
 	warn "WARNING: TEMPORARILY NOT REBATCHING";
@@ -252,6 +266,8 @@ sub execute_batch_list {
 				'--tmp-dir', $self->child_tmp_dir()->stringify(),
 			],
 			$max_est_batch_exe_time,
+			# run_job_array 
+			$ssh_to_login_node,
 		);
 	}
 
