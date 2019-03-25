@@ -211,22 +211,22 @@ sub wait_for_jobs {
 		);
 		DEBUG "qstat command is : " . join( ' ', @qstat_command );
 
-		DEBUG "About to run command " . join( ' ', @qstat_command );
+		# DEBUG "About to run command " . join( ' ', @qstat_command );
 		my ( $qstat_stdout, $qstat_stderr, $qstat_exit ) = capture {
 			system( @qstat_command );
 		};
-		DEBUG "Finished running command " . join( ' ', @qstat_command );
+		# DEBUG "Finished running command " . join( ' ', @qstat_command );
 		# warn localtime() . ' : \$qstat_stdout : ' . $qstat_stdout;
 		# warn localtime() . ' : \$qstat_exit   : ' . $qstat_exit;
 		# warn localtime() . ' : \$qstat_stderr : ' . $qstat_stderr;
 
-		DEBUG 'Dumper is ' . Dumper( {
-			command_arr => \@qstat_command,
-			command_str => join( ' ', @qstat_command ),
-			exit        => $qstat_exit,
-			stderr      => $qstat_stderr,
-			stdout      => $qstat_stdout,
-		} );
+		# DEBUG 'Dumper is ' . Dumper( {
+		# 	command_arr => \@qstat_command,
+		# 	command_str => join( ' ', @qstat_command ),
+		# 	exit        => $qstat_exit,
+		# 	stderr      => $qstat_stderr,
+		# 	stdout      => $qstat_stdout,
+		# } );
 
 		if ( $qstat_exit != 0 ) {
 			WARN "qstat returned non-zero status:\n". Dumper( {
