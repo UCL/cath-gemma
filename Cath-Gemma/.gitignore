@@ -21,3 +21,4 @@ MYMETA.yml
 
 venv/
 .vscode/
+*.pyc
