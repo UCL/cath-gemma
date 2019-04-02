@@ -20,7 +20,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ "$#" -lt 2 ];
 then
 	echo
-	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle> [<project_folder_name>]"
+	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle|grace> [<project_folder_name>]"
 	echo
 	echo "The following files are required:"
 	echo
@@ -30,7 +30,7 @@ then
 	echo "The <project_folder_name> is optional (default: 'gemma_data')"
 	echo
 	echo "Set ALLOW_CACHE=0 to delete any existing alignments, profiles, scans (!)"
-	echo
+	echo "Set CATH_GEMMA_REMOTE_USER to set the remote user if different from your local user"
 	exit
 fi
 
@@ -79,7 +79,7 @@ print_date "--------------------------------------"
 
 # parameters
 LOCAL_DATA_ROOT=$FF_GEN_ROOTDIR
-# specify the running method (local|legion|myriad|chuckle) as $2
+# specify the running method (local|legion|myriad|chuckle|grace) as $2
 
 # print out commands to run:
 LOCAL_PROJECT_FILE="$LOCAL_DATA_ROOT/projects.txt"
@@ -153,9 +153,10 @@ run_hpc () {
 	echo
 }
 
+
 REMOTE_USER=${CATH_GEMMA_REMOTE_USER:-`whoami`}
 
-# run either locally or on legion/myriad/chuckle cluster
+# run either locally or on legion/myriad/chuckle/grace cluster
 case "$RUNNING_METHOD" in
 
 # locally
@@ -187,6 +188,16 @@ myriad)
 	run_hpc
 	;;
 
+# on grace cluster
+grace)
+
+	REMOTE_DATA_PATH=/scratch/scratch/${REMOTE_USER}/${PROJECT_NAME}
+	REMOTE_CODE_PATH=/scratch/scratch/${REMOTE_USER}/Cath-Gemma
+	REMOTE_HOST=grace.rc.ucl.ac.uk
+	SGE_REQUEST_FLAGS="h_rt=2:0:0,mem=7G"
+	run_hpc
+	;;
+
 # on chuckle cluster
 chuckle)
 
@@ -198,7 +209,7 @@ chuckle)
 	;;
 
 *)
-	print_date "Invalid input. Expected local|legion|myriad|chuckle. Got:$RUNNING_METHOD."
+	print_date "Invalid input. Expected local|legion|myriad|chuckle|grace. Got:$RUNNING_METHOD."
 	;;
 esac
 
