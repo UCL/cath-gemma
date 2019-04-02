@@ -30,7 +30,8 @@ then
 	echo "The <project_folder_name> is optional (default: 'gemma_data')"
 	echo
 	echo "Set ALLOW_CACHE=0 to delete any existing alignments, profiles, scans (!)"
-	echo "Set CATH_GEMMA_REMOTE_USER to set the remote user if different from your local user"
+	echo "Set GEMMA_REMOTE_USER to set the remote user if different from your local user"
+	echo "Set GEMMA_CLUSTER_MAX_HOURS to override the maximum time ceiling"
 	exit
 fi
 
@@ -156,7 +157,7 @@ run_hpc () {
 }
 
 
-REMOTE_USER=${CATH_GEMMA_REMOTE_USER:-`whoami`}
+REMOTE_USER=${GEMMA_REMOTE_USER:-`whoami`}
 
 # run either locally or on legion/myriad/chuckle/grace cluster
 case "$RUNNING_METHOD" in
