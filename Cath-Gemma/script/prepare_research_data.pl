@@ -228,16 +228,18 @@ if ( 1 ) {
 		# INFO "".( $rebatched->num_batches() . " treebuild batches to process" );
 		INFO "".( $treebuild_batch_list->num_batches() . " build/scan batches to process" );
 
-    my $log_milestone_str;
-    $log_milestone_str = Cath::Gemma::Util::get_milestone_log_string($executor_name, "START");
-    INFO "$log_milestone_str";
+		my $log_milestone_str;
+		$log_milestone_str = Cath::Gemma::Util::get_milestone_log_string($executor_name, "START");
+		INFO "$log_milestone_str";
 
 		$executor->execute_batch_list( $treebuild_batch_list, 'permit_async_launch' );
 
-    $log_milestone_str = Cath::Gemma::Util::get_milestone_log_string($executor_name, "STOP");
-    INFO "$log_milestone_str";
+		$log_milestone_str = Cath::Gemma::Util::get_milestone_log_string($executor_name, "STOP");
+		INFO "$log_milestone_str";
 	}
 }
+
+INFO "DONE";
 
 }
 

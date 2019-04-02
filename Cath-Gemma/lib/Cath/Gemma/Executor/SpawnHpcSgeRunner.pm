@@ -66,15 +66,26 @@ sub run_job_array {
 		$memy_req = $ENV{GEMMA_CLUSTER_MEM};
 	}
 
+	my %cluster_max_hours = (
+		'bchuckle.cs.ucl.ac.uk' => 100,
+		'myriad.rc.ucl.ac.uk'   => 72,
+	);
+	my $max_hours = $cluster_max_hours{ $submit_host } // 72;
+
+	if ( exists $ENV{GEMMA_CLUSTER_MAX_HOURS} && $ENV{GEMMA_CLUSTER_MAX_HOURS} ) {
+		INFO "Overriding the default max hours ($max_hours) with a custom value from \$GEMMA_CLUSTER_MAX_HOURS=$ENV{GEMMA_CLUSTER_MAX_HOURS}";
+		$max_hours = $ENV{GEMMA_CLUSTER_MAX_HOURS};
+	}
+
 	# Clamp time between 6 hours and 72 hours
 	# (legion rejects jobs longer than 72 hours with:
 	#  `Unable to run job: Rejected by policyjsv Reason:Unable to find a policy compliant place to run job`)
 	my $duration_in_seconds        = min(
 		max(
 			$max_est_time + $max_est_time + $max_est_time + $max_est_time,
-			Time::Seconds->new( 21600 ) # 6 hours in seconds
+			Time::Seconds->new( 6 * 60 * 60 ) # 6 hours in seconds
 		),
-		Time::Seconds->new( 259200 ) # 72 hours in seconds
+		Time::Seconds->new( $max_hours * 60 * 60 ) # max hours in seconds
 	);
 	my $time_req                   = time_seconds_to_sge_string( $duration_in_seconds );
 	my $default_resources          = [
@@ -211,22 +222,22 @@ sub wait_for_jobs {
 		);
 		DEBUG "qstat command is : " . join( ' ', @qstat_command );
 
-		DEBUG "About to run command " . join( ' ', @qstat_command );
+		# DEBUG "About to run command " . join( ' ', @qstat_command );
 		my ( $qstat_stdout, $qstat_stderr, $qstat_exit ) = capture {
 			system( @qstat_command );
 		};
-		DEBUG "Finished running command " . join( ' ', @qstat_command );
+		# DEBUG "Finished running command " . join( ' ', @qstat_command );
 		# warn localtime() . ' : \$qstat_stdout : ' . $qstat_stdout;
 		# warn localtime() . ' : \$qstat_exit   : ' . $qstat_exit;
 		# warn localtime() . ' : \$qstat_stderr : ' . $qstat_stderr;
 
-		DEBUG 'Dumper is ' . Dumper( {
-			command_arr => \@qstat_command,
-			command_str => join( ' ', @qstat_command ),
-			exit        => $qstat_exit,
-			stderr      => $qstat_stderr,
-			stdout      => $qstat_stdout,
-		} );
+		# DEBUG 'Dumper is ' . Dumper( {
+		# 	command_arr => \@qstat_command,
+		# 	command_str => join( ' ', @qstat_command ),
+		# 	exit        => $qstat_exit,
+		# 	stderr      => $qstat_stderr,
+		# 	stdout      => $qstat_stdout,
+		# } );
 
 		if ( $qstat_exit != 0 ) {
 			WARN "qstat returned non-zero status:\n". Dumper( {

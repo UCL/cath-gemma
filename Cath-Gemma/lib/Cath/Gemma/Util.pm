@@ -346,7 +346,8 @@ cluster_name_spaceship as the sort criterion
 =cut
 
 sub cluster_name_spaceship_sort {
-	return sort { cluster_name_spaceship( $a, $b ) } @ARG;
+	my @a = sort { cluster_name_spaceship( $a, $b ) } @ARG;
+	return @a;
 }
 
 =head2 combine_starting_cluster_names

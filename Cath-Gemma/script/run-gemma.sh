@@ -139,6 +139,7 @@ run_hpc () {
 	echo 
 	echo export GEMMA_CLUSTER_NAME=${RUNNING_METHOD}
 	echo export GEMMA_CLUSTER_MEM=15G
+	echo '# export GEMMA_CLUSTER_MAX_HOURS=200'
 	echo GEMMA_DATA_ROOT=${REMOTE_DATA_PATH}
 	echo '# rm -rf $GEMMA_DATA_ROOT/{alignments,profiles,scans}'
 	echo 'mkdir -p $GEMMA_DATA_ROOT'
@@ -149,6 +150,7 @@ run_hpc () {
 	echo "NOTES:" 
 	echo "- uncomment the 'rm' function in the commands above to delete any existing data files"
 	echo "- change the value of GEMMA_CLUSTER_MEM if you require more memory (eg '31G', '63G', '127G')"
+	echo "- use GEMMA_CLUSTER_MAX_HOURS to change the default max time (eg myriad=72, cs=100)"
 	echo "- do not run more than one gemma project in the same data directory"
 	echo
 }
