@@ -27,6 +27,9 @@ output_group.add_argument('--out', '-o', type=str, dest='out_file', required=Fal
 output_group.add_argument('--basedir', type=str, default=None, dest='base_dir', required=False,
     help='base directory')
 
+parser.add_argument('--nopartition', default=False, action='store_true',
+    help='do not partition the sequences by MDA')
+
 filter_group = parser.add_argument_group('filter options')
 
 filter_group.add_argument('--sfam', '-s', type=str, dest='sfam_id', required=False,
@@ -79,7 +82,7 @@ if __name__ == '__main__':
     #       for the moment, it's encapsulated in functions..
 
     dbargs = { n: getattr(args, n) for n in 
-        ["tablespace", "max_evalue", "min_partition_size", "sfam_id", "taxon_id", "max_rows"] }
+        ["tablespace", "max_evalue", "min_partition_size", "sfam_id", "taxon_id", "max_rows", "nopartition"] }
 
     dsn=cx_Oracle.makedsn(dbhost, dbport, dbsid)
     conn=cx_Oracle.connect(user=dbuser, password=dbpass, dsn=dsn)

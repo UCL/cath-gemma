@@ -205,14 +205,19 @@ class GenerateMdaSequences(object):
     DEFAULT_UNIPROT_CHUNK_SIZE=500
 
     def __init__(self, *,
-        projects_fn="projects.txt", mda_fn="mda_lookup.txt", perm=PERM_NONE, 
+        projects_fn='projects.txt',
+        mda_fn='mda_lookup.txt', 
+        perm=PERM_NONE,
         db_conn, tablespace, max_evalue, sfam_id,
         taxon_id=None,
+        nopartition=False,
         min_partition_size=None, 
         uniprot_chunk_size=DEFAULT_UNIPROT_CHUNK_SIZE, 
         max_rows=None):
         
         self.db_conn = db_conn
+        self.projects_fn = projects_fn
+        self.mda_fn = mda_fn
         self.sfam_id = sfam_id
         self.taxon_id = taxon_id
         self.tablespace = tablespace
@@ -221,6 +226,7 @@ class GenerateMdaSequences(object):
         self.file_perm = perm
         self.max_rows = max_rows
         self.min_partition_size = min_partition_size
+        self.nopartition = nopartition
 
         self._proteins = {}
 
@@ -288,14 +294,18 @@ class GenerateMdaSequences(object):
 
     def write_project_files(self, base_dir):
 
+        projects_file = os.path.join(base_dir, self.projects_fn)
+        mda_file = os.path.join(base_dir, self.mda_fn)
+        seq_file = os.path.join(base_dir, '{}-all.seq'.format(self.sfam_id))
         seqs_dir = os.path.join(base_dir, 'sequences')
-        projects_file = os.path.join(base_dir, projects_fn)
-        mda_file = os.path.join(base_dir, mda_fn)
-        seq_file = os.path.join(base_dir, '{}-mda.seq'.format(sfam_id))
 
         file_perm = self.file_perm
+        if file_perm == self.PERM_NONE:
+            file_perm = 'w'
 
-        summary_by_mda = self.get_mda_summary()
+        for out_file in [projects_file, mda_file, seq_file]:
+            if os.path.isfile(out_file) and file_perm == self.PERM_NONE:
+                raise IOError("Projects file '{}' exists and permission action is NONE (requires OVERWRITE or APPEND)".format(out_file))
 
         if not os.path.exists(base_dir):
             LOG.info("Creating base project directory: {}".format(base_dir))
@@ -305,12 +315,12 @@ class GenerateMdaSequences(object):
             LOG.info("Creating seqs directory: {}".format(seqs_dir))
             os.makedirs(seqs_dir)
 
-        for out_file in [projects_file, mda_file, seq_file]:
-            if os.path.isfile(out_file) and file_perm == self.PERM_NONE:
-                raise IOError("Projects file '{}' exists and permission action is NONE (requires OVERWRITE or APPEND)".format(out_file))
-
-        if file_perm == self.PERM_NONE:
-            file_perm = 'w'
+        if self.nopartition:
+            LOG.info("Creating UNPARTITIONED summary")
+            summary_by_mda = self.get_unpartitioned_summary()
+        else:
+            LOG.info("Creating PARTITIONED summary")
+            summary_by_mda = self.get_mda_summary()
 
         projects = []
         project_index = 1
@@ -318,11 +328,15 @@ class GenerateMdaSequences(object):
         partitioned_mda_summaries = [s for s in all_mda_summaries if len(s.ref_domains) >= self.min_partition_size]
         bin_mda_summaries = [s for s in all_mda_summaries if len(s.ref_domains) < self.min_partition_size]
 
+        def get_project_id(project_index=False, nopartition=False):
+            return self.sfam_id if nopartition else '{}-mda-{}'.format(self.sfam_id, project_index)
+
+
         for mda_summary in partitioned_mda_summaries:
             domain_count = len(mda_summary.ref_domains)
             mda = mda_summary.mda
             project = {
-                'id': '{}-mda-{}'.format(self.sfam_id, project_index),
+                'id': get_project_id(nopartition=self.nopartition, project_index=project_index),
                 'mda_entries': [ mda ],
                 'protein_count': mda_summary.protein_count,
                 'domain_count': len(mda_summary.ref_domains),
@@ -333,7 +347,7 @@ class GenerateMdaSequences(object):
 
         if bin_mda_summaries:
             projects.extend([{
-                'id': '{}-mda-{}'.format(self.sfam_id, project_index),
+                'id': get_project_id(nopartition=self.nopartition, project_index=project_index),
                 'mda_entries': [s.mda for s in bin_mda_summaries],
                 'protein_count': sum([s.protein_count for s in bin_mda_summaries]),
                 'domain_count': sum([len(s.ref_domains) for s in bin_mda_summaries]),
@@ -411,6 +425,20 @@ class GenerateMdaSequences(object):
 
         return domain_seq
     
+    def get_unpartitioned_summary(self):
+        """Returns an equivalent dict without MDA partitioning."""
+        sfam_id = self.sfam_id
+
+        summary_by_sfam_id = {}
+        for p in self._proteins.values():
+            if sfam_id not in summary_by_sfam_id:
+                summary_by_sfam_id[sfam_id] = MdaSummary(mda=sfam_id, ref_sfam_id=sfam_id)
+            
+            summary = summary_by_sfam_id[sfam_id]
+            summary.add_protein(p)
+        return summary_by_sfam_id
+
+
     def get_mda_summary(self):
         """Returns a dict containing info about each MDA."""
         ref_sfam_id = self.sfam_id
