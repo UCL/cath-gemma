@@ -2,7 +2,7 @@
 
 =usage
 
-perl ./make_clusters.pl
+perl ./make_starting_clusters.pl
 
 =cut
 
@@ -18,6 +18,9 @@ use FindBin;
 use Getopt::Long;
 use List::Util          qw/ max min none   /;
 use Pod::Usage;
+
+# This is to parse FASTA file - we might need to remove if the dependency is an issue...
+use Bio::SeqIO;
 
 # Find non-core external lib directory using FindBin
 use lib "$FindBin::Bin/../extlib/lib/perl5";
@@ -125,31 +128,13 @@ if ( scalar( @new_clusters ) == 0 ) {
 
 # Read the sequences
 INFO "Reading sequences from file $SEQUENCES_INFILE";
-my $sequences_contents = $SEQUENCES_INFILE->slurp();
-my @sequences_lines = split( /\n+/, $sequences_contents );
-my $id;
+
+my $seqio = Bio::SeqIO->new( -file => "$SEQUENCES_INFILE", -format => "Fasta" );
 my %sequence_of_id;
-foreach my $sequences_line ( @sequences_lines ) {
-	if ( $sequences_line =~ /^>/ ) {
-		if ( $id ) {
-			ERROR "Found another ID in sequences after parsing ID $id";
-			confess '';
-		}
-		$id = substr( $sequences_line, 1 );
-	}
-	else {
-		if ( ! $id ) {
-			ERROR 'Did not have a preceding ID whilst handling line "'. $sequences_line . '"';
-			confess '';
-		}
-		$sequence_of_id{ $id } = $sequences_line;
-		$id = undef;
-
-	}
+while ( my $seq = $seqio->next_seq ) {
+	my $id = $seq->id;
+	$sequence_of_id{ $id } = $seq->seq;
 }
-undef $sequences_contents;
-undef @sequences_lines;
-
 
 # Write sequences to files
 INFO "Writing sequences to cluster files in directory $MEMBERSHIP_OUTDIR";
