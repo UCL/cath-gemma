@@ -20,7 +20,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ "$#" -lt 2 ];
 then
 	echo
-	echo "Usage: $0 <datadir> <local|legion|myriad|chuckle|grace> [<project_folder_name>]"
+	echo "Usage: $0 <datadir> <local|legion|myriad|bchuckle|grace> [<project_folder_name>]"
 	echo
 	echo "The following files are required:"
 	echo
@@ -80,7 +80,7 @@ print_date "--------------------------------------"
 
 # parameters
 LOCAL_DATA_ROOT=$FF_GEN_ROOTDIR
-# specify the running method (local|legion|myriad|chuckle|grace) as $2
+# specify the running method (local|legion|myriad|bchuckle|grace) as $2
 
 # print out commands to run:
 LOCAL_PROJECT_FILE="$LOCAL_DATA_ROOT/projects.txt"
@@ -159,7 +159,7 @@ run_hpc () {
 
 REMOTE_USER=${GEMMA_REMOTE_USER:-`whoami`}
 
-# run either locally or on legion/myriad/chuckle/grace cluster
+# run either locally or on legion/myriad/bchuckle/grace cluster
 case "$RUNNING_METHOD" in
 
 # locally
@@ -201,8 +201,8 @@ grace)
 	run_hpc
 	;;
 
-# on chuckle cluster
-chuckle)
+# on bchuckle cluster
+bchuckle)
 
 	REMOTE_DATA_PATH=/home/${REMOTE_USER}/${PROJECT_NAME}
 	REMOTE_CODE_PATH=/home/${REMOTE_USER}/Cath-Gemma
@@ -212,7 +212,7 @@ chuckle)
 	;;
 
 *)
-	print_date "Invalid input. Expected local|legion|myriad|chuckle|grace. Got:$RUNNING_METHOD."
+	print_date "Invalid input. Expected local|legion|myriad|bchuckle|grace. Got:$RUNNING_METHOD."
 	;;
 esac
 
