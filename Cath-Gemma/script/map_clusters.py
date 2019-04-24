@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-
 import sys
 import traceback
 
@@ -32,7 +31,7 @@ def read_cluster_mapping(cluster_mapping_filename):
 			line_parts = line.rstrip().split()
 			if len( line_parts) != 2:
 				raise Exception(
-					  "Whilst parsing cluster_mapping_filename file " + cluster_mapping_filenameLine
+					  "Whilst parsing cluster_mapping_filename file " + cluster_mapping_filename
 					+ ", found there weren't two parts to line"       + line
 				)
 
@@ -42,8 +41,7 @@ def read_cluster_mapping(cluster_mapping_filename):
 
 	return cluster_mapping
 
-def the_main_function(args)
-
+def the_main_function():
 	# If there aren't two command line arguments, print the usage and stop
 	# Otherwise, grab the arguments
 	if len( sys.argv ) != 3:
@@ -70,7 +68,7 @@ def the_main_function(args)
 			# Add more info to any KeyError that's raised
 			cluster, member_id = line_parts
 			try:
-				mapped_cluster = cluster_mapping[ cluster ];
+				mapped_cluster = cluster_mapping[ cluster ]
 			except KeyError as ex:
 				ex.args = ("Couldn't find entry in cluster mapping for cluster " + ex.args[ 0 ] , )
 				raise
