@@ -3,7 +3,68 @@ import os
 import sys
 import re
 
+import cx_Oracle
+
 LOG = logging.getLogger(__name__)
+
+def init_cli_logging(verbosity=0):
+    log_level = logging.DEBUG if verbosity > 0 else logging.INFO
+    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%y %H:%M:%S', level=log_level)
+
+class CathOraConnection(object):
+    """Generates a connection to Oracle DB (with sensible defaults)"""
+    def __init__(self, *, dbuser="orengoreader", dbpass="orengoreader", 
+        dbhost="odb.cs.ucl.ac.uk", dbport=1521, dbsid="cathora1"):
+        dsn = cx_Oracle.makedsn(dbhost, dbport, dbsid)
+        self._conn = cx_Oracle.connect(user=dbuser, password=dbpass, dsn=dsn)
+
+    @property
+    def conn(self):
+        """Returns the database connection"""
+        return self._conn
+
+class GenerateUniprotFunfamLookup(object):
+
+    _sql = """
+SELECT
+  ff.member_id,
+  u.uniprot_acc || '/' || SUBSTR(ff.member_id, INSTR(ff.member_id, '/', -1, 1) +1),
+  ff.superfamily_id || '-ff-' || ff.funfam_number
+FROM 
+  {tablespace}.funfam_member ff,
+  {tablespace}.uniprot_description u
+WHERE
+  ff.sequence_md5 = u.sequence_md5
+  AND
+  ff.superfamily_id = :sfam_id
+ORDER BY
+  u.uniprot_acc
+"""
+
+    def __init__(self, *, db_conn, tablespace):
+        self.db_conn = db_conn
+        self.tablespace = tablespace
+
+    @property
+    def sql(self):
+        return self._sql.format(tablespace=self.tablespace)
+
+    def run(self, sfam_id):
+
+        LOG.debug("Getting all proteins for superfamily {} ... ".format(sfam_id))
+        cur = self.db_conn.cursor()
+        cur.prepare(self.sql)
+
+        db_args = {'sfam_id': sfam_id}
+        LOG.debug("GenerateUniprotFunfamLookup: SQL: %s", self.sql.replace('\n', ' '))
+        LOG.debug("GenerateUniprotFunfamLookup: ARGS: %s", db_args)
+
+        #print("\t".join(["uniprot_member_id", "funfam_id"]))
+        cur.execute(None, db_args)
+        for result in cur:
+            md5_member_id, uniprot_member_id, funfam_id = (result)
+            print("\t".join([uniprot_member_id, funfam_id]))
+
 
 def _all_sequences_for_uniprot_sql(*, tablespace, max_evalue):
     return """
@@ -20,7 +81,7 @@ FROM (
     INNER JOIN
         {tablespace}.UNIPROT_PRIM_ACC        u ON c.sequence_md5 = u.sequence_md5
     WHERE
-        c.independent_evalue < {evalue}
+        c.independent_evalue < {evalue:.2E}
         AND
         c.superfamily IS NOT NULL
     UNION
@@ -34,14 +95,14 @@ FROM (
     INNER JOIN
         {tablespace}.UNIPROT_PRIM_ACC        u ON c.sequence_md5 = u.sequence_md5
     WHERE
-        c.independent_evalue < {evalue}
+        c.independent_evalue < {evalue:.2E}
         AND
         c.superfamily IS NOT NULL
 )
-""".format(tablespace=tablespace, evalue=max_evalue)
+""".format(tablespace=tablespace, evalue=float(max_evalue))
 
 def _sequences_sql(*, tablespace, max_evalue, 
-    sfam_id = None, taxon_id = None, sequences_extra = False):
+    sfam_id=None, taxon_id=None, sequences_extra=False):
 
     extra_sql = '1=1'
     sequence_table = 'SEQUENCES'
@@ -80,12 +141,12 @@ WHERE
   AND
   {extra_sql}
   AND
-  c.independent_evalue < {evalue}
+  c.independent_evalue < {evalue:.2E}
 """.format(
     tablespace=tablespace, 
     sequence_table=sequence_table, 
     domain_table=domain_table,
-    evalue=max_evalue,
+    evalue=float(max_evalue),
     sfam_sql=sfam_sql,
     taxon_sql=taxon_sql,
     extra_sql=extra_sql
