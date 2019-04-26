@@ -26,19 +26,24 @@ class CathOraConnection(object):
 class GenerateUniprotFunfamLookup(object):
 
     _sql = """
-SELECT
-  ff.member_id,
-  u.uniprot_acc || '/' || SUBSTR(ff.member_id, INSTR(ff.member_id, '/', -1, 1) +1),
-  ff.superfamily_id || '-ff-' || ff.funfam_number
-FROM 
-  {tablespace}.funfam_member ff,
-  {tablespace}.uniprot_description u
-WHERE
-  ff.sequence_md5 = u.sequence_md5
-  AND
-  ff.superfamily_id = :sfam_id
+SELECT DISTINCT 
+    member_id, uniprot_id, funfam_id
+FROM
+(
+    SELECT
+        ff.member_id as member_id,
+        u.uniprot_acc || '/' || SUBSTR(ff.member_id, INSTR(ff.member_id, '/', -1, 1) +1) as uniprot_id,
+        ff.superfamily_id || '-ff-' || ff.funfam_number as funfam_id
+    FROM 
+        {tablespace}.funfam_member ff,
+        {tablespace}.uniprot_description u
+    WHERE
+        ff.sequence_md5 = u.sequence_md5
+        AND
+        ff.superfamily_id = :sfam_id
+)
 ORDER BY
-  u.uniprot_acc
+    uniprot_id
 """
 
     def __init__(self, *, db_conn, tablespace):
