@@ -23,7 +23,7 @@ use Log::Log4perl::Tiny qw/ :easy                    /;
 use Path::Tiny;
 use Type::Params        qw/ compile                  /;
 use Types::Path::Tiny   qw/ Path                     /;
-use Types::Standard     qw/ ArrayRef ClassName Str   /;
+use Types::Standard     qw/ ArrayRef ClassName Str Int /;
 
 # Cath::Gemma
 use Cath::Gemma::Scan::ScanData;
@@ -37,6 +37,8 @@ use Cath::Gemma::Tool::HHSuiteScanner;
 
 use Moo;
 with 'Cath::Gemma::Tool::ScannerInterface';
+
+our $HHSEARCH_CPU = 4;
 
 =head2 _hhsearch_scan_impl
 
@@ -78,6 +80,7 @@ sub _hhsearch_scan_impl {
 		# hhsearch -cpu 4 -i $cluster_id.a3m -d $db_stub -o $result_file
 
 		my @scan_command = (
+			'-cpu', $HHSEARCH_CPU,
 			'-i', $query_prof_file,
 			'-d', $match_lib_stub,
 			'-o', 'stdout'
