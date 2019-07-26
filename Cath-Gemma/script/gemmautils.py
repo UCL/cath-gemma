@@ -3,7 +3,13 @@ import os
 import sys
 import re
 
+import numpy
 import cx_Oracle
+
+from cathpy.align import Sequence
+
+
+SQUASH_SEGMENTS_MAX_GAP = 10
 
 LOG = logging.getLogger(__name__)
 
@@ -14,7 +20,7 @@ def init_cli_logging(verbosity=0):
 class CathOraConnection(object):
     """Generates a connection to Oracle DB (with sensible defaults)"""
     def __init__(self, *, dbuser="orengoreader", dbpass="orengoreader", 
-        dbhost="odb.cs.ucl.ac.uk", dbport=1521, dbsid="cathora1"):
+                 dbhost="odb.cs.ucl.ac.uk", dbport=1521, dbsid="cathora1"):
         dsn = cx_Oracle.makedsn(dbhost, dbport, dbsid)
         self._conn = cx_Oracle.connect(user=dbuser, password=dbpass, dsn=dsn)
 
@@ -56,7 +62,7 @@ ORDER BY
 
     def run(self, sfam_id):
 
-        LOG.debug("Getting all proteins for superfamily {} ... ".format(sfam_id))
+        LOG.debug("Getting all proteins for superfamily %s ... ",sfam_id)
         cur = self.db_conn.cursor()
         cur.prepare(self.sql)
 
@@ -107,7 +113,7 @@ FROM (
 """.format(tablespace=tablespace, evalue=float(max_evalue))
 
 def _sequences_sql(*, tablespace, max_evalue, 
-    sfam_id=None, taxon_id=None, sequences_extra=False):
+    sfam_ids=None, taxon_id=None, sequences_extra=False):
 
     extra_sql = '1=1'
     sequence_table = 'SEQUENCES'
@@ -116,12 +122,15 @@ def _sequences_sql(*, tablespace, max_evalue,
     if sequences_extra:
         sequence_table = 'SEQUENCES_EXTRA'
         domain_table = 'CATH_DOMAIN_PREDICTIONS_EXTRA'
-        extra_sql = "s.source = 'uniref90'"
-    
+        # HACK: yes, this is horrible
+        if tablespace == 'gene3d_16':
+            extra_sql = "s.source = 'uniref90'"
+
     sfam_sql = 'c.superfamily IS NOT NULL'
-    if sfam_id:
-        sfam_sql = 'c.superfamily = :sfam_id'
-    
+    if sfam_ids:
+        sfam_bind_ids = [':sfam_id{}'.format(idx) for idx, sfam_id in enumerate(sfam_ids)]
+        sfam_sql = 'c.superfamily IN ({})'.format(', '.join(sfam_bind_ids))
+
     taxon_sql = 'u.taxon_id IS NOT NULL'
     if taxon_id:
         taxon_sql = 'u.taxon_id = :taxon_id'
@@ -174,68 +183,222 @@ class Segment(object):
 
         return cls(start, stop)
 
+    @classmethod
+    def merge_segments(cls, segs, max_gap=SQUASH_SEGMENTS_MAX_GAP):
+        """
+        Merges segments together where the stop/start position is within `n` residues
+        
+        Note: this could be a class method (or moved elsewhere)
+        """
+
+        orig_segs = segs
+
+        LOG.debug("  Squash segments START: %s", [str(s) for s in orig_segs])
+
+        segs = sorted(segs, key=lambda s: s.start)
+
+        seg_idx = 0
+        while(True):
+            seg = segs[seg_idx]
+
+            if seg_idx + 1 < len(segs):
+                next_seg = segs[seg_idx+1]
+                gap = next_seg.start - seg.stop
+                if gap < max_gap:
+                    seg.stop = next_seg.stop
+                    segs.pop(seg_idx+1)
+                    continue
+            else:
+                break
+
+            seg_idx += 1
+
+        LOG.debug("  Squash segments END:   %s", [str(s) for s in segs])
+
+        return segs
+
+    def __str__(self):
+        return '{}-{}'.format(self.start, self.stop)
+
+    @classmethod
+    def render_segments(cls, segs):
+        return "_".join(['{}-{}'.format(s.start, s.stop) for s in segs])
+
+
 class Domain(object):
-    def __init__(self, id, sfam_id, *, segments):
-        self.id = id
-        self.sfam_id = sfam_id
+    def __init__(self, domain_id, *, segments=None, sfam_ids=None):
+        self.domain_id = domain_id
+        if not sfam_ids:
+            raise Exception("expected sfam_ids to be defined (mainly just because I want to check whether this exception is really required...)")
+        
+        self.sfam_ids = sfam_ids
+        if not segments:
+            segments = []
         self.segments = segments
-        self.start = segments[0].start
         self.seq = None
 
-        if not sfam_id:
-            raise Exception("Error: expected sfam_id to be defined")
+    @property
+    def mda_id(self):
+        if not self.sfam_ids:
+            return None
+        return '-'.join(self.sfam_ids)
+
+    @property
+    def start_pos(self):
+        if not self.segments:
+            return None
+        return self.segments[0].start
+
+    @property
+    def stop_pos(self):
+        if not self.segments:
+            return None
+        return self.segments[-1].stop
 
     @property
     def segment_info(self):
-        return "_".join(['{}-{}'.format(s.start, s.stop) for s in self.segments])
+        return Segment.render_segments(self.segments)
 
     def __str__(self):
-        return "{}".format(self.id)
+        return "{}".format(self.domain_id)
 
     @classmethod
-    def new_from_string(cls, domstr, *, sfam_id=None):
+    def new_from_string(cls, domstr, *, sfam_ids=None):
 
         # 1cukA01
         # Q14119/172-201
         try:
-            id, segstr = domstr.split('/')
+            domain_id, segstr = domstr.split('/')
             segs = segstr.split('_')
-
         except:
             raise Exception("failed to parse domain '{}'".format(domstr))
 
+        kwargs = {'domain_id': domain_id, 'segments': segs}
+        if sfam_ids:
+            kwargs['sfam_ids'] = sfam_ids
 
-
-        dom = cls()
+        dom = cls(**kwargs)
+        return dom
 
 class Protein(object):
-    def __init__(self, id, seq=None):
-        self.id = id
+    """
+    Class representing a Protein
+    """
+
+    def __init__(self, protein_id, seq=None):
+        self.protein_id = protein_id
         self.seq = seq
-        self.domains = {}
+        self._domains = {}
 
     def to_mda_string(self):
-        domains = sorted(self.domains.values(), key=lambda dom: dom.start)
-        domain_ids = [d.sfam_id if d.sfam_id else 'unknown' for d in domains]
+        domains = sorted(self.domains, key=lambda dom: dom.start_pos)
+        domain_ids = [d.mda_id if d.mda_id else 'unknown' for d in domains]
         return '-'.join(domain_ids)
 
+    def remove_domain(self, dom):
+        if isinstance(dom, Domain):
+            domain_id = dom.domain_id
+        else:
+            domain_id = dom
+        del self._domains[domain_id]
+
+    def add_domain(self, dom):
+        self._domains[dom.domain_id] = dom
+
+    @property
+    def domains(self):
+        """Returns the (unordered) array of :class:`Domain` objects."""
+        return list(self._domains.values())
+
+    @property
+    def domain_ids(self):
+        """Returns the (unordered) array of domain ids."""
+        return list(self._domains.keys())
+
+    def merge_mda_domains(self, *, sfam_ids):
+        """
+        Merges domains that match the given MDA into a single record
+        """
+
+        domains = self.domains
+
+        # sort the domains by position of first res
+        domains.sort(key=lambda d: d.start_pos)
+
+        current_mda_idx = 0
+        current_mda_domains = []
+
+        pid = self.protein_id
+        pseq = self.seq
+
+        for dom_idx, domain in enumerate(domains):
+
+            if len(domain.sfam_ids) > 1:
+                raise Exception("""
+                Trying to merge MDA domains in a protein ({}) that looks like it has already been merged 
+                (domain {} has more than one sfam_id: {}). Strictly speaking, this shouldn't be a problem - 
+                though the logic will require some thinking through and until this is necessary, it's going 
+                on the TODO pile.
+                """.replace('\n', ' ').format(self, domain, domain.mda_id))
+
+            sfam_id = None
+            if domain.sfam_ids:
+                sfam_id = domain.sfam_ids[0]
+ 
+            expected_sfam_id = sfam_ids[current_mda_idx]
+
+            # LOG.debug("Checking MDA: actual[%s]=%s expected[%s]=%s",
+            #         dom_idx, sfam_id, current_mda_idx, expected_sfam_id)
+
+            if sfam_id == expected_sfam_id:
+                current_mda_domains.extend([domain])
+                current_mda_idx += 1
+
+                if current_mda_idx == len(sfam_ids):
+
+                    LOG.debug(
+                        "Found %s consecutive MDA domains in %s, creating sequence ...", len(sfam_ids), pid)
+
+                    all_segs = []
+                    for d in current_mda_domains:
+                        all_segs.extend(d.segments)
+
+                    all_segs.sort(key=lambda s: s.start)
+
+                    squashed_segs = Segment.merge_segments(all_segs)
+
+                    merged_domain_id = '{}/{}'.format(self.protein_id, Segment.render_segments(squashed_segs))
+                    merged_domain = Domain(domain_id=merged_domain_id, segments=squashed_segs, sfam_ids=sfam_ids)
+
+                    for dom in current_mda_domains:
+                        self.remove_domain(dom)
+
+                    self.add_domain(merged_domain)
+
+                    current_mda_domains = []
+                    current_mda_idx = 0
+
+            else:
+                current_mda_idx = 0
+
     def __str__(self):
-        domains = sorted(self.domains.values(), key=lambda dom: dom.start)
-        desc = "Protein: {} (seq len:{})".format(self.id, len(self.seq) if self.seq else 'None')
-        desc += "\n".join(["  {:<40} [{}]".format(d, d.sfam_id) for d in domains])
+        domains = sorted(self.domains, key=lambda dom: dom.start_pos)
+        desc = "Protein: {} (seq len:{})".format(self.protein_id, len(self.seq) if self.seq else 'None')
+        domain_lines = ["  {:<40} [{}]\n".format(d, d.mda_id if d.mda_id else 'unknown') for d in domains]
+        desc += "".join(domain_lines)
         return desc
 
 class MdaSummary(object):
-    def __init__(self, *, mda, ref_sfam_id):
+    def __init__(self, *, mda, ref_mda_id):
         self.mda = mda
-        self.ref_sfam_id = ref_sfam_id
+        self.ref_mda_id = ref_mda_id
         self.protein_count = 0
         self.ref_domains = []
 
     def add_protein(self, p):
-        ref_sfam_id = self.ref_sfam_id
+        ref_mda_id = self.ref_mda_id
         
-        sfam_domains = [d for d in p.domains.values() if d.sfam_id == ref_sfam_id]
+        sfam_domains = [d for d in p.domains if d.mda_id == ref_mda_id]
 
         for d in sfam_domains:
             seg_seqs = [p.seq[s.start-1:s.stop] for s in d.segments]
@@ -247,21 +410,30 @@ class MdaSummary(object):
     def append_domains_to_fasta(self, fasta_file):
         with open(fasta_file, 'a') as f:
             for d in self.ref_domains:
-                f.write('>{}\n{}\n'.format(d.id, d.seq))
+                f.write('>{}\n{}\n'.format(d.domain_id, d.seq))
 
-"""
-<PROJECT>/sequences/<SFAM-MDA-KEY>.seqs
-<PROJECT>/starting_clusters/<SFAM-MDA-KEY>/
-<PROJECT>/projects.txt
-<PROJECT>/mda_lookup.txt
-"""
+    def domain_length_stats(self):
+        domain_lengths = [len(d.seq) for d in self.ref_domains]
+        stats = {
+            "mean": numpy.mean(domain_lengths),
+            "min": numpy.min(domain_lengths),
+            "max": numpy.max(domain_lengths),
+        }
+        return stats
 
 class GenerateMdaSequences(object):
     """
     Generate CATH domain sequences for a superfamily or taxon (including MDA string).
 
-    Note: the final MDA does not take into account discontiguous domains
-    in that only the position of the first segment is noted.
+    Outputs the following directory structure:
+
+    ::
+
+        <PROJECT>/sequences/<SFAM-MDA-KEY>.seqs
+        <PROJECT>/starting_clusters/<SFAM-MDA-KEY>/
+        <PROJECT>/projects.txt
+        <PROJECT>/mda_lookup.txt
+
     """
 
     PERM_NONE = False
@@ -272,19 +444,21 @@ class GenerateMdaSequences(object):
 
     def __init__(self, *,
         projects_fn='projects.txt',
-        mda_fn='mda_lookup.txt', 
+        mda_fn='mda_lookup.txt',
         perm=PERM_NONE,
-        db_conn, tablespace, max_evalue, sfam_id,
+        db_conn, tablespace, max_evalue,
+        sfam_ids=None, uniprot_file=None,
         taxon_id=None,
         nopartition=False,
-        min_partition_size=None, 
-        uniprot_chunk_size=DEFAULT_UNIPROT_CHUNK_SIZE, 
+        min_partition_size=None,
+        uniprot_chunk_size=DEFAULT_UNIPROT_CHUNK_SIZE,
         max_rows=None):
         
         self.db_conn = db_conn
         self.projects_fn = projects_fn
         self.mda_fn = mda_fn
-        self.sfam_id = sfam_id
+        self.sfam_ids = sfam_ids
+        self.uniprot_file = uniprot_file
         self.taxon_id = taxon_id
         self.tablespace = tablespace
         self.max_evalue = max_evalue
@@ -300,34 +474,48 @@ class GenerateMdaSequences(object):
 
         self.all_sequences_for_uniprot_sql = _all_sequences_for_uniprot_sql(**dbargs)
 
-        if self.sfam_id:
-            dbargs['sfam_id'] = self.sfam_id
+        if self.sfam_ids:
+            dbargs['sfam_ids'] = self.sfam_ids
         if self.taxon_id:
             dbargs['taxon_id'] = self.taxon_id
 
         self.sequences_sql       = _sequences_sql(**dbargs)
         self.sequences_extra_sql = _sequences_sql(**dbargs, sequences_extra=True)
 
+    @property
+    def ref_mda_id(self):
+        if not self.sfam_ids:
+            return None
+        return '-'.join(self.sfam_ids)
+
     def run(self):
 
-        if self.sfam_id:
-            # get all the gene3d domains within a superfamily
-            LOG.info("Getting all Gene3D domains within superfamily %s", self.sfam_id)
-            all_proteins = self.get_proteins_for_sfam(self.sfam_id)
-        elif self.taxon_id:
-            LOG.info("Getting all Gene3D domains within taxon %s", self.taxon_id)
-            all_proteins = self.get_proteins_for_taxon(self.taxon_id)
-        else:
-            raise ArgumentError("must specify either sfam_id or taxon_id")
-
-        # merge the individual domains together into proteins
-        self.merge_proteins(all_proteins)
-
-        # get the unique uniprot ids
+        # get a list of unique uniprot ids to use (from whatever input source)
         uniq_uniprot_ids = set()
-        for p in all_proteins.values():
-            uniq_uniprot_ids.add(p.id)
-    
+
+        if self.uniprot_file:
+            LOG.info("Getting all UniProtKB accs from file %s", self.uniprot_file)
+            uniprot_ids = self.get_uniprot_accs_from_file(self.uniprot_file)
+            for i in uniprot_ids:
+                uniq_uniprot_ids.add(i)
+        else:
+            if self.sfam_ids:
+                # get all the gene3d domains within a superfamily
+                LOG.info("Getting all Gene3D domains within MDA: %s", self.ref_mda_id)
+                all_proteins = self.get_proteins_for_sfams(sfam_ids=self.sfam_ids)
+            elif self.taxon_id:
+                LOG.info("Getting all Gene3D domains within taxon %s", self.taxon_id)
+                all_proteins = self.get_proteins_for_taxon(self.taxon_id)
+            else:
+                raise ArgumentError("must specify: sfam_ids, taxon_id or uniprot_file")
+            
+            # merge the individual domains together into proteins
+            # WHAT DOES THIS DO? DO WE NEED ALSO NEED TO DO THIS FOR THE UNIPROT ACCS???
+            self.merge_proteins(all_proteins)
+
+            for p in list(all_proteins.values()):
+                uniq_uniprot_ids.add(p.protein_id)
+
         all_uniprot_ids = sorted(uniq_uniprot_ids)
         
         uniprot_from=0
@@ -358,11 +546,21 @@ class GenerateMdaSequences(object):
             # merge them back in
             self.merge_proteins(proteins)
 
+        # we've got all the protein data for all occurrences of the individual
+        # sfam ids. If we've asked for more than one sfam, then we need to:
+        #   * merge the domain boundaries for the subset MDA
+        #   * restrict the list to only include these proteins
+
+        LOG.info("Merging MDAs domains ...")
+        for p in self.proteins:
+            p.merge_mda_domains(sfam_ids=self.sfam_ids)
+
+
     def write_project_files(self, base_dir):
 
         projects_file = os.path.join(base_dir, self.projects_fn)
         mda_file = os.path.join(base_dir, self.mda_fn)
-        seq_file = os.path.join(base_dir, '{}-all.seq'.format(self.sfam_id))
+        seq_file = os.path.join(base_dir, '{}-all.seq'.format(self.ref_mda_id))
         seqs_dir = os.path.join(base_dir, 'sequences')
 
         file_perm = self.file_perm
@@ -395,29 +593,45 @@ class GenerateMdaSequences(object):
         bin_mda_summaries = [s for s in all_mda_summaries if len(s.ref_domains) < self.min_partition_size]
 
         def get_project_id(project_index=False, nopartition=False):
-            return self.sfam_id if nopartition else '{}-mda-{}'.format(self.sfam_id, project_index)
+            return self.ref_mda_id if nopartition else '{}-mda-{}'.format(self.ref_mda_id, project_index)
 
 
         for mda_summary in partitioned_mda_summaries:
             domain_count = len(mda_summary.ref_domains)
             mda = mda_summary.mda
+            
+            dom_lengths = [len(d.seq) for d in mda_summary.ref_domains]
+            len_mean = numpy.mean(dom_lengths)
+            len_min = numpy.min(dom_lengths)
+            len_max = numpy.max(dom_lengths)
             project = {
                 'id': get_project_id(nopartition=self.nopartition, project_index=project_index),
                 'mda_entries': [ mda ],
                 'protein_count': mda_summary.protein_count,
                 'domain_count': len(mda_summary.ref_domains),
                 'index': project_index,
+                'dom_len_min': len_min,
+                'dom_len_max': len_max,
+                'dom_len_mean': len_mean,
             }
             project_index += 1
             projects.extend([project])
 
         if bin_mda_summaries:
+            dom_lengths = [len(d.seq) for d in mda_summary.ref_domains for mda_summary in bin_mda_summaries]
+            len_mean = numpy.mean(dom_lengths)
+            len_min = numpy.min(dom_lengths)
+            len_max = numpy.max(dom_lengths)
+ 
             projects.extend([{
                 'id': get_project_id(nopartition=self.nopartition, project_index=project_index),
                 'mda_entries': [s.mda for s in bin_mda_summaries],
                 'protein_count': sum([s.protein_count for s in bin_mda_summaries]),
                 'domain_count': sum([len(s.ref_domains) for s in bin_mda_summaries]),
                 'index': project_index,
+                'dom_len_min': len_min,
+                'dom_len_max': len_max,
+                'dom_len_mean': len_mean,
             }])
 
         file_action = None
@@ -439,10 +653,12 @@ class GenerateMdaSequences(object):
         LOG.info("   %s", mda_file)
         with open(mda_file, file_perm) as f:
             f.write("{:<30} {:<7} {:<7} {:<3} {}\n".format(
-                'id', 'protein_count', 'domain_count', 'mda_count', 'mda_entries'))
+                'id', 'protein_count', 'domain_count', 'mda_count', 'min/max/mean', 'mda_entries'))
             for p in projects:
-                f.write("{:<30} {:<7} {:<7} {:<3} {}\n".format(
-                    p['id'], p['protein_count'], p['domain_count'], len(p['mda_entries']), ",".join(p['mda_entries'])))
+                f.write("{:<30} {:<7} {:<7} {:<3} {}/{}/{} {}\n".format(
+                    p['id'], p['protein_count'], p['domain_count'], len(p['mda_entries']),
+                    p['dom_len_min'], p['dom_len_max'], p['dom_len_mean'],
+                    ",".join(p['mda_entries'])))
 
         LOG.info("   %s", seq_file)
         self.write_to_file(seq_file)
@@ -457,16 +673,19 @@ class GenerateMdaSequences(object):
                 mda_summary.append_domains_to_fasta(fasta_file)
 
     def merge_proteins(self, proteins):
-        for p in proteins.values():
-            domains_to_merge = p.domains
-            if p.id in self._proteins:
-                p = self._proteins[p.id]
+        """
+        Merges protein domains into the set of proteins already stored
+        """
+        for p in list(proteins.values()):
+            domain_ids_to_merge = p.domains
+            if p.protein_id in self._proteins:
+                p = self._proteins[p.protein_id]
             else:
-                self._proteins[p.id] = p
+                self._proteins[p.protein_id] = p
             
-            for d in domains_to_merge.values():
-                if d.id not in p.domains: # make sure we don't overwrite domains with sequences
-                    p.domains[d.id] = d
+            for d in domain_ids_to_merge:
+                if d.domain_id not in p.domain_ids: # make sure we don't overwrite domains with sequences
+                    p.add_domain(d)
 
     def get_chopped_sequence(self, full_sequence, segments):
         domain_seq = ''
@@ -480,7 +699,7 @@ class GenerateMdaSequences(object):
         if domain_length != len(domain_seq):
             raise Exception( "expected domain length {} from segment info {}, actually got {} '{}'".format(
                 domain_length, 
-                ','.join(['{}-{}'.format(s.start, s.stop) for s in segments]), 
+                ','.join(['{}-{}'.format(s.start, s.stop) for s in segments]),
                 len(domain_seq), domain_seq
             ))
 
@@ -491,56 +710,69 @@ class GenerateMdaSequences(object):
 
         return domain_seq
     
-    def get_unpartitioned_summary(self):
-        """Returns an equivalent dict without MDA partitioning."""
-        sfam_id = self.sfam_id
-
-        summary_by_sfam_id = {}
-        for p in self._proteins.values():
-            if sfam_id not in summary_by_sfam_id:
-                summary_by_sfam_id[sfam_id] = MdaSummary(mda=sfam_id, ref_sfam_id=sfam_id)
-            
-            summary = summary_by_sfam_id[sfam_id]
-            summary.add_protein(p)
-        return summary_by_sfam_id
-
 
     def get_mda_summary(self):
-        """Returns a dict containing info about each MDA."""
-        ref_sfam_id = self.sfam_id
+        """
+        Returns a dict containing info about each MDA.
+        """
+        
+        ref_mda_id = self.ref_mda_id
 
         summary_by_mda = {}
-        for p in self._proteins.values():
-            mda = p.to_mda_string()
-            if mda not in summary_by_mda:
-                summary_by_mda[mda] = MdaSummary(mda=mda, ref_sfam_id=ref_sfam_id)
+        for p in list(self._proteins.values()):
+            mda_id = p.to_mda_string()
+            if mda_id not in summary_by_mda:
+                summary_by_mda[mda_id] = MdaSummary(mda=mda_id, ref_mda_id=ref_mda_id)
             
-            summary = summary_by_mda[mda]
+            summary = summary_by_mda[mda_id]
             summary.add_protein(p)
         return summary_by_mda
 
+    @property
+    def proteins(self):
+        return list(self._proteins.values())
+
+    def get_unpartitioned_summary(self):
+        """
+        Returns an equivalent dict without MDA partitioning.
+        """
+        
+        ref_mda_id = '-'.join(self.sfam_ids)
+
+        summary_by_mda = {}
+        for p in self.proteins:
+            # index by the reference MDA, not the full MDA of the protein
+            if ref_mda_id not in summary_by_mda:
+                summary_by_mda_id[ref_mda_id] = MdaSummary(mda=ref_mda_id, ref_mda_id=ref_mda_id)
+            
+            summary = summary_by_mda[ref_mda_id]
+            summary.add_protein(p)
+        return summary_by_mda
+
+
     def count_domains(self):
         domain_count=0
-        for p in self._proteins.values():
+        for p in self.proteins:
             domain_count += len(p.domains)
         return domain_count
 
     def write_to_file(self, out_filename):
+            
 
         with open(out_filename, 'w') as fout:
 
             # print out the domains in this superfamily
-            for p in self._proteins.values():
+            for p in self.proteins:
                 try:
                     mda = p.to_mda_string()
                 except:
-                    LOG.error("failed to generate mda string for protein: {}".format(p.id))
+                    LOG.error("failed to generate mda string for protein: {}".format(p.protein_id))
                     raise
                 
-                if self.sfam_id:
-                    domains = [d for d in p.domains.values() if d.sfam_id == self.sfam_id]
+                if self.ref_mda_id:
+                    domains = [d for d in p.domains if d.mda_id == self.ref_mda_id]
                 else:
-                    domains = [d for d in p.domains.values()]
+                    domains = [d for d in p.domains]
 
                 for d in domains:
                     try:
@@ -548,7 +780,28 @@ class GenerateMdaSequences(object):
                     except:
                         raise Exception("failed to chop segments {} from protein {}".format(d, p))
                     
-                    fout.write("{}\n".format( "\t".join([ p.id, d.id, mda, dom_seq]) ) )
+                    fout.write("{}\n".format("\t".join([ p.protein_id, d.domain_id, mda, dom_seq])))
+
+    def get_uniprot_accs_from_file(self, uniprot_file):
+
+        uniprot_accs = []
+        re_uniprot = re.compile(r'(\w+)\b')
+        currentline = 0
+        with open(uniprot_file, 'r') as uniprot_io:
+            for line in uniprot_io:
+                currentline += 1
+                if line.startswith('#'):
+                    continue
+                uni_result = re_uniprot.match(line)
+                if uni_result:
+                    uniprot_accs.extend([uni_result.group(1)])
+                else:
+                    raise Exception("failed to parse UniProtKB accession from line '{}' ({}: line {})".format(
+                        line.strip(), uniprot_file, currentline
+                    ))
+        
+        return uniprot_accs
+
 
     def get_proteins_for_uniprot_ids(self, uniprot_ids):
         
@@ -568,22 +821,22 @@ class GenerateMdaSequences(object):
             segs = self._segs_from_string(resolved)
             # dom = { "id": domain_id, "sfam_id": sfam_id, "segments": segs }
             p = proteins[uniprot_acc]
-            dom = Domain(id=domain_id, sfam_id=sfam_id, segments=segs)
+            dom = Domain(domain_id=domain_id, sfam_ids=[sfam_id], segments=segs)
 
             if domain_id not in p.domains: # do not overwrite existing domains (ie with sequence data)
-                p.domains[domain_id] = dom
+                p.add_domain(dom)
 
         return proteins
 
-    def get_proteins_for_sfam(self, sfam_id):
+    def get_proteins_for_sfams(self, sfam_ids):
 
-        LOG.info("Getting all proteins for superfamily {} ... ".format(sfam_id))
+        LOG.info("Getting all proteins for superfamily {} ... ".format('-'.join(sfam_ids)))
 
-        proteins = self._get_proteins_sql(self.sequences_sql, sfam_id=sfam_id)
+        proteins = self._get_proteins_sql(self.sequences_sql, sfam_ids=sfam_ids)
 
-        LOG.info("Getting all 'extra' proteins for superfamily {} ... ".format(sfam_id))
+        LOG.info("Getting all 'extra' proteins for superfamily {} ... ".format(sfam_ids))
 
-        proteins_extra = self._get_proteins_sql(self.sequences_extra_sql, sfam_id=sfam_id)
+        proteins_extra = self._get_proteins_sql(self.sequences_extra_sql, sfam_ids=sfam_ids)
 
         proteins.update(proteins_extra)
 
@@ -614,7 +867,7 @@ class GenerateMdaSequences(object):
 
         return segs
 
-    def _get_proteins_sql(self, sql, *, sfam_id=None, taxon_id=None):
+    def _get_proteins_sql(self, sql, *, sfam_ids=None, taxon_id=None):
 
         max_rows = self.max_rows
 
@@ -626,10 +879,12 @@ class GenerateMdaSequences(object):
         record_count=0
 
         db_args = {}
-        if not sfam_id and not taxon_id:
-            raise ArgumentError("must specify at least one of ['sfam_id' | 'taxon_id']")
-        if sfam_id:
-            db_args['sfam_id'] = sfam_id
+        if not sfam_ids and not taxon_id:
+            raise ArgumentError("must specify at least one of ['sfam_ids' | 'taxon_id']")
+        if sfam_ids:
+            for idx, sfam_id in enumerate(sfam_ids):
+                bind_var = 'sfam_id{}'.format(idx)
+                db_args[bind_var] = sfam_id
         if taxon_id:
             db_args['taxon_id'] = taxon_id
 
@@ -651,9 +906,9 @@ class GenerateMdaSequences(object):
                 proteins[uniprot_acc] = p
 
             segs = self._segs_from_string(resolved)
-            dom = Domain(id=domain_id, sfam_id=dom_sfam_id, segments=segs)
+            dom = Domain(domain_id=domain_id, sfam_ids=[dom_sfam_id], segments=segs)
 
-            p.domains[domain_id] = dom
+            p.add_domain(dom)
 
             record_count += 1
             if record_count % 1000 == 0:
