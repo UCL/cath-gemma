@@ -652,7 +652,7 @@ class GenerateMdaSequences(object):
 
         LOG.info("   %s", mda_file)
         with open(mda_file, file_perm) as f:
-            f.write("{:<30} {:<7} {:<7} {:<3} {}\n".format(
+            f.write("{:<30} {:<7} {:<7} {:<3} {} {}\n".format(
                 'id', 'protein_count', 'domain_count', 'mda_count', 'min/max/mean', 'mda_entries'))
             for p in projects:
                 f.write("{:<30} {:<7} {:<7} {:<3} {}/{}/{} {}\n".format(
