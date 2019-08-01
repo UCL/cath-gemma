@@ -743,7 +743,7 @@ class GenerateMdaSequences(object):
         for p in self.proteins:
             # index by the reference MDA, not the full MDA of the protein
             if ref_mda_id not in summary_by_mda:
-                summary_by_mda_id[ref_mda_id] = MdaSummary(mda=ref_mda_id, ref_mda_id=ref_mda_id)
+                summary_by_mda[ref_mda_id] = MdaSummary(mda=ref_mda_id, ref_mda_id=ref_mda_id)
             
             summary = summary_by_mda[ref_mda_id]
             summary.add_protein(p)
