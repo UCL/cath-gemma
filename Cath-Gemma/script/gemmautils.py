@@ -618,7 +618,7 @@ class GenerateMdaSequences(object):
             projects.extend([project])
 
         if bin_mda_summaries:
-            dom_lengths = [len(d.seq) for d in mda_summary.ref_domains for mda_summary in bin_mda_summaries]
+            dom_lengths = [len(d.seq) for d in mda_sum.ref_domains for mda_sum in bin_mda_summaries]
             len_mean = numpy.mean(dom_lengths)
             len_min = numpy.min(dom_lengths)
             len_max = numpy.max(dom_lengths)
