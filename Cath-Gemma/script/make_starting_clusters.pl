@@ -1,11 +1,5 @@
 #!/usr/bin/env perl
 
-=usage
-
-perl ./make_starting_clusters.pl
-
-=cut
-
 # Strict/warnings
 use strict;
 use warnings;
@@ -31,57 +25,67 @@ use Path::Tiny;
 
 my $help = undef;
 
-my $CLUSTER_INFILE        = path( 'nr90.out.clstr'    );
-my $IDS_GO_TERMS_INFILE   = path( 'ids_go_terms.out'  );
-my $SEQUENCES_INFILE      = path( 'sequences.fa'      );
+my $CLUSTER_INFILE;     #   = path( 'nr90.out.clstr'    );
+my $SEQUENCES_INFILE;   #   = path( 'sequences.fa'      );
+my $IDS_GO_TERMS_INFILE;#   = path( 'ids_go_terms.out'  );
 
 my $INCLUDED_GO_IEA_TERMS = '';
 
 my $MEMBERSHIP_OUTDIR     = path( 'starting_clusters' );
-
 
 Getopt::Long::Configure( 'bundling' );
 GetOptions(
 	'h|help'                    => \$help,
 
 	'c|cluster-infile=s'        => \$CLUSTER_INFILE,
-	'i|ids-go-terms-infile=s'   => \$IDS_GO_TERMS_INFILE,
 	's|sequences-infile=s'      => \$SEQUENCES_INFILE,
+
+	'i|ids-go-terms-infile=s'   => \$IDS_GO_TERMS_INFILE,
 
 	'o|membership-outdir=s'     => \$MEMBERSHIP_OUTDIR,
 
 	'g|included-go-iea-terms=s' => \$INCLUDED_GO_IEA_TERMS,
 ) or pod2usage( 2 );
+
 if ( $help ) {
 	pod2usage( 1 );
 }
 
+if (!$CLUSTER_INFILE || !$SEQUENCES_INFILE) {
+	pod2usage(3);
+}
+
 $CLUSTER_INFILE      = path( $CLUSTER_INFILE      );
-$IDS_GO_TERMS_INFILE = path( $IDS_GO_TERMS_INFILE );
 $MEMBERSHIP_OUTDIR   = path( $MEMBERSHIP_OUTDIR   );
 $SEQUENCES_INFILE    = path( $SEQUENCES_INFILE    );
 
 my %INCLUDED_GO_IEA_TERMS = map { ( $ARG, 1 ); } split( /,/, $INCLUDED_GO_IEA_TERMS );
 
+my $APPLY_GO_FILTER = $IDS_GO_TERMS_INFILE ? 1 : 0;
+
 # Read the GO terms file
-INFO "Reading GO terms file $IDS_GO_TERMS_INFILE";
-my $ids_go_terms_contents = $IDS_GO_TERMS_INFILE->slurp();
-my @ids_go_terms_contents = split( /\n+/, $ids_go_terms_contents );
-while ( chomp( @ids_go_terms_contents ) ) {}
-
-# Record the IDs that have associated GO terms
 my %id_with_go;
-foreach my $ids_go_terms_line ( @ids_go_terms_contents ) {
-	my @ids_go_terms_lineparts = split( /\s+/, $ids_go_terms_line );
+if ( $APPLY_GO_FILTER ) {
+	$IDS_GO_TERMS_INFILE = path( $IDS_GO_TERMS_INFILE );
 
-	my ( $id, $go_code, $go_term ) = @ids_go_terms_lineparts;
-	if ( $go_term !~ /^N/ && ( $go_term !~ /^IEA:/ || ( $INCLUDED_GO_IEA_TERMS{ $go_term } ) ) ) {
-		$id_with_go{ $id } = 1;
+	INFO "Reading GO terms file $IDS_GO_TERMS_INFILE";
+	my $ids_go_terms_contents = $IDS_GO_TERMS_INFILE->slurp();
+	my @ids_go_terms_contents = split( /\n+/, $ids_go_terms_contents );
+	while ( chomp( @ids_go_terms_contents ) ) {}
+
+	# Record the IDs that have associated GO terms
+	foreach my $ids_go_terms_line ( @ids_go_terms_contents ) {
+		my @ids_go_terms_lineparts = split( /\s+/, $ids_go_terms_line );
+
+		my ( $id, $go_code, $go_term ) = @ids_go_terms_lineparts;
+		if ( $go_term !~ /^N/ && ( $go_term !~ /^IEA:/ || ( $INCLUDED_GO_IEA_TERMS{ $go_term } ) ) ) {
+			$id_with_go{ $id } = 1;
+		}
 	}
 }
-
-undef @ids_go_terms_contents;
-undef $ids_go_terms_contents;
+else {
+	INFO "Not applying GO filtering";
+}
 
 # Read in lines of S90 cluster membership file
 INFO "Reading cd-hit S90 clusters file $CLUSTER_INFILE";
@@ -112,16 +116,18 @@ if ( scalar( @new_clusters ) == 0 ) {
 	WARN 'There are no clusters at this point in the processing!!';
 }
 
-INFO 'Removing clusters without suitable GO annotations (...starting with ' . scalar( @new_clusters ) . ' clusters)';
-my @del_indices = grep {
-	my $clust_idx = $ARG;
-	none { exists( $id_with_go{ $ARG } ) } @{ $new_clusters[ $clust_idx ] };
-} ( 0 .. $#new_clusters );
-
-foreach my $reverse_index ( reverse( @del_indices ) ) {
-	splice( @new_clusters, $reverse_index, 1 );
+if ($APPLY_GO_FILTER) {
+	INFO 'Removing clusters without suitable GO annotations (...starting with ' . scalar( @new_clusters ) . ' clusters)';
+	my @del_indices = grep {
+		my $clust_idx = $ARG;
+		none { exists( $id_with_go{ $ARG } ) } @{ $new_clusters[ $clust_idx ] };
+	} ( 0 .. $#new_clusters );
+	foreach my $reverse_index ( reverse( @del_indices ) ) {
+		splice( @new_clusters, $reverse_index, 1 );
+	}
+	INFO 'After removing clusters without suitable GO annotations, there are now ' . scalar( @new_clusters ) . ' clusters';
 }
-INFO 'After removing clusters without suitable GO annotations, there are now ' . scalar( @new_clusters ) . ' clusters';
+
 if ( scalar( @new_clusters ) == 0 ) {
 	WARN '!!!! There are no clusters at this point in the processing !!!!';
 }
@@ -173,21 +179,24 @@ make_starting_clusters.pl - Make sequences files for clusters with GO annotation
 
 =head1 SYNOPSIS
 
-perl script/make_starting_clusters.pl [options]
+make_starting_clusters.pl [options] -c <file> -s <file> [-i <file>]
 
 =head1 OPTIONS
 
     -h [ --help ]                         Output usage message
 
     -c [ --cluster-infile ] <file>        Read cluster membership from file <file>
-    -i [ --ids-go-terms-infile ] <file>   Read IDs and GO terms from file <file>
     -s [ --sequences-infile ] <file>      Read sequences from file <file>
 
-    -o [ --membership-outdir ] <dir>      Output help message
+    -i [ --ids-go-terms-infile ] <file>   Read IDs and GO terms from file <file>
 
-    -g [ --included-go-iea-terms ] <list> Only consider GO terms beginning IEA: if they're in comma-separated list <list>
-                                          Eg: IEA:UniProtKB-KW,IEA:UniProtKB-EC
-                                          Default: ''
+    -o [ --membership-outdir ] <dir>      Output directory 
+                                          (default: './starting-clusters')
+
+    -g [ --included-go-iea-terms ] <list> Only consider GO terms beginning IEA if 
+                                          they are in comma-separated list <list>
+                                          eg: 'IEA:UniProtKB-KW,IEA:UniProtKB-EC'
+                                          (default: '')
 
 =head2 DESCRIPTION
 
@@ -200,6 +209,6 @@ All GO terms beginning with N are excluded.
 
 To understand how to use this script, see:
 
-See https://github.com/UCL/cath-gemma/wiki/Running-the-Full-FunFam-Protocol
+https://github.com/UCL/cath-gemma/wiki/Running-the-Full-FunFam-Protocol
 
 =cut
