@@ -27,6 +27,10 @@ use Log::Log4perl::Tiny qw/ :easy          /;
 # Cath::Gemma
 use Cath::Gemma::Util;
 
+my %CLUSTER_HOST_FROM_NODE = (
+	'pchuckle.cs.ucl.ac.uk' => 'pchuckle',
+);
+
 =head1 ROLES
 
 =over
@@ -69,13 +73,15 @@ sub run_job_array {
 	my %cluster_max_hours = (
 		'bchuckle.cs.ucl.ac.uk' => 100,
 		'myriad.rc.ucl.ac.uk'   => 72,
+		'pchuckle.cs.ucl.ac.uk' => 200,
 	);
+
+	
+	my $submit_host_from_node = $CLUSTER_HOST_FROM_NODE{ $submit_host } // $submit_host;
+
 	my $max_hours = $cluster_max_hours{ $submit_host } // 72;
 
-	if ( exists $ENV{GEMMA_CLUSTER_MAX_HOURS} && $ENV{GEMMA_CLUSTER_MAX_HOURS} ) {
-		INFO "Overriding the default max hours ($max_hours) with a custom value from \$GEMMA_CLUSTER_MAX_HOURS=$ENV{GEMMA_CLUSTER_MAX_HOURS}";
-		$max_hours = $ENV{GEMMA_CLUSTER_MAX_HOURS};
-	}
+	
 
 	# Clamp time between 6 hours and 72 hours
 	# (legion rejects jobs longer than 72 hours with:
@@ -87,6 +93,13 @@ sub run_job_array {
 		),
 		Time::Seconds->new( $max_hours * 60 * 60 ) # max hours in seconds
 	);
+
+	if ( exists $ENV{GEMMA_CLUSTER_MAX_HOURS} && $ENV{GEMMA_CLUSTER_MAX_HOURS} ) {
+		INFO "Overriding the default max hours ($max_hours) with a custom value from \$GEMMA_CLUSTER_MAX_HOURS=$ENV{GEMMA_CLUSTER_MAX_HOURS}";
+		$max_hours = $ENV{GEMMA_CLUSTER_MAX_HOURS};
+		$duration_in_seconds = Time::Seconds->new( $max_hours * 60 * 60 );
+	}
+	
 	my $time_req                   = time_seconds_to_sge_string( $duration_in_seconds );
 	my $default_resources          = [
 		'vf='     . $memy_req,
@@ -98,12 +111,14 @@ sub run_job_array {
 		'bchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req                     ],
 		'legion.rc.ucl.ac.uk'   => [                                         ],
 		'myriad.rc.ucl.ac.uk'   => [                                         ],
+		'pchuckle.cs.ucl.ac.uk' => [ 'tmem=' . $memy_req                     ],
 	);
 	my %cluster_extras             = (
 		#'bchuckle.cs.ucl.ac.uk' => [ '-P', 'cath' ], # Can be removed in the future - is currently being used as part of Tristan giving us dedicated access to a pool of nodes
 		'bchuckle.cs.ucl.ac.uk' => [              ],
 		'legion.rc.ucl.ac.uk'   => [              ],
 		'myriad.rc.ucl.ac.uk'   => [              ],
+		'pchuckle.cs.ucl.ac.uk' => [              ],
 	);
 
 	my $cluster_specific_resources = $cluster_resources{ $submit_host }
@@ -136,7 +151,7 @@ sub run_job_array {
 
 	# pass GEMMA_* environment variables through to child jobs
 
-	my @gemma_env_args = map { ('-v', "$_='$ENV{$_}'") } # map to '-v key=value'
+	my @gemma_env_args = map { ('-v', "'$_=$ENV{$_}'") } # map to '-v key=value'
 		grep { $ENV{$_} }                                # only env keys that have trueish values
 		grep { /^GEMMA/ }                                # only GEMMA env keys
 		keys %ENV;
@@ -144,7 +159,7 @@ sub run_job_array {
 	# TODO: Consider adding a parameter that allows users to specify the location of the
 	#       Perl to run the jobs with and then prepend it to the PATH here
 	my @qsub_command = (
-		($ssh_to_login_node ? ('ssh', $submit_host) : ()),
+		($ssh_to_login_node ? ('ssh', $submit_host_from_node) : ()),
 		# 'ssh', '-v', $submit_host,
 		'qsub',
 		'-l', join( ',', @$default_resources, @$cluster_specific_resources ),
@@ -208,16 +223,16 @@ sub wait_for_jobs {
 
 	# this will die if GEMMA_CLUSTER_NAME is not set
 	my $submit_host = $self->get_cluster_submit_host;
-
+	my $submit_host_from_node = $CLUSTER_HOST_FROM_NODE{ $submit_host } // $submit_host;
 	while ( 1 ) {
 		my $wait_in_seconds = Time::Seconds->new( 60 );
 		DEBUG "Waiting $wait_in_seconds seconds before (re)checking for submitted jobs : ". join( ', ', @wanted_jobs );
 		sleep $wait_in_seconds->seconds();
 
-		DEBUG "Submit host is : " . $submit_host;
+		DEBUG "Submit host is : " . $submit_host_from_node;
 
 		my @qstat_command = (
-			'ssh', $submit_host,
+			'ssh', $submit_host_from_node,
 			'qstat',
 		);
 		DEBUG "qstat command is : " . join( ' ', @qstat_command );

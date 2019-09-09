@@ -9,7 +9,7 @@ import gemmautils
 
 DEFAULT_DB_NAME = None
 DEFAULT_MIN_EVALUE = 0.001
-DEFAULT_MIN_PARTITION_SIZE = 100
+DEFAULT_MIN_PARTITION_SIZE = 1000
 
 parser = argparse.ArgumentParser(
     description="Write CATH domain sequences (with MDA info)")

@@ -79,9 +79,11 @@ sub get_cluster_submit_host {
 	my $cluster_name = $self->get_cluster_name;
 
 	return 
-		$cluster_name =~ /chuckle/   ? 'bchuckle.cs.ucl.ac.uk' :
+		$cluster_name =~ /bchuckle/   ? 'bchuckle.cs.ucl.ac.uk' :
+		$cluster_name =~ /pchuckle/   ? 'pchuckle.cs.ucl.ac.uk' :
 		$cluster_name =~ /^legion/   ? 'legion.rc.ucl.ac.uk' : 
 		$cluster_name =~ /^myriad/   ? 'myriad.rc.ucl.ac.uk' :
+		$cluster_name =~ /^pchuckle/   ? 'pchuckle.cs.ucl.ac.uk' :
 		die "Error: failed to get submit host from cluster name: $cluster_name";
 }
 

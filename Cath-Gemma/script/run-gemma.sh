@@ -20,7 +20,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 if [ "$#" -lt 2 ];
 then
 	echo
-	echo "Usage: $0 <datadir> <local|legion|myriad|bchuckle|grace> [<project_folder_name>]"
+	echo "Usage: $0 <datadir> <local|legion|myriad|bchuckle|grace|pchuckle> [<project_folder_name>]"
 	echo
 	echo "The following files are required:"
 	echo
@@ -211,8 +211,18 @@ bchuckle)
 	run_hpc
 	;;
 
+# on pchuckle cluster
+pchuckle)
+
+	REMOTE_DATA_PATH=/home/${REMOTE_USER}/${PROJECT_NAME}
+	REMOTE_CODE_PATH=/home/${REMOTE_USER}/Cath-Gemma
+	REMOTE_HOST=pchuckle.cs.ucl.ac.uk
+	SGE_REQUEST_FLAGS="h_rt=4:0:0,h_vmem=7G,tmem=7G"
+	run_hpc
+	;;
+
 *)
-	print_date "Invalid input. Expected local|legion|myriad|bchuckle|grace. Got:$RUNNING_METHOD."
+	print_date "Invalid input. Expected local|legion|myriad|bchuckle|grace|pchuckle. Got:$RUNNING_METHOD."
 	;;
 esac
 
