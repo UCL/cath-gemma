@@ -256,29 +256,74 @@ sub _embedding_scan_impl {
 					push(@match_protids, $line);
 				}
 			}
-			# For the sequence ids, get their embedding dists
-				my $dist_sum;
-				my $dist_num;
-				for my $match_protid (@match_protids) {
-					for my $query_protid (@query_protids) {
-					# INFO "$match_protid,$query_protid";
-						open (my $df, "<", "embs")
-							or die "cannot open embedding distance file";
-						while (my $dist_line = <$df>){
-							my @dists = split(' ', $dist_line);
-							if (($match_protid eq $dists[0] && $query_protid eq $dists[1]) || 
-								($query_protid eq $dists[0] && $match_protid eq $dists[1])) {
-							# if ($match_protid eq $dists[0] && $query_protid eq $dists[1]){
-								$dist_sum += $dists[2];
-								$dist_num +=1;
-								last;
-							}
-						}	
-					}
+			# # For the sequence ids, get their embedding dists
+			#####################################
+			#OLD VERSION OPENING FILE EVERY TIME#
+			#####################################
+			# 	my $dist_sum;
+			# 	my $dist_num;
+			# 	for my $match_protid (@match_protids) {
+			# 		for my $query_protid (@query_protids) {
+			# 		# INFO "$match_protid,$query_protid";
+			# 			open (my $df, "<", "embs")
+			# 				or die "cannot open embedding distance file";
+			# 			while (my $dist_line = <$df>){
+			# 				my @dists = split(' ', $dist_line);
+			# 				if (($match_protid eq $dists[0] && $query_protid eq $dists[1]) || 
+			# 					($query_protid eq $dists[0] && $match_protid eq $dists[1])) {
+			# 				# if ($match_protid eq $dists[0] && $query_protid eq $dists[1]){
+			# 					$dist_sum += $dists[2];
+			# 					$dist_num +=1;
+			# 					last;
+			# 				}
+			# 			}	
+			# 		}
 
-				}
+			# 	}
+			# 	my $aver_dist = $dist_sum / $dist_num;
+			# 	INFO "$query_cluster_id,$match_cluster_id,$aver_dist";
+
+
+                # build a lookup of query/match ids and initialise
+                my %dist_scores_by_query_match = ();
+                for my $match_protid (@match_protids) {
+                    for my $query_protid (@query_protids) {
+                        $dist_scores_by_query_match{$match_protid}{$query_protid} = undef;
+                        $dist_scores_by_query_match{$query_protid}{$match_protid} = undef;
+                    }
+                }
+				# INFO "%dist_scores_by_query_match";
+
+				# search through file for any matches and store distance scores
+                my $dist_sum;
+                my $dist_num;
+                open (my $df, "<", "embs")
+                    or die "cannot open embedding distance file";
+                while (my $dist_line = <$df>){
+                    my ($query_id, $match_id, $dist) = split(' ', $dist_line);
+                    if (exists $dist_scores_by_query_match{$query_id}{$match_id}) {
+                        $dist_scores_by_query_match{$query_id}{$match_id} = $dist;
+                        $dist_scores_by_query_match{$match_id}{$query_id} = $dist;
+                        $dist_sum += $dist;
+                        $dist_num +=1;
+                    }
+                }
+				# INFO "checked all";
+
+                # check if any expected query/match combinations are not found
+                # for my $match_protid (@match_protids) {
+                #     for my $query_protid (@query_protids) {
+                #         if ($dist_scores_by_query_match{$match_protid}{$query_protid} == undef) {
+                #             WARN "WARNING: failed to find result for query/match ($match_protid / $query_protid)";
+                #         }
+                #     }
+                # }
+
 				my $aver_dist = $dist_sum / $dist_num;
-				INFO "$query_cluster_id,$match_cluster_id,$aver_dist";
+
+
+
+
 				my @emb_line = ();
 				push( @emb_line, $query_cluster_id);
 				push( @emb_line, $match_cluster_id);
@@ -294,7 +339,7 @@ sub _embedding_scan_impl {
 
 
 	}
-	INFO "AAAAAAAAAAAAAa @embedding_diff_results";
+	# INFO "AAAAAAAAAAAAAa @embedding_diff_results";
 	# INFO "$embedding_diff_results[0]";
 
 	return Cath::Gemma::Scan::ScanData->new( scan_data => \@embedding_diff_results );
