@@ -98,40 +98,44 @@ sub build_profile_in_dir {
 			my $changed_directory_guard = cwd_guard( ''. $aln_file->parent->absolute() );
 
 			# hhconsensus -v 0 -i $aln_file -o $a3m_file
-			_run_hhconsensus(
-				[
-					'' . $exes->hhconsensus(),
-					'-i', ''.$aln_file,
-					'-o', ''.$tmp_prof_absfile_orig,
-				],
-				$output_stem,
-				$profile_build_type
-			);
+			# _run_hhconsensus(
+			# 	[
+			# 		# '' . $exes->hhconsensus(),
+			# 		'/bin/cp ', 
+			# 		# '-i', ''.$aln_file,
+			# 		''.$aln_file,
+			# 		''.$tmp_prof_absfile_orig
+			# 		# '-o', ''.$tmp_prof_absfile_orig,
+			# 	],
+			# 	$output_stem,
+			# 	$profile_build_type
+			# );
+			copy(''.$aln_file,''.$tmp_prof_absfile);
 
 
-			if ( ! -s $tmp_prof_absfile_orig ) {
-				confess "Couldn't find non-empty output profile file \"$tmp_prof_absfile_orig\"";
-			}
+			# if ( ! -s $tmp_prof_absfile_orig ) {
+				# confess "Couldn't find non-empty output profile file \"$tmp_prof_absfile_orig\"";
+			# }
 
-            # sed -i '1s/.*/#$cluster_name/' $a3m_file
-            # sed -i '2s/.*/>$cluster_name _consensus/' $a3m_file
+            ### sed -i '1s/.*/#$cluster_name/' $a3m_file
+            ### sed -i '2s/.*/>$cluster_name _consensus/' $a3m_file
 
-			my $fh_in  = $tmp_prof_absfile_orig->openr;
-			my $fh_out = $tmp_prof_absfile->openw;
-			while ( my $line = <$fh_in> ) {
-				if ( $. == 1 ) {
-					$line = "#$output_stem\n";
-				}
-				if ( $. == 2 ) {
-					$line = ">$output_stem _consensus\n";
-				}
-				$fh_out->print( $line );
-			}
-			$fh_in->close;
-			$fh_out->close;
+			# my $fh_in  = $tmp_prof_absfile_orig->openr;
+			# my $fh_out = $tmp_prof_absfile->openw;
+			# while ( my $line = <$fh_in> ) {
+			# 	if ( $. == 1 ) {
+			# 		$line = "#$output_stem\n";
+			# 	}
+			# 	if ( $. == 2 ) {
+			# 		$line = ">$output_stem _consensus\n";
+			# 	}
+			# 	$fh_out->print( $line );
+			# }
+			# $fh_in->close;
+			# $fh_out->close;
 
-			unlink( $tmp_prof_absfile_orig )
-				or confess "failed to unlink tmp profile file '$tmp_prof_absfile_orig' : $!";
+			# unlink( $tmp_prof_absfile_orig )
+			# 	or confess "failed to unlink tmp profile file '$tmp_prof_absfile_orig' : $!";
 
 			return {
 				file_already_present => 0,

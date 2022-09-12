@@ -124,7 +124,7 @@ sub make_alignment_file {
 			my @mafft_params_fast_low_qual  = ( qw/ --amino --anysymbol --parttree  --retree     1    --quiet / );
 
 			my $gap_percentage = 0;
-			if ( $num_sequences  > 1 ) {
+			if ( $num_sequences  > 10000 ) {
 				my $mafft_params = ( $num_sequences <= 200 ) ? [ @mafft_params_slow_high_qual, "$raw_seqs_filename" ]
 				                                             : [ @mafft_params_fast_low_qual,  "$raw_seqs_filename" ];
 
