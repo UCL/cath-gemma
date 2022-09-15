@@ -228,6 +228,7 @@ sub _embedding_scan_impl {
 	# search individual query alignments against the library of match profiles
 	my @all_scan_data;
 	my @embedding_diff_results = ();
+	my %dist_scores_by_query_match = ();
 	# INFO "HERE";
 	for my $query_cluster_id ( @$query_cluster_ids ) {
 		# Set up @query_protids and get all the protein IDs from the query profile
@@ -285,29 +286,89 @@ sub _embedding_scan_impl {
 
 
                 # build a lookup of query/match ids and initialise
-                my %dist_scores_by_query_match = ();
+                # my %dist_scores_by_query_match = ();
                 for my $match_protid (@match_protids) {
                     for my $query_protid (@query_protids) {
+						# INFO "MM $match_protid";
+						# INFO "QQ $query_protid";
                         $dist_scores_by_query_match{$match_protid}{$query_protid} = undef;
                         $dist_scores_by_query_match{$query_protid}{$match_protid} = undef;
                     }
                 }
 				# INFO "%dist_scores_by_query_match";
 
-				# search through file for any matches and store distance scores
-                my $dist_sum;
-                my $dist_num;
-                open (my $df, "<", "embs")
-                    or die "cannot open embedding distance file";
-                while (my $dist_line = <$df>){
-                    my ($query_id, $match_id, $dist) = split(' ', $dist_line);
-                    if (exists $dist_scores_by_query_match{$query_id}{$match_id}) {
-                        $dist_scores_by_query_match{$query_id}{$match_id} = $dist;
-                        $dist_scores_by_query_match{$match_id}{$query_id} = $dist;
-                        $dist_sum += $dist;
-                        $dist_num +=1;
-                    }
-                }
+		}
+	}
+
+
+	INFO "made hash";
+	# INFO "$query_cluster_id";
+	# INFO "$match_cluster_id";
+	# search through file for any matches and store distance scores
+	my $dist_sum;
+	my $dist_num;
+	open (my $df, "<", "embs")
+		or die "cannot open embedding distance file";
+	while (my $dist_line = <$df>){
+		my ($query_id, $match_id, $dist) = split(' ', $dist_line);
+		if (exists $dist_scores_by_query_match{$query_id}{$match_id}) {
+			$dist_scores_by_query_match{$query_id}{$match_id} = $dist;
+			$dist_scores_by_query_match{$match_id}{$query_id} = $dist;
+			# $dist_sum += $dist;
+			# $dist_num +=1;
+		}
+	}
+	INFO "got dists";
+
+
+
+
+
+	for my $query_cluster_id ( @$query_cluster_ids ) {
+		# Set up @query_protids and get all the protein IDs from the query profile
+		my $query_prof_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $query_cluster_id, $profile_build_type );
+		my @query_protids;
+		my $delim="/";
+		open(my $fh, "<", $query_prof_file)
+			or die "cannot open $query_prof_file";
+		while (my $line = <$fh>) {
+			if ($line =~ m/$delim/) {
+				$line =~ s/\s*$//;
+				push(@query_protids, $line);
+			}
+		}
+		for my $match_cluster_id ( @$match_cluster_ids ) {
+				my $match_prof_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $match_cluster_id, $profile_build_type );
+			# 	# INFO "$aa";
+				# open match profile file and get sequence ids
+				my @match_protids;
+				my $delim="/";
+				open(my $fh, "<", $match_prof_file)
+					or die "cannot open $match_prof_file";
+				while (my $line = <$fh>) {
+					if ($line =~ m/$delim/) {
+						$line =~ s/\s*$//;
+						push(@match_protids, $line);
+					}
+				}
+
+				my $dist_sum;
+				my $dist_num;
+				for my $match_protid (@match_protids) {
+						for my $query_protid (@query_protids) {
+							$dist_sum += $dist_scores_by_query_match{$query_protid}{$match_protid};
+							$dist_num += 1
+						}
+				}
+
+
+
+
+
+
+
+
+				# INFO "$query_id";
 				# INFO "checked all";
 
                 # check if any expected query/match combinations are not found
