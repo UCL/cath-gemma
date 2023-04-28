@@ -64,20 +64,34 @@ sub _hhsearch_scan_impl {
 	my @all_scan_data;
 	for my $query_cluster_id ( @$query_cluster_ids ) {
 
+		
 		my $query_prof_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $query_cluster_id, $profile_build_type );
+			# open query profile file and get sequence ids
+			my @query_protids;
+			my $delim="/";
+			open(my $fh, "<", $query_prof_file)
+				or die "cannot open $query_prof_file";
+			while (my $line = <$fh>) {
+				if ($line =~ m/$delim/) {
+					$line =~ s/\s*$//;
+					push(@query_protids, $line);
+				}
+			}
 
-		# builds profile library db (stub, ffdata, ffindex) from the cluster ids 
-		# my ($query_lib_stub, $query_lib_ffdata, $query_lib_ffindex) 
-		# 	= build_temp_profile_lib_files( $profile_dir, $exes, $query_cluster_ids, $exes->tmp_dir(), $profile_build_type );
+
 		my ($match_lib_stub, $match_lib_ffdata, $match_lib_ffindex) 
 			= build_temp_profile_lib_files( $profile_dir, $exes, $match_cluster_ids, $exes->tmp_dir(), $profile_build_type );
+
 
 		my $hhsuite_scan_exe = $exes->hhsearch;
 
 		my $query_clusters_id = generic_id_of_clusters( $query_cluster_ids, 1 );
 		my $match_clusters_id = generic_id_of_clusters( $match_cluster_ids, 1 );
 
+		INFO "////////////////////";
+		INFO "$query_clusters_id,,$match_clusters_id";
 		# hhsearch -cpu 4 -i $cluster_id.a3m -d $db_stub -o $result_file
+		INFO "$match_lib_stub";
 
 		my @scan_command = (
 			'-cpu', $HHSEARCH_CPU,
@@ -108,6 +122,7 @@ sub _hhsearch_scan_impl {
 
 		push @all_scan_data, @{ $scan->scan_data };
 	}
+
 
 	return Cath::Gemma::Scan::ScanData->new( scan_data => \@all_scan_data );
 }
@@ -143,6 +158,137 @@ sub hhsuite_scan {
 	return $result;
 }
 
+
+
+=head2 _embedding_scan_impl
+
+Function to get the scan files from embedding or other distance metric
+
+=cut
+
+sub _embedding_scan_impl {
+	state $check = compile( ClassName, Path, ArrayRef[Str], ArrayRef[Str], CathGemmaHHSuiteProfileType );
+	my ( $class, $profile_dir, $query_cluster_ids, $match_cluster_ids, $profile_build_type ) = $check->( @ARG );
+
+	my $num_query_ids = scalar( @$query_cluster_ids );
+	my $num_match_ids = scalar( @$match_cluster_ids );
+
+	Cath::Gemma::Util::check_all_profile_files_exist(
+		$profile_dir,
+		$query_cluster_ids,
+		$match_cluster_ids,
+		$profile_build_type
+	);
+
+	# search individual query alignments against the library of match profiles
+	my @all_scan_data;
+	my @embedding_diff_results = ();
+	my %dist_scores_by_query_match = ();
+	for my $query_cluster_id ( @$query_cluster_ids ) {
+		# Set up @query_protids and get all the protein IDs from the query profile
+		my $query_prof_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $query_cluster_id, $profile_build_type );
+		my @query_protids;
+		my $delim="/";
+		open(my $fh, "<", $query_prof_file)
+			or die "cannot open $query_prof_file";
+		while (my $line = <$fh>) {
+			if ($line =~ m/$delim/) {
+				$line =~ s/\s*$//;
+				push(@query_protids, $line);
+			}
+		}
+	for my $match_cluster_id ( @$match_cluster_ids ) {
+			my $match_prof_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $match_cluster_id, $profile_build_type );
+			my @match_protids;
+			my $delim="/";
+			open(my $fh, "<", $match_prof_file)
+				or die "cannot open $match_prof_file";
+			while (my $line = <$fh>) {
+				if ($line =~ m/$delim/) {
+					$line =~ s/\s*$//;
+					push(@match_protids, $line);
+				}
+			}
+
+			for my $match_protid (@match_protids) {
+			    for my $query_protid (@query_protids) {
+				$dist_scores_by_query_match{$match_protid}{$query_protid} = undef;
+				$dist_scores_by_query_match{$query_protid}{$match_protid} = undef;
+			    }
+			}
+
+		}
+	}
+
+
+	# search through file for any matches and store distance scores
+	my $dist_sum;
+	my $dist_num;
+	open (my $df, "<", "embs")
+		or die "cannot open embedding distance file";
+	while (my $dist_line = <$df>){
+		my ($query_id, $match_id, $dist) = split(' ', $dist_line);
+		if (exists $dist_scores_by_query_match{$query_id}{$match_id}) {
+			$dist_scores_by_query_match{$query_id}{$match_id} = $dist;
+			$dist_scores_by_query_match{$match_id}{$query_id} = $dist;
+		}
+	}
+
+
+	for my $query_cluster_id ( @$query_cluster_ids ) {
+		# Set up @query_protids and get all the protein IDs from the query profile
+		my $query_prof_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $query_cluster_id, $profile_build_type );
+		my @query_protids;
+		my $delim="/";
+		open(my $fh, "<", $query_prof_file)
+			or die "cannot open $query_prof_file";
+		while (my $line = <$fh>) {
+			if ($line =~ m/$delim/) {
+				$line =~ s/\s*$//;
+				push(@query_protids, $line);
+			}
+		}
+		for my $match_cluster_id ( @$match_cluster_ids ) {
+				my $match_prof_file = prof_file_of_prof_dir_and_cluster_id( $profile_dir, $match_cluster_id, $profile_build_type );
+				# open match profile file and get sequence ids
+				my @match_protids;
+				my $delim="/";
+				open(my $fh, "<", $match_prof_file)
+					or die "cannot open $match_prof_file";
+				while (my $line = <$fh>) {
+					if ($line =~ m/$delim/) {
+						$line =~ s/\s*$//;
+						push(@match_protids, $line);
+					}
+				}
+
+				my $dist_sum;
+				my $dist_num;
+				for my $match_protid (@match_protids) {
+						for my $query_protid (@query_protids) {
+							$dist_sum += $dist_scores_by_query_match{$query_protid}{$match_protid};
+							$dist_num += 1
+						}
+				}
+
+
+				my $aver_dist = $dist_sum / $dist_num;
+
+
+
+
+				my @emb_line = ();
+				push( @emb_line, $query_cluster_id);
+				push( @emb_line, $match_cluster_id);
+				push( @emb_line, $aver_dist);
+				push( @embedding_diff_results, [ @emb_line ])
+		}
+
+	}
+
+	return Cath::Gemma::Scan::ScanData->new( scan_data => \@embedding_diff_results );
+}
+
 =head2 scan_to_file
 
 TODOCUMENT
@@ -155,6 +301,7 @@ sub scan_to_file {
 
 	my $output_file = $gemma_dir_set->scan_filename_of_cluster_ids( $query_ids, $match_ids, $profile_build_type );
 
+
 	my $result = {};
 	my $file_already_present = ( -s $output_file ) ? 1 : 0;
 	if ( ! $file_already_present ) {
@@ -165,8 +312,16 @@ sub scan_to_file {
 				my $scan_atomic_file = shift;
 				my $tmp_scan_file    = path( $scan_atomic_file->filename );
 
-				my $result = __PACKAGE__->_hhsearch_scan_impl(
-					$exes,
+				# my $result = __PACKAGE__->_hhsearch_scan_impl(
+				# 	$exes,
+				# 	$gemma_dir_set->prof_dir(),
+				# 	$query_ids,
+				# 	$match_ids,
+				# 	$profile_build_type,
+				# );
+
+
+				my $result = __PACKAGE__->_embedding_scan_impl(
 					$gemma_dir_set->prof_dir(),
 					$query_ids,
 					$match_ids,
